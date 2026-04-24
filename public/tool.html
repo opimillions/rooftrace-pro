@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RoofTrace Pro | Aerial Roof Measurement Tool</title>
+  <title>RoofTrace Pro</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <style>
@@ -21,7 +21,6 @@
     .header input { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:5px 10px; border-radius:5px; font-size:0.82em; min-width:120px; }
     .header input::placeholder { color:rgba(255,255,255,0.5); }
     .header .btn-report { background:#f59e0b; color:#172235; padding:7px 16px; border-radius:6px; font-weight:700; font-size:0.82em; border:none; cursor:pointer; white-space:nowrap; }
-    .header .btn-logout { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); padding:7px 14px; border-radius:6px; font-size:0.82em; border:1px solid rgba(255,255,255,0.2); cursor:pointer; white-space:nowrap; }
 
     /* ── Left Sidebar ── */
     .sidebar { background:#1e293b; color:white; display:flex; flex-direction:column; gap:0; overflow-y:auto; border-right:1px solid #334155; }
@@ -111,7 +110,7 @@
 
   <!-- Header -->
   <header class="header">
-    <div class="logo">First Call PA | <span>Roof Tool</span></div>
+    <div class="logo">Roof<span>Trace</span> Pro</div>
     <div class="claim-fields">
       <input type="text" id="claimNumber" placeholder="Claim #" style="max-width:130px">
       <input type="text" id="inspectorName" placeholder="Inspector Name" style="max-width:150px">
@@ -119,7 +118,6 @@
       <input type="date" id="inspectionDate" style="max-width:140px">
     </div>
     <button class="btn-report" onclick="generatePDF()">&#128196; PDF Report</button>
-    <button class="btn-logout" onclick="logout()">Sign Out</button>
   </header>
 
   <!-- Sidebar -->
@@ -1090,9 +1088,6 @@ window.geocodeAddress = geocodeAddress;
 window.generatePDF = generatePDF;
 window.changePitch = changePitch;
 window.removeFacet = removeFacet;
-async function logout() { await fetch('/api/auth/logout',{method:'POST'}); window.location='/login'; }
-window.logout = logout;
-
 window.undoLast = function() {
   if (undoStack.length > 0) {
     const last = undoStack.pop();
