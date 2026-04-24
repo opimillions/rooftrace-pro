@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RoofTrace Pro | Aerial Roof Measurement Tool</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; overflow:hidden; font-family:Arial,sans-serif; background:#0f172a; }
+
+    /* ── App Shell ── */
+    .app { display:grid; grid-template-columns:280px 1fr; grid-template-rows:auto 1fr auto; height:100vh; }
+
+    /* ── Header ── */
+    .header { grid-column:1/-1; background:#172235; color:white; padding:10px 20px; display:flex; align-items:center; gap:16px; border-bottom:2px solid #2563eb; }
+    .header .logo { font-weight:900; font-size:1.05em; letter-spacing:0.5px; }
+    .header .logo span { color:#f59e0b; }
+    .header .claim-fields { display:flex; gap:10px; flex:1; flex-wrap:wrap; }
+    .header input { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:5px 10px; border-radius:5px; font-size:0.82em; min-width:120px; }
+    .header input::placeholder { color:rgba(255,255,255,0.5); }
+    .header .btn-report { background:#f59e0b; color:#172235; padding:7px 16px; border-radius:6px; font-weight:700; font-size:0.82em; border:none; cursor:pointer; white-space:nowrap; }
+    .header .btn-logout { background:rgba(255,255,255,0.1); color:rgba(255,255,255,0.8); padding:7px 14px; border-radius:6px; font-size:0.82em; border:1px solid rgba(255,255,255,0.2); cursor:pointer; white-space:nowrap; }
+
+    /* ── Left Sidebar ── */
+    .sidebar { background:#1e293b; color:white; display:flex; flex-direction:column; gap:0; overflow-y:auto; border-right:1px solid #334155; }
+
+    .sidebar-section { padding:14px 16px; border-bottom:1px solid #334155; }
+    .sidebar-section h3 { font-size:0.72em; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:#94a3b8; margin-bottom:10px; }
+
+    /* Address search */
+    .addr-row { display:flex; gap:6px; }
+    .addr-row input { flex:1; background:#0f172a; border:1px solid #334155; color:white; padding:8px 10px; border-radius:6px; font-size:0.85em; }
+    .addr-row input::placeholder { color:#64748b; }
+    .addr-row button { background:#2563eb; color:white; border:none; border-radius:6px; padding:8px 12px; cursor:pointer; font-size:0.85em; font-weight:700; white-space:nowrap; }
+
+    /* Draw mode buttons */
+    .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .mode-btn { padding:10px 6px; border-radius:8px; border:2px solid; font-size:0.78em; font-weight:700; cursor:pointer; text-align:center; transition:all 0.15s; background:transparent; }
+    .mode-btn.active { color:white !important; }
+
+    /* Facet table */
+    .facet-list { max-height:250px; overflow-y:auto; }
+    .facet-row { display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid #334155; font-size:0.82em; }
+    .facet-row .label { font-weight:700; color:#93c5fd; min-width:52px; }
+    .facet-row select { background:#0f172a; border:1px solid #334155; color:white; padding:3px 5px; border-radius:4px; font-size:0.8em; flex:1; }
+    .facet-row .area { color:#94a3b8; min-width:70px; text-align:right; font-size:0.78em; }
+    .facet-row .del { background:none; border:none; color:#ef4444; cursor:pointer; font-size:1em; padding:2px 4px; }
+    .facet-hint { color:#64748b; font-size:0.82em; padding:10px 0; text-align:center; }
+
+    /* Action buttons */
+    .action-btns { display:flex; flex-direction:column; gap:6px; }
+    .action-btns button { padding:9px; border-radius:7px; border:none; font-size:0.82em; font-weight:700; cursor:pointer; }
+    .btn-clear { background:#7f1d1d; color:#fca5a5; }
+    .btn-pdf   { background:#1e40af; color:#bfdbfe; }
+
+    /* ── Map ── */
+    #map { width:100%; height:100%; }
+
+    /* ── Bottom Bar ── */
+    .bottom-bar {
+      grid-column:1/-1;
+      background:#172235;
+      border-top:2px solid #2563eb;
+      padding:10px 20px;
+      display:flex;
+      gap:0;
+      align-items:stretch;
+      overflow-x:auto;
+    }
+    .stat { padding:4px 20px; border-right:1px solid #334155; display:flex; flex-direction:column; gap:2px; min-width:120px; }
+    .stat:last-child { border-right:none; }
+    .stat .lbl { font-size:0.68em; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+    .stat .val { font-size:1.15em; font-weight:900; color:white; }
+    .stat.blue  .lbl { color:#60a5fa; }
+    .stat.blue  .val { color:#93c5fd; }
+    .stat.red   .lbl { color:#f87171; }
+    .stat.red   .val { color:#fca5a5; }
+    .stat.orange .lbl { color:#fb923c; }
+    .stat.orange .val { color:#fdba74; }
+    .stat.green .lbl { color:#4ade80; }
+    .stat.green .val { color:#86efac; }
+    .stat.cyan  .lbl { color:#22d3ee; }
+    .stat.cyan  .val { color:#67e8f9; }
+    .stat.purple .lbl { color:#c084fc; }
+    .stat.purple .val { color:#d8b4fe; }
+    .stat.white .lbl { color:#94a3b8; }
+    .stat.white .val { color:white; }
+
+    /* waste mini table */
+    .waste-pills { display:flex; gap:6px; align-items:center; flex-wrap:wrap; padding:4px 20px; }
+    .waste-pill { background:#1e293b; border:1px solid #334155; border-radius:4px; padding:3px 8px; font-size:0.75em; color:#94a3b8; white-space:nowrap; }
+    .waste-pill strong { color:white; }
+
+    /* Leaflet tooltip override */
+    .facet-label { background:rgba(15,23,42,0.85); border:1px solid #2563eb; color:white; font-weight:700; font-size:0.8em; padding:2px 6px; border-radius:4px; }
+    .leaflet-tooltip { background:rgba(15,23,42,0.85); border:1px solid #475569; color:#e2e8f0; font-size:0.78em; }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width:5px; height:5px; }
+    ::-webkit-scrollbar-track { background:#0f172a; }
+    ::-webkit-scrollbar-thumb { background:#334155; border-radius:3px; }
+
+    /* PDF hidden */
+    @media print { .sidebar,.header,.bottom-bar { display:none; } #map { height:100vh; } }
+  </style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="logo">First Call PA | <span>Roof Tool</span></div>
+    <div class="claim-fields">
+      <input type="text" id="claimNumber" placeholder="Claim #" style="max-width:130px">
+      <input type="text" id="inspectorName" placeholder="Inspector Name" style="max-width:150px">
+      <input type="text" id="companyName" placeholder="Company" style="max-width:150px">
+      <input type="date" id="inspectionDate" style="max-width:140px">
+    </div>
+    <button class="btn-report" onclick="generatePDF()">&#128196; PDF Report</button>
+    <button class="btn-logout" onclick="logout()">Sign Out</button>
+  </header>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+
+    <!-- Address -->
+    <div class="sidebar-section">
+      <h3>&#128205; Property Address</h3>
+      <div class="addr-row">
+        <input type="text" id="addressInput" placeholder="123 Main St, City TX" onkeydown="if(event.key==='Enter')geocodeAddress()">
+        <button onclick="geocodeAddress()">Go</button>
+      </div>
+    </div>
+
+    <!-- Draw Mode -->
+    <div class="sidebar-section">
+      <h3>&#9998; Draw Mode</h3>
+      <div class="mode-grid">
+        <button id="mode-facet"  class="mode-btn active" style="border-color:#2563eb;color:#2563eb"  onclick="setMode('facet')">&#9632; Facet</button>
+        <button id="mode-ridge"  class="mode-btn"        style="border-color:#dc2626;color:#dc2626"  onclick="setMode('ridge')">&#8213; Ridge</button>
+        <button id="mode-hip"    class="mode-btn"        style="border-color:#ea580c;color:#ea580c"  onclick="setMode('hip')">&#8213; Hip</button>
+        <button id="mode-valley" class="mode-btn"        style="border-color:#16a34a;color:#16a34a"  onclick="setMode('valley')">&#8213; Valley</button>
+        <button id="mode-drip"   class="mode-btn"        style="border-color:#0891b2;color:#0891b2"  onclick="setMode('drip')">&#8213; Drip Edge</button>
+        <button id="mode-rake"   class="mode-btn"        style="border-color:#7c3aed;color:#7c3aed"  onclick="setMode('rake')">&#8213; Rake</button>
+        <button id="mode-eaves"  class="mode-btn"        style="border-color:#d97706;color:#d97706"  onclick="setMode('eaves')">&#8213; Eaves</button>
+      </div>
+      <div style="margin-top:8px;font-size:0.75em;color:#64748b" id="modeHint">Click to draw a roof facet polygon</div>
+    </div>
+
+    <!-- Pitch default -->
+    <div class="sidebar-section">
+      <h3>&#128101; Default Pitch</h3>
+      <select id="defaultPitch" style="width:100%;background:#0f172a;border:1px solid #334155;color:white;padding:7px;border-radius:6px;font-size:0.85em">
+        <option value="4/12">4/12</option>
+        <option value="5/12">5/12</option>
+        <option value="6/12" selected>6/12</option>
+        <option value="7/12">7/12</option>
+        <option value="8/12">8/12</option>
+        <option value="9/12">9/12</option>
+        <option value="10/12">10/12</option>
+        <option value="12/12">12/12</option>
+      </select>
+    </div>
+
+    <!-- Facet List -->
+    <div class="sidebar-section" style="flex:1">
+      <h3>&#9744; Roof Facets</h3>
+      <div class="facet-list" id="facetList">
+        <div class="facet-hint">Trace roof facets on the map →</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="sidebar-section">
+      <div class="action-btns">
+        <button onclick="autoCompleteFacets()" style="background:#064e3b;color:#6ee7b7;padding:9px;border-radius:7px;border:none;font-size:0.82em;font-weight:700;cursor:pointer">&#10024; Auto-Complete Facets</button>
+        <button onclick="calcPerimeter()" style="background:#1e3a5f;color:#93c5fd;padding:9px;border-radius:7px;border:none;font-size:0.82em;font-weight:700;cursor:pointer">&#9711; Calculate Perimeter</button>
+        <button onclick="undoLast()" style="background:#374151;color:#d1d5db;padding:9px;border-radius:7px;border:none;font-size:0.82em;font-weight:700;cursor:pointer">&#8617; Undo Last (Ctrl+Z)</button>
+        <button class="btn-clear" onclick="clearAllLayers()">&#128465; Clear All Shapes</button>
+      </div>
+      <div style="margin-top:10px;font-size:0.72em;color:#475569;line-height:1.5">
+        💡 <strong style="color:#64748b">Tips:</strong><br>
+        • Double-click a line to delete it<br>
+        • Right-click a line to delete it<br>
+        • Hover near a point to snap to it
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- Map -->
+  <div id="map"></div>
+
+  <!-- Bottom Bar -->
+  <div class="bottom-bar">
+    <div class="stat white">
+      <div class="lbl">Flat Area</div>
+      <div class="val" id="statFlatArea">— sq ft</div>
+    </div>
+    <div class="stat blue">
+      <div class="lbl">Sloped Area</div>
+      <div class="val" id="statSlopedArea">— sq ft</div>
+    </div>
+    <div class="stat white">
+      <div class="lbl">Squares</div>
+      <div class="val" id="statSquares">—</div>
+    </div>
+    <div class="stat red">
+      <div class="lbl">&#8213; Ridge</div>
+      <div class="val" id="statRidge">— ft</div>
+    </div>
+    <div class="stat orange">
+      <div class="lbl">&#8213; Hip</div>
+      <div class="val" id="statHip">— ft</div>
+    </div>
+    <div class="stat green">
+      <div class="lbl">&#8213; Valley</div>
+      <div class="val" id="statValley">— ft</div>
+    </div>
+    <div class="stat cyan">
+      <div class="lbl">&#8213; Drip Edge</div>
+      <div class="val" id="statDrip">— ft</div>
+    </div>
+    <div class="stat purple">
+      <div class="lbl">&#8213; Rake</div>
+      <div class="val" id="statRake">— ft</div>
+    </div>
+    <div class="stat" style="border-left-color:#d97706">
+      <div class="lbl" style="color:#fbbf24">&#8213; Eaves</div>
+      <div class="val" id="statEaves" style="color:#fcd34d">— ft</div>
+    </div>
+    <div class="stat" style="border-left-color:#10b981">
+      <div class="lbl" style="color:#6ee7b7">&#9711; Perimeter</div>
+      <div class="val" id="statPerimeter" style="color:#a7f3d0">— ft</div>
+    </div>
+    <div style="flex:1;padding:4px 16px;display:flex;flex-direction:column;gap:4px;min-width:280px">
+      <div style="font-size:0.68em;font-weight:700;letter-spacing:1px;color:#94a3b8;text-transform:uppercase">Waste Factor</div>
+      <div class="waste-pills" id="wastePills" style="padding:0">
+        <span class="waste-pill">—</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js"></script>
+<script>
+// ── Config ──────────────────────────────────────────────────────────────────
+const pitchMultipliers = {
+  '2/12':1.014,'3/12':1.031,'4/12':1.054,'5/12':1.083,'6/12':1.118,
+  '7/12':1.158,'8/12':1.202,'9/12':1.25,'10/12':1.302,'11/12':1.357,'12/12':1.414
+};
+const wasteFactors = [10, 12, 15, 17, 20];
+
+// ── Map Init ─────────────────────────────────────────────────────────────────
+const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
+
+const googleSat = L.tileLayer(
+  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
+).addTo(map);
+
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
+);
+
+L.control.layers({'&#127758; Google':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:false}).addTo(map);
+
+// ── Layer Groups ─────────────────────────────────────────────────────────────
+const facetLayer  = new L.FeatureGroup().addTo(map);
+const ridgeLayer  = new L.FeatureGroup().addTo(map);
+const hipLayer    = new L.FeatureGroup().addTo(map);
+const valleyLayer = new L.FeatureGroup().addTo(map);
+const dripLayer   = new L.FeatureGroup().addTo(map);
+const rakeLayer   = new L.FeatureGroup().addTo(map);
+
+const modeStyles = {
+  facet:  { poly:true,  color:'#2563eb', fillColor:'#3b82f6', fillOpacity:0.22, weight:2.5 },
+  ridge:  { poly:false, color:'#dc2626', weight:3 },
+  hip:    { poly:false, color:'#ea580c', weight:3 },
+  valley: { poly:false, color:'#16a34a', weight:3 },
+  drip:   { poly:false, color:'#0891b2', weight:3 },
+  rake:   { poly:false, color:'#7c3aed', weight:3 },
+  eaves:  { poly:false, color:'#d97706', weight:3 },
+};
+const modeHints = {
+  facet:'Click to draw a roof facet polygon',
+  ridge:'1st click = start • 2nd click = end the ridge segment',
+  hip:'1st click = start • 2nd click = end the hip segment',
+  valley:'1st click = start • 2nd click = end the valley',
+  drip:'1st click = start • 2nd click = end the drip edge segment',
+  rake:'1st click = start • 2nd click = end the rake segment',
+  eaves:'1st click = start • 2nd click = end the eave segment',
+};
+const eavesLayer = new L.FeatureGroup().addTo(map);
+const modeLayerMap = { facet:facetLayer, ridge:ridgeLayer, hip:hipLayer, valley:valleyLayer, drip:dripLayer, rake:rakeLayer, eaves:eavesLayer };
+
+// ── Draw Control ─────────────────────────────────────────────────────────────
+let currentMode = 'facet';
+let drawControl = null;
+
+// We use a hidden draw control just to access leaflet-draw polygon handler
+let polygonDrawer = null;
+
+function buildDrawControl(mode) {
+  const s = modeStyles[mode];
+  return new L.Control.Draw({
+    position: 'topleft',
+    draw: {
+      polygon: s.poly ? { allowIntersection:false, showArea:true, shapeOptions:{ color:s.color, fillColor:s.fillColor, fillOpacity:s.fillOpacity, weight:s.weight } } : false,
+      polyline: false, rectangle:false, circle:false, marker:false, circlemarker:false,
+    },
+    edit: { featureGroup: facetLayer, remove:true }
+  });
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  // Reset any pending segment
+  segmentStart = null;
+  if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
+  // Stop any active polygon drawing
+  if (polygonDrawer) { polygonDrawer.disable(); polygonDrawer = null; }
+  if (drawControl) { map.removeControl(drawControl); drawControl = null; }
+
+  if (mode === 'facet') {
+    const s = modeStyles.facet;
+    // Add edit/delete toolbar only (no draw buttons — we trigger drawing directly)
+    drawControl = new L.Control.Draw({
+      position: 'topleft',
+      draw: { polygon:false, polyline:false, rectangle:false, circle:false, marker:false, circlemarker:false },
+      edit: { featureGroup: facetLayer, remove:true }
+    });
+    map.addControl(drawControl);
+    // Enable polygon drawing directly — use a fresh instance each time
+    setTimeout(() => {
+      try {
+        if (polygonDrawer) polygonDrawer.disable();
+        polygonDrawer = new L.Draw.Polygon(map, {
+          allowIntersection: false,
+          showArea: true,
+          shapeOptions: { color:s.color, fillColor:s.fillColor, fillOpacity:s.fillOpacity, weight:s.weight }
+        });
+        polygonDrawer.enable();
+        // Change cursor hint text
+        document.getElementById('modeHint').textContent = '✍️ Drawing active — click to place points, double-click to finish';
+      } catch(err) {
+        console.error('Draw enable error:', err);
+      }
+    }, 100);
+  }
+  // Line modes handled by click listener — no extra toolbar needed
+  // Update button styles
+  Object.keys(modeStyles).forEach(m => {
+    const btn = document.getElementById('mode-' + m);
+    if (!btn) return;
+    const c = modeStyles[m].color;
+    if (m === mode) {
+      btn.style.background = c; btn.style.color = 'white'; btn.style.borderColor = c;
+      btn.classList.add('active');
+    } else {
+      btn.style.background = 'transparent'; btn.style.color = c; btn.style.borderColor = c;
+      btn.classList.remove('active');
+    }
+  });
+  document.getElementById('modeHint').textContent = modeHints[mode];
+}
+
+// setMode called on window load below
+
+// ── Facets ───────────────────────────────────────────────────────────────────
+const facets = [];
+let facetCounter = 0;
+
+function getNextLabel() {
+  const abc = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+  const i = facetCounter++;
+  return 'Facet ' + (i < 26 ? abc[i] : abc[i % 26] + Math.floor(i/26));
+}
+
+function calcFacetMetrics(layer) {
+  const lls = layer.getLatLngs()[0];
+  const ring = lls.map(ll => [ll.lng, ll.lat]);
+  ring.push([lls[0].lng, lls[0].lat]);
+  const poly = turf.polygon([ring]);
+  const flatSqFt = turf.area(poly) * 10.7639;
+  let perimFt = 0;
+  lls.forEach((p,i) => { perimFt += map.distance(p, lls[(i+1)%lls.length]) * 3.28084; });
+  return { flatSqFt, perimFt };
+}
+
+function addFacet(layer) {
+  const pitch = document.getElementById('defaultPitch').value || '6/12';
+  const mult = pitchMultipliers[pitch];
+  const metrics = calcFacetMetrics(layer);
+  const facet = {
+    id: Date.now() + '-' + Math.random().toString(16).slice(2),
+    label: getNextLabel(),
+    pitch, mult, layer,
+    flatSqFt: metrics.flatSqFt,
+    perimFt: metrics.perimFt,
+    slopedSqFt: metrics.flatSqFt * mult
+  };
+  layer.bindTooltip(`<b>${facet.label}</b><br>${fmt(facet.slopedSqFt,0)} sq ft`, { permanent:true, direction:'center', className:'facet-label' }).openTooltip();
+  facets.push(facet);
+  renderFacets();
+}
+
+function renderFacets() {
+  const el = document.getElementById('facetList');
+  if (!facets.length) { el.innerHTML = '<div class="facet-hint">Trace roof facets on the map →</div>'; refreshStats(); return; }
+  el.innerHTML = facets.map(f => `
+    <div class="facet-row">
+      <span class="label">${f.label}</span>
+      <select onchange="changePitch('${f.id}', this.value)">
+        ${Object.keys(pitchMultipliers).map(p => `<option ${p===f.pitch?'selected':''}>${p}</option>`).join('')}
+      </select>
+      <span class="area">${fmt(f.slopedSqFt,0)} sf</span>
+      <button class="del" onclick="removeFacet('${f.id}')">&#215;</button>
+    </div>`).join('');
+  refreshStats();
+}
+
+function changePitch(id, pitch) {
+  const f = facets.find(x => x.id === id);
+  if (!f) return;
+  f.pitch = pitch; f.mult = pitchMultipliers[pitch];
+  f.slopedSqFt = f.flatSqFt * f.mult;
+  f.layer.bindTooltip(`<b>${f.label}</b><br>${fmt(f.slopedSqFt,0)} sq ft`, { permanent:true, direction:'center', className:'facet-label' }).openTooltip();
+  renderFacets();
+}
+
+function removeFacet(id) {
+  const i = facets.findIndex(x => x.id === id);
+  if (i === -1) return;
+  facetLayer.removeLayer(facets[i].layer);
+  facets.splice(i, 1);
+  renderFacets();
+}
+
+// ── Line Length ───────────────────────────────────────────────────────────────
+function lineLengthFt(layer) {
+  const lls = layer.getLatLngs();
+  let t = 0;
+  for (let i = 0; i < lls.length - 1; i++) t += map.distance(lls[i], lls[i+1]);
+  return t * 3.28084;
+}
+
+function totalLayerFt(lg) { return lg.getLayers().reduce((s,l) => s + lineLengthFt(l), 0); }
+
+// ── Stats Refresh ─────────────────────────────────────────────────────────────
+function fmt(n, dec=1) { return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
+
+function refreshStats() {
+  const flatTotal   = facets.reduce((s,f) => s + f.flatSqFt, 0);
+  const slopedTotal = facets.reduce((s,f) => s + f.slopedSqFt, 0);
+  const squares     = slopedTotal / 100;
+  const ridgeFt     = totalLayerFt(ridgeLayer);
+  const hipFt       = totalLayerFt(hipLayer);
+  const valleyFt    = totalLayerFt(valleyLayer);
+  const dripFt      = totalLayerFt(dripLayer);
+  const rakeFt      = totalLayerFt(rakeLayer);
+
+  document.getElementById('statFlatArea').textContent   = flatTotal   ? fmt(flatTotal,0)   + ' sq ft' : '— sq ft';
+  document.getElementById('statSlopedArea').textContent = slopedTotal ? fmt(slopedTotal,0) + ' sq ft' : '— sq ft';
+  document.getElementById('statSquares').textContent    = squares     ? fmt(squares,2)                : '—';
+  document.getElementById('statRidge').textContent      = ridgeFt     ? fmt(ridgeFt,0)     + ' ft'    : '— ft';
+  document.getElementById('statHip').textContent        = hipFt       ? fmt(hipFt,0)       + ' ft'    : '— ft';
+  document.getElementById('statValley').textContent     = valleyFt    ? fmt(valleyFt,0)    + ' ft'    : '— ft';
+  document.getElementById('statDrip').textContent       = dripFt      ? fmt(dripFt,0)      + ' ft'    : '— ft';
+  document.getElementById('statRake').textContent       = rakeFt      ? fmt(rakeFt,0)      + ' ft'    : '— ft';
+  const eavesFt = totalLayerFt(eavesLayer);
+  document.getElementById('statEaves').textContent    = eavesFt     ? fmt(eavesFt,0)     + ' ft'    : '— ft';
+
+  // Waste pills
+  document.getElementById('wastePills').innerHTML = squares
+    ? wasteFactors.map(w => `<span class="waste-pill">${w}% = <strong>${fmt(squares*(1+w/100),2)} sq</strong></span>`).join('')
+    : '<span class="waste-pill">—</span>';
+
+  // Update line tooltips
+  [ridgeLayer,hipLayer,valleyLayer,dripLayer,rakeLayer].forEach(lg => {
+    lg.getLayers().forEach(l => l.bindTooltip(fmt(lineLengthFt(l),0)+' ft', {permanent:true,direction:'center',className:'facet-label'}));
+  });
+}
+
+// ── Snap helper — finds nearest existing vertex within snap distance ──────────────
+const SNAP_PX = 30; // snap radius in pixels — increased for easier connecting
+
+function getAllVertices() {
+  const pts = [];
+  const allLayers = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, rakeLayer, eavesLayer];
+  allLayers.forEach(lg => {
+    lg.getLayers().forEach(l => {
+      const lls = l.getLatLngs();
+      const flat = Array.isArray(lls[0]) ? lls[0] : lls;
+      flat.forEach(ll => pts.push(ll));
+    });
+  });
+  return pts;
+}
+
+function snapToNearest(latlng) {
+  const pts = getAllVertices();
+  const clickPx = map.latLngToContainerPoint(latlng);
+  let best = null, bestDist = Infinity;
+  pts.forEach(pt => {
+    const ptPx = map.latLngToContainerPoint(pt);
+    const dist = clickPx.distanceTo(ptPx);
+    if (dist < SNAP_PX && dist < bestDist) { best = pt; bestDist = dist; }
+  });
+  return best || latlng;
+}
+
+// Snap cursor indicator
+let snapIndicator = null;
+
+map.on('mousemove', function(e) {
+  if (currentMode === 'facet') { if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; } return; }
+  const snapped = snapToNearest(e.latlng);
+  const isSnapping = snapped !== e.latlng;
+  if (isSnapping) {
+    if (!snapIndicator) {
+      snapIndicator = L.circleMarker(snapped, { radius:8, color:'#facc15', fillColor:'#facc15', fillOpacity:0.5, weight:2 }).addTo(map);
+    } else {
+      snapIndicator.setLatLng(snapped);
+    }
+  } else {
+    if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; }
+  }
+});
+
+// ── Single-segment line mode with snapping ───────────────────────────
+let segmentStart = null;
+let segmentPreview = null;
+let previewLine = null;
+
+map.on('mousemove', function(e) {
+  if (currentMode === 'facet' || !segmentStart) return;
+  const endPt = snapToNearest(e.latlng);
+  if (previewLine) map.removeLayer(previewLine);
+  previewLine = L.polyline([segmentStart, endPt], {
+    color: modeStyles[currentMode]?.color || '#fff',
+    weight: 2, dashArray: '6,4', opacity: 0.6
+  }).addTo(map);
+});
+
+map.on('click', function(e) {
+  if (currentMode === 'facet') return;
+  if (e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-draw')) return;
+
+  const snappedPt = snapToNearest(e.latlng);
+
+  if (!segmentStart) {
+    segmentStart = snappedPt;
+    if (segmentPreview) map.removeLayer(segmentPreview);
+    segmentPreview = L.circleMarker(snappedPt, {
+      radius:5, color: modeStyles[currentMode]?.color || '#fff',
+      fillColor: modeStyles[currentMode]?.color || '#fff', fillOpacity:1
+    }).addTo(map);
+  } else {
+    const tl = modeLayerMap[currentMode];
+    const line = L.polyline([segmentStart, snappedPt], {
+      color: modeStyles[currentMode]?.color || '#fff',
+      weight: modeStyles[currentMode]?.weight || 3,
+      opacity: 0.85
+    });
+    tl.addLayer(line);
+    attachLineEvents(line, tl);
+    undoStack.push({ layer: line, group: tl });
+    if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
+    if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
+    if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; }
+    segmentStart = null;
+    refreshStats();
+    // Flash green dot at connection point if snapped
+    if (snappedPt !== e.latlng) {
+      const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
+      setTimeout(() => map.removeLayer(flash), 600);
+    }
+  }
+});
+
+// ── Map Events ────────────────────────────────────────────────────────────────
+// ── Double-click any line to delete it ────────────────────────────────────────
+const lineLayers = [ridgeLayer, hipLayer, valleyLayer, dripLayer, rakeLayer, eavesLayer];
+
+function attachLineEvents(layer, parentGroup) {
+  layer.on('dblclick', function(e) {
+    L.DomEvent.stopPropagation(e);
+    parentGroup.removeLayer(layer);
+    refreshStats();
+    // brief red flash to confirm deletion
+    const flash = L.circleMarker(e.latlng, { radius:10, color:'#ef4444', fillColor:'#ef4444', fillOpacity:0.6, weight:2 }).addTo(map);
+    setTimeout(() => map.removeLayer(flash), 400);
+  });
+  // Right-click = highlight and mark for undo
+  layer.on('contextmenu', function(e) {
+    L.DomEvent.stopPropagation(e);
+    parentGroup.removeLayer(layer);
+    refreshStats();
+  });
+  // Hover highlight
+  layer.on('mouseover', function() { layer.setStyle({ weight:5, opacity:1 }); });
+  layer.on('mouseout',  function() { layer.setStyle({ weight:3, opacity:0.85 }); });
+}
+
+// Undo stack for line segments
+const undoStack = [];
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+    e.preventDefault();
+    if (undoStack.length > 0) {
+      const last = undoStack.pop();
+      last.group.removeLayer(last.layer);
+      refreshStats();
+    }
+  }
+});
+
+map.on(L.Draw.Event.CREATED, e => {
+  const tl = modeLayerMap[currentMode];
+  tl.addLayer(e.layer);
+  if (currentMode === 'facet') {
+    addFacet(e.layer);
+    // Auto-restart polygon drawing for next facet
+    setTimeout(() => {
+      if (currentMode === 'facet') {
+        const s = modeStyles.facet;
+        polygonDrawer = new L.Draw.Polygon(map, {
+          allowIntersection:false, showArea:true,
+          shapeOptions:{ color:s.color, fillColor:s.fillColor, fillOpacity:s.fillOpacity, weight:s.weight }
+        });
+        polygonDrawer.enable();
+      }
+    }, 150);
+  } else {
+    refreshStats();
+  }
+});
+
+map.on(L.Draw.Event.EDITED, () => {
+  facets.forEach(f => {
+    const m = calcFacetMetrics(f.layer);
+    f.flatSqFt = m.flatSqFt; f.perimFt = m.perimFt;
+    f.slopedSqFt = f.flatSqFt * f.mult;
+    f.layer.bindTooltip(`<b>${f.label}</b><br>${fmt(f.slopedSqFt,0)} sq ft`,{permanent:true,direction:'center',className:'facet-label'}).openTooltip();
+  });
+  refreshStats(); renderFacets();
+});
+
+map.on(L.Draw.Event.DELETED, () => {
+  for (let i = facets.length-1; i >= 0; i--) {
+    if (!facetLayer.hasLayer(facets[i].layer)) facets.splice(i,1);
+  }
+  refreshStats(); renderFacets();
+});
+
+// ── Address Geocode ───────────────────────────────────────────────────────────
+async function geocodeAddress() {
+  const addr = document.getElementById('addressInput').value.trim();
+  if (!addr) return;
+  const btn = document.querySelector('.addr-row button');
+  if (btn) { btn.textContent = '...'; btn.disabled = true; }
+  try {
+    // Step 1: Geocode the address
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'en-US'} });
+    const d = await r.json();
+    if (!d.length) { alert('Address not found.'); return; }
+    const lat = parseFloat(d[0].lat);
+    const lon = parseFloat(d[0].lon);
+    map.setView([lat, lon], 21);
+
+    // Step 2: Try to fetch building footprint from Overpass API (OpenStreetMap)
+    await fetchBuildingFootprint(lat, lon);
+
+    // Step 3: If no OSM footprint found, try Microsoft Building Footprints
+    // (OSM usually has good coverage in DFW/TX suburbs)
+  } catch(e) {
+    console.error('Geocode error:', e);
+    alert('Geocoding error. Please try again.');
+  } finally {
+    if (btn) { btn.textContent = 'Go'; btn.disabled = false; }
+  }
+}
+
+async function fetchBuildingFootprint(lat, lon) {
+  // Clear any existing footprint
+  facetLayer.clearLayers();
+  facets.length = 0; facetCounter = 0;
+  document.getElementById('modeHint').textContent = 'Fetching building footprint...';
+
+  try {
+    // Query Overpass API for building outlines near the lat/lon
+    const delta = 0.0004; // ~40m bounding box
+    const bbox = `${lat-delta},${lon-delta},${lat+delta},${lon+delta}`;
+    const query = `[out:json][timeout:10];(way["building"](${bbox}););out geom;`;
+    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.elements || data.elements.length === 0) {
+      // Try Microsoft Building Footprints via a different approach
+      await fetchMSBuildingFootprint(lat, lon);
+      return;
+    }
+
+    // Find the closest building to the geocoded point
+    let bestBuilding = null;
+    let bestDist = Infinity;
+    data.elements.forEach(el => {
+      if (!el.geometry || el.geometry.length < 3) return;
+      // Calculate centroid
+      const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
+      const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
+      const dist = Math.sqrt(Math.pow(centLat-lat,2) + Math.pow(centLon-lon,2));
+      if (dist < bestDist) { bestDist = dist; bestBuilding = el; }
+    });
+
+    if (!bestBuilding) {
+      await fetchMSBuildingFootprint(lat, lon);
+      return;
+    }
+
+    // Draw the building footprint as a facet
+    const latlngs = bestBuilding.geometry.map(p => L.latLng(p.lat, p.lon));
+    // Remove last point if it duplicates the first (closed polygon)
+    if (latlngs.length > 1) {
+      const first = latlngs[0], last = latlngs[latlngs.length-1];
+      if (Math.abs(first.lat-last.lat) < 0.00001 && Math.abs(first.lng-last.lng) < 0.00001) latlngs.pop();
+    }
+
+    const poly = L.polygon(latlngs, {
+      color:'#2563eb', fillColor:'#3b82f6', fillOpacity:0.18, weight:2.5,
+      dashArray:'6,4' // dashed = auto-traced, not manually drawn
+    });
+    facetLayer.addLayer(poly);
+    addFacet(poly);
+
+    // Flash the polygon
+    map.fitBounds(poly.getBounds().pad(0.3));
+    document.getElementById('modeHint').textContent = '✅ Building footprint loaded! Adjust pitch, then trace ridges & hips above.';
+
+  } catch(err) {
+    console.warn('OSM footprint error:', err);
+    await fetchMSBuildingFootprint(lat, lon);
+  }
+}
+
+async function fetchMSBuildingFootprint(lat, lon) {
+  // Microsoft Building Footprints via the open dataset
+  // Available through US Building Footprints API
+  try {
+    // Use the US Census TIGER building shapes as fallback
+    // Query via geocod.io or similar
+    // For now show a helpful message
+    document.getElementById('modeHint').textContent = '⚠️ No auto-footprint found — trace the eaves manually, then add ridges & hips';
+
+    // Try one more source: OpenStreetMap buildings with broader search
+    const delta = 0.001;
+    const bbox = `${lat-delta},${lon-delta},${lat+delta},${lon+delta}`;
+    const query = `[out:json][timeout:15];(way["building"](${bbox});relation["building"](${bbox}););out geom;`;
+    const url = `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.elements && data.elements.length > 0) {
+      // Sort by distance to click point and take closest
+      const withDist = data.elements
+        .filter(el => el.geometry && el.geometry.length >= 3)
+        .map(el => {
+          const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
+          const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
+          return { el, dist: Math.sqrt(Math.pow(centLat-lat,2)+Math.pow(centLon-lon,2)) };
+        })
+        .sort((a,b) => a.dist-b.dist);
+
+      if (withDist.length > 0) {
+        const bestEl = withDist[0].el;
+        const latlngs = bestEl.geometry.map(p => L.latLng(p.lat, p.lon));
+        if (latlngs.length > 1) {
+          const first = latlngs[0], last = latlngs[latlngs.length-1];
+          if (Math.abs(first.lat-last.lat)<0.00001 && Math.abs(first.lng-last.lng)<0.00001) latlngs.pop();
+        }
+        const poly = L.polygon(latlngs, {
+          color:'#2563eb', fillColor:'#3b82f6', fillOpacity:0.18, weight:2.5, dashArray:'6,4'
+        });
+        facetLayer.addLayer(poly);
+        addFacet(poly);
+        map.fitBounds(poly.getBounds().pad(0.3));
+        document.getElementById('modeHint').textContent = '✅ Building footprint loaded! Adjust pitch, then trace ridges & hips above.';
+      }
+    }
+  } catch(err) {
+    console.warn('MS footprint fallback error:', err);
+    document.getElementById('modeHint').textContent = 'Trace the roof outline manually using Facet mode';
+  }
+}
+
+// ── Clear All ─────────────────────────────────────────────────────────────────
+function clearAllLayers() {
+  if (!confirm('Clear all drawn shapes?')) return;
+  [facetLayer,ridgeLayer,hipLayer,valleyLayer,dripLayer,rakeLayer,eavesLayer].forEach(l=>l.clearLayers());
+  facets.length = 0; facetCounter = 0;
+  renderFacets();
+}
+
+// ── PDF Report ────────────────────────────────────────────────────────────────
+function generatePDF() {
+  const btn = document.querySelector('.btn-report');
+  if (btn) { btn.innerHTML = '⏳ Capturing...'; btn.disabled = true; }
+
+  // Try to capture map with leaflet-image, fall back to html2canvas
+  function doCapture(cb) {
+    if (window.leafletImage) {
+      leafletImage(map, function(err, canvas) {
+        cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
+      });
+    } else {
+      html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true })
+        .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
+        .catch(() => cb(null));
+    }
+  }
+
+  doCapture(function(mapImg) {
+    buildPDF(mapImg);
+    if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+  });
+}
+
+function buildPDF(mapImageDataUrl) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
+  const W = 612, M = 40;
+  const flatTotal   = facets.reduce((s,f) => s + f.flatSqFt, 0);
+  const slopedTotal = facets.reduce((s,f) => s + f.slopedSqFt, 0);
+  const squares     = slopedTotal / 100;
+  const addr = document.getElementById('addressInput').value || 'N/A';
+  const claim = document.getElementById('claimNumber').value || 'N/A';
+  const inspector = document.getElementById('inspectorName').value || 'N/A';
+  const date = document.getElementById('inspectionDate').value || new Date().toLocaleDateString();
+
+  // Header
+  doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
+  doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
+  doc.text('First Call Public Adjusters', M, 28);
+  doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
+  doc.text('Aerial Roof Measurement Report  |  TX #1921679 | OK #3000772279 | CO #906301 | (817) 618-9884', M, 44);
+  doc.text('thepublicadjustertx.com', M, 57);
+
+  // Property info
+  doc.setTextColor(30,30,30); doc.setFontSize(9);
+  doc.setFont(undefined,'bold'); doc.text('Address:', M, 82); doc.setFont(undefined,'normal'); doc.text(addr, M+52, 82);
+  doc.setFont(undefined,'bold'); doc.text('Claim #:', M, 95); doc.setFont(undefined,'normal'); doc.text(claim, M+50, 95);
+  doc.setFont(undefined,'bold'); doc.text('Inspector:', M+150, 95); doc.setFont(undefined,'normal'); doc.text(inspector, M+202, 95);
+  doc.setFont(undefined,'bold'); doc.text('Date:', M+350, 95); doc.setFont(undefined,'normal'); doc.text(date, M+378, 95);
+
+  // Summary strip
+  const sumY = 108;
+  doc.setFillColor(235,242,255); doc.rect(M, sumY, W-M*2, 52, 'F');
+  doc.setDrawColor(200,215,240); doc.rect(M, sumY, W-M*2, 52, 'S');
+  const cols = [
+    ['Flat Area', fmt(flatTotal,0)+' sf'],
+    ['Sloped Area', fmt(slopedTotal,0)+' sf'],
+    ['Squares', fmt(squares,2)],
+    ['Ridge', fmt(totalLayerFt(ridgeLayer),0)+' ft'],
+    ['Hip', fmt(totalLayerFt(hipLayer),0)+' ft'],
+    ['Valley', fmt(totalLayerFt(valleyLayer),0)+' ft'],
+    ['Drip Edge', fmt(totalLayerFt(dripLayer),0)+' ft'],
+    ['Rake', fmt(totalLayerFt(rakeLayer),0)+' ft'],
+    ['Eaves', fmt(totalLayerFt(eavesLayer),0)+' ft'],
+  ];
+  const cw = (W-M*2)/cols.length;
+  cols.forEach(([lbl,val],i) => {
+    const cx = M + i*cw + cw/2;
+    doc.setFontSize(7); doc.setFont(undefined,'normal'); doc.setTextColor(100,110,130);
+    doc.text(lbl, cx, sumY+14, {align:'center'});
+    doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(20,30,55);
+    doc.text(val, cx, sumY+32, {align:'center'});
+  });
+
+  let y = sumY + 62;
+
+  // Map image
+  if (mapImageDataUrl) {
+    doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+    doc.text('Aerial View with Roof Tracings', M, y); y += 8;
+    const imgH = 220;
+    try {
+      doc.addImage(mapImageDataUrl, 'JPEG', M, y, W-M*2, imgH);
+      y += imgH + 12;
+    } catch(e) {
+      doc.setFontSize(8); doc.setTextColor(150);
+      doc.text('(Map image blocked by browser CORS policy — measurements above are accurate.)', M, y+12);
+      y += 24;
+    }
+  }
+
+  // Facet table
+  if (y > 680) { doc.addPage(); y = 40; }
+  doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+  doc.text('Facet Breakdown', M, y); y += 10;
+  const fcols = ['Facet','Pitch','Mult','Flat Area','Sloped Area','Perimeter'];
+  const fwidths = [50,45,40,90,90,80];
+  doc.setFillColor(23,34,53); doc.rect(M,y,W-M*2,13,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont(undefined,'bold');
+  let fx = M+6;
+  fcols.forEach((h,i) => { doc.text(h, fx, y+9); fx += fwidths[i]; });
+  y += 13;
+  facets.forEach((f,idx) => {
+    if (y > 720) { doc.addPage(); y=40; }
+    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,W-M*2,12,'F'); }
+    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont(undefined,'normal');
+    fx = M+6;
+    [f.label, f.pitch, f.mult.toFixed(3), fmt(f.flatSqFt,0)+' sf', fmt(f.slopedSqFt,0)+' sf', fmt(f.perimFt,0)+' ft'].forEach((v,i) => {
+      doc.text(v, fx, y+8); fx += fwidths[i];
+    });
+    y += 12;
+  });
+
+  // Waste table
+  y += 12;
+  if (y > 700) { doc.addPage(); y=40; }
+  doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+  doc.text('Waste Factor Table', M, y); y += 10;
+  doc.setFillColor(23,34,53); doc.rect(M,y,150,13,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255);
+  doc.text('Waste %', M+8, y+9); doc.text('Squares', M+80, y+9); y+=13;
+  wasteFactors.forEach((w,idx) => {
+    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,150,12,'F'); }
+    doc.setTextColor(30,30,30); doc.setFont(undefined,'normal');
+    doc.text(w+'%', M+8, y+8); doc.text(fmt(squares*(1+w/100),2)+' sq', M+80, y+8); y+=12;
+  });
+
+  // Footer
+  doc.setFontSize(7); doc.setTextColor(160);
+  doc.text('Measurements traced from aerial satellite imagery. Field verification recommended.', M, 755);
+  doc.text('First Call Public Adjusters | (817) 618-9884 | thepublicadjustertx.com | TX #1921679 | OK #3000772279 | CO #906301', M, 765);
+
+  const fn = `roof-report-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
+  doc.save(fn);
+}
+
+// ── Perimeter Calculator ─────────────────────────────────────────────────────────
+function calcPerimeter() {
+  // Sum all drip edge + eave + rake segments = total perimeter
+  const perimFt = totalLayerFt(dripLayer) + totalLayerFt(eavesLayer) + totalLayerFt(rakeLayer);
+  // Also sum facet perimeters
+  const facetPerim = facets.reduce((s,f) => s + (f.perimFt||0), 0);
+  const total = perimFt > 0 ? perimFt : facetPerim;
+  document.getElementById('statPerimeter').textContent = total > 0 ? fmt(total,0) + ' ft' : '— ft';
+  // Show breakdown
+  const hint = [];
+  if (totalLayerFt(dripLayer) > 0) hint.push(`Drip: ${fmt(totalLayerFt(dripLayer),0)}ft`);
+  if (totalLayerFt(eavesLayer) > 0) hint.push(`Eaves: ${fmt(totalLayerFt(eavesLayer),0)}ft`);
+  if (totalLayerFt(rakeLayer) > 0)  hint.push(`Rake: ${fmt(totalLayerFt(rakeLayer),0)}ft`);
+  if (hint.length) document.getElementById('modeHint').textContent = 'Perimeter: ' + hint.join(' + ') + ` = ${fmt(total,0)} ft`;
+}
+window.calcPerimeter = calcPerimeter;
+
+// ── Auto-Complete Facets from connected lines ─────────────────────────────
+function autoCompleteFacets() {
+  // Collect all line segment endpoints from ridge, hip, valley, drip, eave, rake
+  const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+  const segments = [];
+
+  lineSources.forEach(lg => {
+    lg.getLayers().forEach(l => {
+      const pts = l.getLatLngs();
+      if (pts.length >= 2) {
+        segments.push({ a: pts[0], b: pts[pts.length-1], layer: l });
+      }
+    });
+  });
+
+  if (segments.length < 3) {
+    document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected segments to auto-complete a facet';
+    return;
+  }
+
+  // Build adjacency: find all unique vertices (snap nearby points together)
+  const MERGE_DIST = 5; // meters
+  const vertices = [];
+
+  function findOrAddVertex(latlng) {
+    for (let i = 0; i < vertices.length; i++) {
+      if (map.distance(vertices[i], latlng) < MERGE_DIST) return i;
+    }
+    vertices.push(latlng);
+    return vertices.length - 1;
+  }
+
+  const edges = segments.map(seg => ({
+    a: findOrAddVertex(seg.a),
+    b: findOrAddVertex(seg.b)
+  }));
+
+  // Build adjacency list
+  const adj = {};
+  edges.forEach(({ a, b }) => {
+    if (!adj[a]) adj[a] = [];
+    if (!adj[b]) adj[b] = [];
+    if (!adj[a].includes(b)) adj[a].push(b);
+    if (!adj[b].includes(a)) adj[b].push(a);
+  });
+
+  // Find cycles (closed polygons) using DFS
+  const foundPolygons = [];
+  const visited = new Set();
+
+  function dfs(start, current, path, depth) {
+    if (depth > 8) return; // max facet complexity
+    if (adj[current]) {
+      for (const next of adj[current]) {
+        if (next === start && path.length >= 3) {
+          // Found a closed polygon!
+          const poly = path.map(i => vertices[i]);
+          foundPolygons.push(poly);
+          return;
+        }
+        if (!path.includes(next)) {
+          dfs(start, next, [...path, next], depth + 1);
+        }
+      }
+    }
+  }
+
+  Object.keys(adj).forEach(v => {
+    dfs(parseInt(v), parseInt(v), [parseInt(v)], 0);
+  });
+
+  // Deduplicate polygons (same vertices, different order)
+  const unique = [];
+  foundPolygons.forEach(poly => {
+    const key = [...poly.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).sort()].join('|');
+    if (!unique.find(u => u.key === key)) {
+      unique.push({ key, poly });
+    }
+  });
+
+  if (unique.length === 0) {
+    document.getElementById('modeHint').textContent = '⚠️ No closed facets detected. Make sure all line endpoints are connected (use snap).';
+    return;
+  }
+
+  // Draw detected facets
+  let added = 0;
+  unique.forEach(({ poly }) => {
+    const leafPoly = L.polygon(poly, {
+      color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.22, weight: 2.5
+    });
+    facetLayer.addLayer(leafPoly);
+    addFacet(leafPoly);
+    added++;
+  });
+
+  document.getElementById('modeHint').textContent = `✅ Auto-detected ${added} facet(s)! Check pitch values in the sidebar.`;
+  renderFacets();
+}
+window.autoCompleteFacets = autoCompleteFacets;
+
+// Update perimeter in refreshStats
+const _origRefreshStats = refreshStats;
+refreshStats = function() {
+  _origRefreshStats();
+  // Auto-calc perimeter from all boundary lines
+  const perimFt = totalLayerFt(dripLayer) + totalLayerFt(eavesLayer) + totalLayerFt(rakeLayer);
+  const facetPerim = facets.reduce((s,f) => s + (f.perimFt||0), 0);
+  const total = perimFt > 0 ? perimFt : facetPerim;
+  const el = document.getElementById('statPerimeter');
+  if (el) el.textContent = total > 0 ? fmt(total,0) + ' ft' : '— ft';
+};
+
+// Init — wait for all scripts to load before enabling draw
+document.getElementById('inspectionDate').value = new Date().toISOString().split('T')[0];
+window.setMode = setMode;
+window.clearAllLayers = clearAllLayers;
+window.geocodeAddress = geocodeAddress;
+window.generatePDF = generatePDF;
+window.changePitch = changePitch;
+window.removeFacet = removeFacet;
+async function logout() { await fetch('/api/auth/logout',{method:'POST'}); window.location='/login'; }
+window.logout = logout;
+
+window.undoLast = function() {
+  if (undoStack.length > 0) {
+    const last = undoStack.pop();
+    last.group.removeLayer(last.layer);
+    refreshStats();
+  } else {
+    // If nothing in undo stack, cancel in-progress segment
+    if (segmentStart) {
+      if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
+      if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
+      segmentStart = null;
+    }
+  }
+};
+
+// Delay initial setMode so L.Draw is fully loaded
+window.addEventListener('load', () => {
+  setTimeout(() => setMode('facet'), 200);
+});
+</script>
+</body>
+</html>

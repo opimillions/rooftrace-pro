@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RoofTrace Pro — Aerial Roof Measurement Tool for Insurance Professionals</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    .hero { background: linear-gradient(135deg, #0f172a 0%, #172235 100%); color: white; padding: 80px 20px; text-align: center; }
+    .hero h1 { font-size: 2.5em; font-weight: 900; margin-bottom: 14px; }
+    .hero h1 span { color: #f59e0b; }
+    .hero p { font-size: 1.15em; opacity: 0.85; max-width: 580px; margin: 0 auto 32px; line-height: 1.6; }
+    .hero-btns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .features { max-width: 900px; margin: 60px auto; padding: 0 20px; }
+    .features h2 { text-align: center; font-size: 1.6em; color: var(--navy); margin-bottom: 32px; }
+    .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+    .feat-card { background: white; border-radius: 10px; padding: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+    .feat-card .icon { font-size: 2em; margin-bottom: 10px; }
+    .feat-card h3 { font-size: 1em; color: var(--navy); margin-bottom: 8px; }
+    .feat-card p { font-size: 0.88em; color: var(--muted); line-height: 1.5; }
+    .demo-img { max-width: 900px; margin: 0 auto 60px; padding: 0 20px; text-align:center; }
+    .demo-img img { width:100%; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,0.2); }
+    .pricing { background: #0f172a; color: white; padding: 60px 20px; text-align: center; }
+    .pricing h2 { font-size: 1.6em; margin-bottom: 8px; }
+    .pricing .sub { opacity: 0.7; margin-bottom: 32px; }
+    .price-box { background: white; color: var(--text); border-radius: 14px; padding: 36px; max-width: 380px; margin: 0 auto; }
+    .price-box .price { font-size: 3em; font-weight: 900; color: var(--navy); }
+    .price-box .price .per { font-size: 0.3em; color: var(--muted); font-weight: 600; }
+    .price-list { list-style: none; text-align: left; margin: 20px 0; }
+    .price-list li { padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+    .price-list li:last-child { border-bottom: none; }
+    .bundle-box { background: #1e293b; border: 2px solid #f59e0b; border-radius: 14px; padding: 28px; max-width: 580px; margin: 32px auto 0; text-align:left; }
+    .bundle-box h3 { color: #f59e0b; font-size: 1.1em; margin-bottom: 8px; }
+    .bundle-box .bundle-price { font-size: 2em; font-weight: 900; color: white; margin-bottom: 4px; }
+    .bundle-box .bundle-sub { color: rgba(255,255,255,0.6); font-size: 0.85em; margin-bottom: 16px; }
+    .bundle-row { display:flex; gap: 10px; flex-wrap:wrap; }
+    .bundle-pill { background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.4); color: #fcd34d; padding: 4px 12px; border-radius: 20px; font-size: 0.82em; }
+    footer { background: #0f172a; color: rgba(255,255,255,0.6); text-align: center; padding: 24px; font-size: 0.85em; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="brand">Roof<span>Trace</span> Pro</div>
+  <div class="nav-links">
+    <a href="/login">Sign In</a>
+    <a href="/register" class="btn-nav btn">Start Free Trial</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Aerial Roof Measurements<br>for <span>Insurance Professionals</span></h1>
+  <p>Trace any roof from satellite imagery. Get squares, linear footage, pitch calculations, and a professional PDF report — in minutes.</p>
+  <div class="hero-btns">
+    <a href="/register" class="btn btn-primary" style="font-size:1.05em;padding:14px 32px">Start Free Trial →</a>
+    <a href="/login" class="btn btn-outline" style="font-size:1.05em;padding:14px 32px;color:white;border-color:rgba(255,255,255,0.4)">Sign In</a>
+  </div>
+  <div style="margin-top:20px;opacity:0.6;font-size:0.85em">No credit card required · 1 free report · Cancel anytime</div>
+</div>
+
+<div class="features">
+  <h2>Everything You Need to Measure Any Roof</h2>
+  <div class="feat-grid">
+    <div class="feat-card">
+      <div class="icon">🛰️</div>
+      <h3>Google Satellite Imagery</h3>
+      <p>High-resolution aerial view of any property. Zoom in close enough to trace individual shingles.</p>
+    </div>
+    <div class="feat-card">
+      <div class="icon">✏️</div>
+      <h3>Color-Coded Drawing Layers</h3>
+      <p>Separate tools for Facets, Ridge, Hip, Valley, Drip Edge, Rake, and Eaves — each color coded for clarity.</p>
+    </div>
+    <div class="feat-card">
+      <div class="icon">🔗</div>
+      <h3>Smart Snapping</h3>
+      <p>Lines snap to existing endpoints automatically. Build a perfectly connected roof diagram with confidence.</p>
+    </div>
+    <div class="feat-card">
+      <div class="icon">⚡</div>
+      <h3>Auto-Complete Facets</h3>
+      <p>Draw your ridge and hips — click Auto-Complete and the tool detects all closed facets automatically.</p>
+    </div>
+    <div class="feat-card">
+      <div class="icon">📐</div>
+      <h3>Instant Calculations</h3>
+      <p>Flat area, sloped area, squares, all linear footage, perimeter, and waste factor table — live as you draw.</p>
+    </div>
+    <div class="feat-card">
+      <div class="icon">📄</div>
+      <h3>Professional PDF Reports</h3>
+      <p>Export a branded report with aerial map image, facet breakdown, and waste factor table for your claim file.</p>
+    </div>
+  </div>
+</div>
+
+<div class="pricing">
+  <h2>Simple Pricing</h2>
+  <p class="sub">Pay for what you use. Cancel anytime.</p>
+  <div class="price-box">
+    <div class="price">$49<span class="per">/month</span></div>
+    <ul class="price-list">
+      <li>✅ Unlimited roof measurements</li>
+      <li>✅ Google + Esri satellite imagery</li>
+      <li>✅ All drawing modes (7 types)</li>
+      <li>✅ Auto-complete facets</li>
+      <li>✅ PDF report with map screenshot</li>
+      <li>✅ Auto building footprint lookup</li>
+      <li>✅ Cancel anytime</li>
+    </ul>
+    <a href="/register" class="btn btn-primary btn-block" style="font-size:1.05em;padding:14px">Start Free Trial →</a>
+    <div style="font-size:0.8em;color:var(--muted);margin-top:10px">1 free report · No credit card required</div>
+  </div>
+
+  <div class="bundle-box">
+    <h3>🔥 PA Pro Bundle — Best Value</h3>
+    <div class="bundle-price">$179<span style="font-size:0.4em;font-weight:600;opacity:0.7">/month</span></div>
+    <div class="bundle-sub">All 3 tools. Save $68/mo vs buying separately.</div>
+    <div class="bundle-row">
+      <span class="bundle-pill">⚡ StormCheck Pro ($99)</span>
+      <span class="bundle-pill">📐 RoofTrace Pro ($49)</span>
+      <span class="bundle-pill">🤖 ClaimScope AI ($99)</span>
+    </div>
+    <div style="margin-top:16px;font-size:0.85em;color:rgba(255,255,255,0.5)">Coming soon — <a href="mailto:info@thepublicadjustertx.com" style="color:#f59e0b">contact us to get notified</a></div>
+  </div>
+</div>
+
+<footer>
+  RoofTrace Pro is powered by <a href="https://thepublicadjustertx.com" style="color:rgba(255,255,255,0.7)">First Call Public Adjusters</a> · Southlake, TX · (817) 618-9884<br>
+  Licensed TX #1921679 · OK #3000772279 · CO #906301
+</footer>
+
+</body>
+</html>

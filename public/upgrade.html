@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upgrade — RoofTrace Pro</title>
+  <link rel="stylesheet" href="/style.css">
+  <style>
+    body { background: var(--navy); display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+    .wrap { width: 100%; max-width: 500px; }
+    .logo { text-align: center; margin-bottom: 24px; }
+    .brand { font-size: 1.5em; font-weight: 900; color: white; }
+    .brand span { color: #f59e0b; }
+    .card { background: white; border-radius: 14px; padding: 36px; text-align: center; border: 3px solid #f59e0b; }
+    .price { font-size: 3.5em; font-weight: 900; color: var(--navy); }
+    .price span { font-size: 0.3em; color: var(--muted); font-weight: 600; }
+    .feature-list { list-style: none; text-align: left; margin: 20px 0; }
+    .feature-list li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.9em; }
+    .feature-list li:last-child { border-bottom: none; }
+    .guarantee { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px; margin-top: 14px; font-size: 0.82em; color: #166534; }
+    .back { text-align: center; margin-top: 16px; font-size: 0.88em; color: rgba(255,255,255,0.6); }
+    .back a { color: #f59e0b; text-decoration: none; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo"><div class="brand">Roof<span>Trace</span> Pro</div></div>
+  <div class="card">
+    <h2 style="margin-bottom:8px">Upgrade to Pro</h2>
+    <div class="price">$49<span>/month</span></div>
+    <div style="color:var(--muted);font-size:0.88em;margin:8px 0 20px">Cancel anytime · Access through end of billing period</div>
+    <ul class="feature-list">
+      <li>✅ Unlimited roof measurements</li>
+      <li>✅ Google + Esri satellite imagery</li>
+      <li>✅ All 7 drawing modes</li>
+      <li>✅ Smart snapping & auto-complete</li>
+      <li>✅ PDF reports with aerial map</li>
+      <li>✅ Auto building footprint</li>
+      <li>✅ Priority support</li>
+    </ul>
+    <div id="errorMsg" class="alert alert-error" style="display:none"></div>
+    <button class="btn btn-primary btn-block" id="upgradeBtn" onclick="startCheckout()" style="font-size:1.1em;padding:16px">Subscribe for $49/month →</button>
+    <div class="guarantee">🛡️ Cancel anytime. No partial refunds. Access continues through billing period.</div>
+  </div>
+  <div class="back"><a href="/tool">← Back to tool</a> &nbsp;|&nbsp; <a href="tel:8176189884">Questions? (817) 618-9884</a></div>
+</div>
+<script>
+async function startCheckout() {
+  const btn = document.getElementById('upgradeBtn');
+  const err = document.getElementById('errorMsg');
+  err.style.display = 'none';
+  btn.innerHTML = '<span class="spinner"></span> Loading...'; btn.disabled = true;
+  try {
+    const res = await fetch('/api/stripe/checkout', { method: 'POST' });
+    const data = await res.json();
+    if (data.url) { window.location = data.url; }
+    else { err.textContent = data.error || 'Contact (817) 618-9884 to subscribe.'; err.style.display = 'block'; btn.innerHTML = 'Subscribe for $49/month →'; btn.disabled = false; }
+  } catch(e) { err.textContent = 'Connection error.'; err.style.display = 'block'; btn.innerHTML = 'Subscribe for $49/month →'; btn.disabled = false; }
+}
+</script>
+</body>
+</html>
