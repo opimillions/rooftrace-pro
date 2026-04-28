@@ -12,7 +12,7 @@ const { userOps, lookupOps, alertOps } = require('./db');
 const { generateToken, requireAuth, requireAdmin, requireActiveSubscription } = require('./auth');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
