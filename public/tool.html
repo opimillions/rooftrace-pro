@@ -110,7 +110,7 @@
 
   <!-- Header -->
   <header class="header">
-    <div class="logo"><img src="/logo-icon.svg" style="height:28px;vertical-align:middle;margin-right:8px">Roof<span>Trace</span> Pro</div>
+    <div class="logo"><img src="logo-icon.svg" style="height:28px;vertical-align:middle;margin-right:8px">Roof<span>Trace</span> Pro</div>
     <div class="claim-fields">
       <input type="text" id="claimNumber" placeholder="Claim #" style="max-width:130px">
       <input type="text" id="inspectorName" placeholder="Inspector Name" style="max-width:150px">
@@ -574,6 +574,7 @@ map.on('click', function(e) {
     tl.addLayer(line);
     attachLineEvents(line, tl);
     undoStack.push({ layer: line, group: tl });
+    const lineStartPt = segmentStart; // save before clearing
     if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
     if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
     if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; }
@@ -584,6 +585,11 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
+    // Check both endpoints for closed facets
+    setTimeout(() => {
+      detectAndFillFacet(snappedPt);
+      if (lineStartPt) detectAndFillFacet(lineStartPt);
+    }, 150);
   }
 });
 
@@ -949,6 +955,110 @@ function buildPDF(mapImageDataUrl) {
   const fn = `roof-report-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
   doc.save(fn);
 }
+
+// ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
+const MERGE_M = 15; // meters to consider points the same vertex (generous for real-world use)
+
+function buildGraph() {
+  const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+  const verts = [];
+
+  function vidOf(ll) {
+    for (let i = 0; i < verts.length; i++) {
+      if (map.distance(verts[i], ll) < MERGE_M) return i;
+    }
+    verts.push(ll);
+    return verts.length - 1;
+  }
+
+  const adj = {};
+  lineSources.forEach(lg => {
+    lg.getLayers().forEach(l => {
+      const pts = l.getLatLngs();
+      const a = vidOf(pts[0]);
+      const b = vidOf(pts[pts.length - 1]);
+      if (a !== b) {
+        if (!adj[a]) adj[a] = [];
+        if (!adj[b]) adj[b] = [];
+        if (!adj[a].includes(b)) adj[a].push(b);
+        if (!adj[b].includes(a)) adj[b].push(a);
+      }
+    });
+  });
+
+  return { verts, adj };
+}
+
+function findAllSimpleCycles(verts, adj) {
+  // Find all simple cycles of length 3-7 using DFS
+  const cycles = [];
+  const n = verts.length;
+
+  function dfs(start, current, path) {
+    if (path.length > 7) return;
+    const neighbors = adj[current] || [];
+    for (const next of neighbors) {
+      if (next === start && path.length >= 3) {
+        // Found a cycle � store it with canonical key to avoid duplicates
+        const sorted = [...path].sort((a,b)=>a-b).join(',');
+        if (!cycles.some(c => c.key === sorted)) {
+          cycles.push({ key: sorted, vids: [...path] });
+        }
+        continue;
+      }
+      if (!path.includes(next) && next > start) {
+        // Only explore vertices > start to avoid duplicates
+        dfs(start, next, [...path, next]);
+      }
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if ((adj[i] || []).length >= 2) dfs(i, i, [i]);
+  }
+  return cycles;
+}
+
+function detectAndFillFacet(snappedPt) {
+  const { verts, adj } = buildGraph();
+  if (verts.length < 3) return;
+
+  // Find all simple cycles
+  const cycles = findAllSimpleCycles(verts, adj);
+  if (!cycles.length) return;
+
+  // For each cycle, calculate area and check if it's new
+  for (const { vids } of cycles) {
+    const polyPts = vids.map(i => verts[i]);
+    if (polyPts.length < 3) continue;
+
+    try {
+      const ring = [...polyPts.map(p => [p.lng, p.lat]), [polyPts[0].lng, polyPts[0].lat]];
+      const areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
+
+      // Skip tiny slivers and huge areas
+      if (areaSqFt < 50 || areaSqFt > 20000) continue;
+
+      // Skip if already have a facet of very similar area
+      const duplicate = facets.some(f => Math.abs((f.flatSqFt || 0) - areaSqFt) < areaSqFt * 0.05);
+      if (duplicate) continue;
+
+      // Create facet!
+      const poly = L.polygon(polyPts, {
+        color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
+      });
+      facetLayer.addLayer(poly);
+      addFacet(poly);
+
+      document.getElementById('modeHint').textContent =
+        `Auto-detected facet: ${Math.round(areaSqFt).toLocaleString()} sq ft. Keep drawing to complete the roof.`;
+      setTimeout(() => {
+        if (currentMode !== 'facet') document.getElementById('modeHint').textContent = modeHints[currentMode];
+      }, 4000);
+    } catch (e) { /* invalid polygon */ }
+  }
+}
+window.detectAndFillFacet = detectAndFillFacet;
 
 // ── Perimeter Calculator ─────────────────────────────────────────────────────────
 function calcPerimeter() {
