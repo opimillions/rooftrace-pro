@@ -1,0 +1,12 @@
+{
+  "name": "RoofTrace Pro",
+  "short_name": "RoofTrace",
+  "description": "Aerial roof measurement tool for insurance professionals",
+  "start_url": "/tool",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
