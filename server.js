@@ -26,6 +26,7 @@ app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'pub
 app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reset-password.html')));
 app.get('/upgrade', (req, res) => res.sendFile(path.join(__dirname, 'public', 'upgrade.html')));
 app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
@@ -99,6 +100,29 @@ app.get('/tool', requireAuth, (req, res) => {
 });
 
 // ── Me API ────────────────────────────────────────────────────────────────────
+
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => res.json(await userOps.getAll()));
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  const { email, password, name, company, tier, notes } = req.body;
+  if (!email || !password || !name) return res.status(400).json({ error: 'Name, email, password required' });
+  const existing = await userOps.findByEmail(email);
+  if (existing) return res.status(409).json({ error: 'Email already exists' });
+  await userOps.create({ email, password, name, company, tier: tier||'trial', notes, role:'subscriber', lookupLimit: (tier==='pro'||tier==='client')?-1:1 });
+  res.json({ success: true });
+});
+app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { tier, notes } = req.body;
+  if (tier) await userOps.updateTier(req.params.id, tier);
+  if (notes !== undefined) await userOps.update(req.params.id, { notes });
+  res.json({ success: true });
+});
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  await userOps.delete(req.params.id); res.json({ success: true });
+});
+app.get('/api/admin/stats', requireAuth, requireAdmin, async (req, res) => {
+  const allUsers = await userOps.getAll();
+  res.json({ users: { total: allUsers.length, pro: allUsers.filter(u=>u.tier==='pro').length, trial: allUsers.filter(u=>u.tier==='trial').length, client: allUsers.filter(u=>u.tier==='client').length }, lookups: { total: 0, today: 0 }, recentAlerts: [], recentLookups: [] });
+});
 app.get('/api/me', requireAuth, async (req, res) => {
   const { passwordHash, ...user } = req.user;
   res.json({ user });
