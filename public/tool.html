@@ -1130,7 +1130,7 @@ function autoCompleteFacets() {
   }
 
   // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = 5; // meters
+  const MERGE_DIST = 15; // meters — increased for better snap tolerance
   const vertices = [];
 
   function findOrAddVertex(latlng) {
