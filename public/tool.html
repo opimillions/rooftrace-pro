@@ -288,14 +288,14 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
-const esriSat = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri World Imagery', maxZoom:22, maxNativeZoom:19 }
-).addTo(map);
-
 const googleSat = L.tileLayer(
   'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
   { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
+).addTo(map);
+
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'&copy; Esri World Imagery', maxZoom:22, maxNativeZoom:19 }
 );
 
 const osmLayer = L.tileLayer(
@@ -303,7 +303,7 @@ const osmLayer = L.tileLayer(
   { attribution:'&copy; OpenStreetMap', maxZoom:19 }
 );
 
-L.control.layers({'&#128506; Esri Satellite (Default)':esriSat,'&#127758; Google Satellite':googleSat,'&#128506; Street Map':osmLayer}, null, {position:'topright',collapsed:false}).addTo(map);
+L.control.layers({'&#127758; Google Satellite (Default)':googleSat,'&#128506; Esri Satellite':esriSat,'&#128506; Street Map':osmLayer}, null, {position:'topright',collapsed:false}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
