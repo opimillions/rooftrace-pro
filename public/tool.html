@@ -1252,38 +1252,36 @@ function showSummary() {
     ['Hips',        fmt(hipFt,0) + "'"],
     ['Drip Edge',   fmt(dripFt,0) + "'"],
     ['Perimeter',   fmt(perimFt,0) + "'"],
-  ].map(([l,v]) => <tr style="border-bottom:1px solid #334155"><td style="padding:10px 16px;color:#94a3b8;font-size:0.9em">\</td><td style="padding:10px 16px;color:white;font-weight:600;text-align:right">\</td></tr>).join('');
+  ].map(([l,v]) => `<tr style="border-bottom:1px solid #334155"><td style="padding:10px 16px;color:#94a3b8;font-size:0.9em">${l}</td><td style="padding:10px 16px;color:white;font-weight:600;text-align:right">${v}</td></tr>`).join('');
 
   const wasteRows = [10,12,15,17,20].map(w => {
-    const sq = squares * (1 + w/100);
-    return <tr style="border-bottom:1px solid #334155"><td style="padding:8px 16px;color:#94a3b8;font-size:0.85em">Waste \%</td><td style="padding:8px 16px;color:white;font-weight:600;text-align:right">\ SQs</td></tr>;
+    const sq = (squares * (1 + w/100)).toFixed(1);
+    return `<tr style="border-bottom:1px solid #334155"><td style="padding:8px 16px;color:#94a3b8;font-size:0.85em">${w}% Waste</td><td style="padding:8px 16px;color:white;font-weight:600;text-align:right">${sq} SQs</td></tr>`;
   }).join('');
 
-  const html = 
-    <div id="summaryModal" onclick="if(event.target===this)closeSummary()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
-      <div style="background:#1e293b;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">
-        <div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
-          <div style="font-weight:900;color:white;font-size:1.1em">Measurement Summary</div>
-          <button onclick="closeSummary()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">&#10005;</button>
-        </div>
-        <table style="width:100%;border-collapse:collapse">\</table>
-        <div style="background:#0f172a;padding:12px 16px;margin:0 0 0 0">
-          <div style="color:#f59e0b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Roof Area</div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Flat Area</span><span style="color:white;font-weight:600">\ sq ft</span></div>
-          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Sloped Area</span><span style="color:white;font-weight:600">\ sq ft</span></div>
-          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #f59e0b"><span style="color:white;font-weight:700;font-size:1.05em">Total Squares</span><span style="color:#f59e0b;font-weight:900;font-size:1.2em">\ SQs</span></div>
-        </div>
-        <div style="background:#0f172a;padding:12px 16px;border-radius:0 0 0 0">
-          <div style="color:#64748b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Waste Factor</div>
-          <table style="width:100%;border-collapse:collapse">\</table>
-        </div>
-        <div style="padding:16px;display:flex;gap:10px">
-          <button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>
-          <button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>
-        </div>
+  const html = `<div id="summaryModal" onclick="if(event.target===this)closeSummary()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
+    <div style="background:#1e293b;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">
+      <div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:900;color:white;font-size:1.1em">Measurement Summary</div>
+        <button onclick="closeSummary()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">&#10005;</button>
+      </div>
+      <table style="width:100%;border-collapse:collapse">${rows}</table>
+      <div style="background:#0f172a;padding:12px 16px">
+        <div style="color:#f59e0b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Roof Area</div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Flat Area</span><span style="color:white;font-weight:600">${fmt(flatSqFt,0)} sq ft</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Sloped Area</span><span style="color:white;font-weight:600">${fmt(slopedSqFt,0)} sq ft</span></div>
+        <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #f59e0b"><span style="color:white;font-weight:700;font-size:1.05em">Total Squares</span><span style="color:#f59e0b;font-weight:900;font-size:1.2em">${squares.toFixed(2)} SQs</span></div>
+      </div>
+      <div style="background:#0f172a;padding:12px 16px">
+        <div style="color:#64748b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Waste Factor</div>
+        <table style="width:100%;border-collapse:collapse">${wasteRows}</table>
+      </div>
+      <div style="padding:16px;display:flex;gap:10px">
+        <button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>
+        <button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>
       </div>
     </div>
-  ;
+  </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
 }
 function closeSummary() { document.getElementById('summaryModal')?.remove(); }
