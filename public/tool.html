@@ -252,14 +252,23 @@
 <script src="/lib/leaflet.min.js"></script>
 <script src="/lib/leaflet.draw.min.js"></script>
 <script src="/lib/leaflet.geometryutil.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
 <script>
-// Stub leaflet-image if CDN fails
-window.leafletImage = window.leafletImage || function(map, cb) { cb(new Error('leaflet-image not loaded'), null); };
+// Stubs for optional CDN libs — loaded async below
+window.turf = window.turf || null;
+window.jspdf = window.jspdf || null;
+window.html2canvas = window.html2canvas || null;
+window.leafletImage = window.leafletImage || function(map, cb) { cb(new Error('not loaded'), null); };
+// Load CDN scripts async so they can't block main script
+['https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js',
+ 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+ 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+ 'https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js'
+].forEach(function(src) {
+  var s = document.createElement('script'); s.src = src; s.async = true;
+  s.onerror = function() { console.warn('Optional CDN failed:', src); };
+  document.head.appendChild(s);
+});
 </script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js" crossorigin="anonymous" onerror="console.warn('leaflet-image CDN failed, using stub')"></script>
 <script>
 // ── Guard: ensure Leaflet loaded ─────────────────────────────────────────────
 if (typeof L === 'undefined') {
