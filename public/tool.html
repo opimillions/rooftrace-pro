@@ -276,7 +276,8 @@ if (typeof L === 'undefined') {
   throw new Error('Leaflet not loaded');
 }
 
-window.onerror = function(msg, src, line, col, err) { console.error('ROOFTRACE CRASH:', line, msg, err); return false; };
+window.onerror = function(msg, src, line, col, err) { console.error('ROOFTRACE CRASH at line', line, ':', msg, err); return false; };
+try {
 // ── Config ──────────────────────────────────────────────────────────────────
 const pitchMultipliers = {
   '2/12':1.014,'3/12':1.031,'4/12':1.054,'5/12':1.083,'6/12':1.118,
@@ -1306,7 +1307,9 @@ window.undoLast = function() {
 // Delay initial setMode so L.Draw is fully loaded
 window.addEventListener('load', () => {
   setTimeout(() => setMode('facet'), 200);
-  setTimeout(() => setMode('facet'), 200);
   setTimeout(() => { if (typeof map !== 'undefined' && map) map.invalidateSize(true); }, 500);
+});
+} catch(e) { console.error('ROOFTRACE INIT ERROR:', e.message, e.stack); }
+</script>
 </body>
 </html>
