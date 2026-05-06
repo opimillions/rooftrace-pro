@@ -267,6 +267,7 @@ if (typeof L === 'undefined') {
   throw new Error('Leaflet not loaded');
 }
 
+window.onerror = function(msg, src, line, col, err) { console.error('ROOFTRACE CRASH:', line, msg, err); return false; };
 // ── Config ──────────────────────────────────────────────────────────────────
 const pitchMultipliers = {
   '2/12':1.014,'3/12':1.031,'4/12':1.054,'5/12':1.083,'6/12':1.118,
