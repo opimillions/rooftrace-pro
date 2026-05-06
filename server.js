@@ -209,8 +209,8 @@ app.get('*', (req, res) => {
 // Monthly lookup reset
 cron.schedule('0 0 1 * *', () => userOps.resetMonthlyLookups(), { timezone: 'America/Chicago' });
 
-app.listen(PORT, () => {
-  console.log(`\nRoofTrace Pro running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\nRoofTrace Pro running on http://0.0.0.0:${PORT}`);
   console.log(`Admin: ${process.env.ADMIN_EMAIL}\n`);
 });
 
