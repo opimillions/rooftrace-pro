@@ -261,6 +261,12 @@ window.leafletImage = window.leafletImage || function(map, cb) { cb(new Error('l
 </script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js" crossorigin="anonymous" onerror="console.warn('leaflet-image CDN failed, using stub')"></script>
 <script>
+// ── Guard: ensure Leaflet loaded ─────────────────────────────────────────────
+if (typeof L === 'undefined') {
+  document.body.innerHTML = '<div style="color:white;background:#0f172a;padding:40px;font-family:sans-serif;text-align:center"><h2>⚠️ Map library failed to load</h2><p>Please hard refresh: <strong>Ctrl+Shift+R</strong></p><button onclick="location.reload(true)" style="margin-top:20px;padding:12px 24px;background:#f59e0b;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:16px">Reload Page</button></div>';
+  throw new Error('Leaflet not loaded');
+}
+
 // ── Config ──────────────────────────────────────────────────────────────────
 const pitchMultipliers = {
   '2/12':1.014,'3/12':1.031,'4/12':1.054,'5/12':1.083,'6/12':1.118,
