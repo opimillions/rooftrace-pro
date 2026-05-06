@@ -263,17 +263,22 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'&copy; Esri World Imagery', maxZoom:22, maxNativeZoom:19 }
+).addTo(map);
+
 const googleSat = L.tileLayer(
   'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
   { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
-).addTo(map);
-
-const esriSat = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
 );
 
-L.control.layers({'&#127758; Google':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:false}).addTo(map);
+const osmLayer = L.tileLayer(
+  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+  { attribution:'&copy; OpenStreetMap', maxZoom:19 }
+);
+
+L.control.layers({'&#128506; Esri Satellite (Default)':esriSat,'&#127758; Google Satellite':googleSat,'&#128506; Street Map':osmLayer}, null, {position:'topright',collapsed:false}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
@@ -1001,7 +1006,7 @@ function findAllSimpleCycles(verts, adj) {
     const neighbors = adj[current] || [];
     for (const next of neighbors) {
       if (next === start && path.length >= 3) {
-        // Found a cycle � store it with canonical key to avoid duplicates
+        // Found a cycle � store it with canonical key to avoid duplicates
         const sorted = [...path].sort((a,b)=>a-b).join(',');
         if (!cycles.some(c => c.key === sorted)) {
           cycles.push({ key: sorted, vids: [...path] });
