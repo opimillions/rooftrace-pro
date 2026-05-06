@@ -252,10 +252,14 @@
 <script src="/lib/leaflet.min.js"></script>
 <script src="/lib/leaflet.draw.min.js"></script>
 <script src="/lib/leaflet.geometryutil.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" crossorigin="anonymous"></script>
+<script>
+// Stub leaflet-image if CDN fails
+window.leafletImage = window.leafletImage || function(map, cb) { cb(new Error('leaflet-image not loaded'), null); };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js" crossorigin="anonymous" onerror="console.warn('leaflet-image CDN failed, using stub')"></script>
 <script>
 // ── Config ──────────────────────────────────────────────────────────────────
 const pitchMultipliers = {
