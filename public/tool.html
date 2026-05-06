@@ -617,12 +617,12 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
-    // Auto-detect facets only when drawing eaves or rakes (perimeter lines)
-    if (currentMode === 'eaves' || currentMode === 'rake') {
+    // Auto-detect facets after every segment (not facet mode itself)
+    if (currentMode !== 'facet') {
       setTimeout(() => {
         detectAndFillFacet(snappedPt);
         if (lineStartPt) detectAndFillFacet(lineStartPt);
-      }, 150);
+      }, 200);
     }
   }
 });
@@ -991,7 +991,7 @@ function buildPDF(mapImageDataUrl) {
 }
 
 // ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
-const MERGE_M = 15; // meters to consider points the same vertex (generous for real-world use)
+const MERGE_M = 25; // meters to consider points the same vertex (generous for real-world use)
 
 function buildGraph() {
   const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
@@ -1040,8 +1040,7 @@ function findAllSimpleCycles(verts, adj) {
         }
         continue;
       }
-      if (!path.includes(next) && next > start) {
-        // Only explore vertices > start to avoid duplicates
+      if (!path.includes(next)) {
         dfs(start, next, [...path, next]);
       }
     }
@@ -1158,7 +1157,7 @@ function autoCompleteFacets() {
   }
 
   // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = 15; // meters — increased for better snap tolerance
+  const MERGE_DIST = 25; // meters — generous snap tolerance for field use
   const vertices = [];
 
   function findOrAddVertex(latlng) {
