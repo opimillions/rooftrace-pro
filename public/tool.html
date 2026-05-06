@@ -617,11 +617,13 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
-    // Check both endpoints for closed facets
-    setTimeout(() => {
-      detectAndFillFacet(snappedPt);
-      if (lineStartPt) detectAndFillFacet(lineStartPt);
-    }, 150);
+    // Auto-detect facets only when drawing eaves or rakes (perimeter lines)
+    if (currentMode === 'eaves' || currentMode === 'rake') {
+      setTimeout(() => {
+        detectAndFillFacet(snappedPt);
+        if (lineStartPt) detectAndFillFacet(lineStartPt);
+      }, 150);
+    }
   }
 });
 
@@ -1059,18 +1061,17 @@ function detectAndFillFacet(snappedPt) {
   const cycles = findAllSimpleCycles(verts, adj);
   if (!cycles.length) return;
 
-  // For each cycle, calculate area and check if it's new
+  // Calculate area for each cycle, collect valid ones
+  const candidates = [];
   for (const { vids } of cycles) {
     const polyPts = vids.map(i => verts[i]);
     if (polyPts.length < 3) continue;
-
     try {
       const ring = [...polyPts.map(p => [p.lng, p.lat]), [polyPts[0].lng, polyPts[0].lat]];
       let areaSqFt;
       if (typeof turf !== 'undefined' && turf.area) {
         areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
       } else {
-        // Fallback: Shoelace formula in meters converted to sq ft
         let area = 0;
         for (let i = 0; i < polyPts.length; i++) {
           const j = (i + 1) % polyPts.length;
@@ -1078,31 +1079,43 @@ function detectAndFillFacet(snappedPt) {
           const xj = map.project(polyPts[j]).x, yj = map.project(polyPts[j]).y;
           area += xi * yj - xj * yi;
         }
-        const pxPerMeter = map.getZoomScale(map.getZoom(), 0) || 1;
-        areaSqFt = Math.abs(area / 2) / (pxPerMeter * pxPerMeter) * 10.7639;
-        if (areaSqFt < 10) areaSqFt = Math.abs(area / 2) * 0.092903; // fallback estimate
+        areaSqFt = Math.abs(area / 2) * 0.092903 * 10.7639;
       }
+      if (areaSqFt < 30 || areaSqFt > 15000) continue;
+      candidates.push({ polyPts, areaSqFt });
+    } catch(e) {}
+  }
 
-      // Skip tiny slivers and huge areas
-      if (areaSqFt < 50 || areaSqFt > 20000) continue;
+  // Sort by area ascending — smallest closed polygon first (individual facets, not whole roof)
+  candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
 
-      // Skip if already have a facet of very similar area
-      const duplicate = facets.some(f => Math.abs((f.flatSqFt || 0) - areaSqFt) < areaSqFt * 0.05);
-      if (duplicate) continue;
+  for (const { polyPts, areaSqFt } of candidates) {
+    // Skip if already have a facet covering nearly the same area AND same approximate center
+    const cx = polyPts.reduce((s,p) => s+p.lat, 0) / polyPts.length;
+    const cy = polyPts.reduce((s,p) => s+p.lng, 0) / polyPts.length;
+    const duplicate = facets.some(f => {
+      if (!f.layer || !f.layer.getLatLngs) return false;
+      const pts = f.layer.getLatLngs()[0] || [];
+      if (!pts.length) return false;
+      const fcx = pts.reduce((s,p) => s+p.lat, 0) / pts.length;
+      const fcy = pts.reduce((s,p) => s+p.lng, 0) / pts.length;
+      const dist = map.distance({lat:cx,lng:cy}, {lat:fcx,lng:fcy});
+      return dist < 5 && Math.abs((f.flatSqFt||0) - areaSqFt) < areaSqFt * 0.15;
+    });
+    if (duplicate) continue;
 
-      // Create facet!
-      const poly = L.polygon(polyPts, {
-        color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
-      });
-      facetLayer.addLayer(poly);
-      addFacet(poly);
-
-      document.getElementById('modeHint').textContent =
-        `Auto-detected facet: ${Math.round(areaSqFt).toLocaleString()} sq ft. Keep drawing to complete the roof.`;
-      setTimeout(() => {
-        if (currentMode !== 'facet') document.getElementById('modeHint').textContent = modeHints[currentMode];
-      }, 4000);
-    } catch (e) { /* invalid polygon */ }
+    // Create facet!
+    const poly = L.polygon(polyPts, {
+      color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
+    });
+    facetLayer.addLayer(poly);
+    addFacet(poly);
+    document.getElementById('modeHint').textContent =
+      `✅ Facet created: ${Math.round(areaSqFt).toLocaleString()} sq ft. Continue drawing.`;
+    setTimeout(() => {
+      document.getElementById('modeHint').textContent = modeHints[currentMode] || '';
+    }, 3000);
+    break; // Only create ONE facet per snap — avoid filling everything at once
   }
 }
 window.detectAndFillFacet = detectAndFillFacet;
