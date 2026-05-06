@@ -1066,7 +1066,22 @@ function detectAndFillFacet(snappedPt) {
 
     try {
       const ring = [...polyPts.map(p => [p.lng, p.lat]), [polyPts[0].lng, polyPts[0].lat]];
-      const areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
+      let areaSqFt;
+      if (typeof turf !== 'undefined' && turf.area) {
+        areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
+      } else {
+        // Fallback: Shoelace formula in meters converted to sq ft
+        let area = 0;
+        for (let i = 0; i < polyPts.length; i++) {
+          const j = (i + 1) % polyPts.length;
+          const xi = map.project(polyPts[i]).x, yi = map.project(polyPts[i]).y;
+          const xj = map.project(polyPts[j]).x, yj = map.project(polyPts[j]).y;
+          area += xi * yj - xj * yi;
+        }
+        const pxPerMeter = map.getZoomScale(map.getZoom(), 0) || 1;
+        areaSqFt = Math.abs(area / 2) / (pxPerMeter * pxPerMeter) * 10.7639;
+        if (areaSqFt < 10) areaSqFt = Math.abs(area / 2) * 0.092903; // fallback estimate
+      }
 
       // Skip tiny slivers and huge areas
       if (areaSqFt < 50 || areaSqFt > 20000) continue;
