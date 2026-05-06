@@ -94,7 +94,9 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 // ── Tool Route (protected) ────────────────────────────────────────────────────
 app.get('/tool', requireAuth, (req, res) => {
-  // Check subscription
+  // Admins always have access
+  if (req.user.role === 'admin') return res.sendFile(path.join(__dirname, 'public', 'tool.html'));
+  // Check subscription for regular users
   if (!userOps.canLookup(req.user)) return res.redirect('/upgrade?reason=limit');
   res.sendFile(path.join(__dirname, 'public', 'tool.html'));
 });
