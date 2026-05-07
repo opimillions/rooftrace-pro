@@ -62,6 +62,129 @@
     /* ── Map ── */
     #map { width:100%; height:100%; }
 
+    /* ── Mobile Layout ── */
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
+
+      /* Header: compact on mobile */
+      .header { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+      .header .claim-fields { display: none; } /* hide claim fields on mobile - use summary button */
+      .header .logo { font-size: 1.1em; }
+
+      /* Sidebar: slide-up panel from bottom */
+      .sidebar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: auto;
+        max-height: 50vh;
+        z-index: 500;
+        border-right: none;
+        border-top: 2px solid #2563eb;
+        border-radius: 16px 16px 0 0;
+        overflow-y: auto;
+        transform: translateY(calc(100% - 120px));
+        transition: transform 0.3s ease;
+        grid-column: unset;
+        grid-row: unset;
+      }
+      .sidebar.open { transform: translateY(0); }
+
+      /* Sidebar handle */
+      .sidebar::before {
+        content: '';
+        display: block;
+        width: 40px;
+        height: 4px;
+        background: #475569;
+        border-radius: 2px;
+        margin: 10px auto 0;
+      }
+
+      /* Mobile toolbar - always visible above sidebar */
+      .mobile-toolbar {
+        display: flex !important;
+        position: fixed;
+        bottom: 110px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 600;
+        background: rgba(15,23,42,0.95);
+        border: 1px solid #334155;
+        border-radius: 50px;
+        padding: 6px 10px;
+        gap: 4px;
+        backdrop-filter: blur(8px);
+      }
+      .mobile-toolbar button {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 13px;
+        font-weight: 700;
+        padding: 8px 10px;
+        border-radius: 30px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.15s;
+      }
+      .mobile-toolbar button.active { background: #2563eb; }
+      .mobile-toolbar button:active { opacity: 0.7; }
+
+      /* Map takes full screen */
+      .map-wrap { grid-column: 1; grid-row: 2; }
+      #map { height: calc(100vh - 120px) !important; }
+
+      /* Bottom bar: scrollable compact */
+      .bottom-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 56px;
+        z-index: 400;
+        padding: 4px 8px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+      .stat { min-width: 80px; padding: 2px 10px; }
+      .stat .val { font-size: 0.95em; }
+      .stat .lbl { font-size: 0.6em; }
+
+      /* Panel toggle button */
+      .panel-toggle {
+        display: flex !important;
+        position: fixed;
+        bottom: 66px;
+        right: 16px;
+        z-index: 600;
+        background: #f59e0b;
+        color: #000;
+        border: none;
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        font-size: 20px;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      }
+
+      /* Hide layer control on mobile */
+      .leaflet-control-layers { display: none; }
+
+      /* Bigger touch targets */
+      .addr-row button { padding: 10px 16px; font-size: 1em; }
+      .addr-row input { font-size: 1em; padding: 10px; }
+      .mode-btn { padding: 12px 6px; font-size: 0.85em; }
+    }
+
+    /* Desktop: hide mobile-only elements */
+    .mobile-toolbar { display: none; }
+    .panel-toggle { display: none; }
+
     /* ── Bottom Bar ── */
     .bottom-bar {
       grid-column:1/-1;
@@ -195,6 +318,19 @@
   </aside>
 
   <!-- Map -->
+  <!-- Mobile toolbar: quick mode switcher floating above map -->
+  <div class="mobile-toolbar" id="mobileToolbar">
+    <button onclick="setMode('ridge')" id="mob-ridge" style="color:#ef4444">Ridge</button>
+    <button onclick="setMode('hip')" id="mob-hip" style="color:#f97316">Hip</button>
+    <button onclick="setMode('valley')" id="mob-valley" style="color:#22c55e">Valley</button>
+    <button onclick="setMode('eaves')" id="mob-eaves" style="color:#f59e0b">Eaves</button>
+    <button onclick="setMode('rake')" id="mob-rake" style="color:#a855f7">Rake</button>
+    <button onclick="undoLast()" style="color:#94a3b8">&#8617;</button>
+  </div>
+
+  <!-- Mobile panel toggle button -->
+  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" title="Toggle panel">&#9776;</button>
+
   <div id="map" style="width:100%;height:100%;min-height:400px"></div>
 
   <!-- Bottom Bar -->
@@ -1255,6 +1391,29 @@ document.getElementById('inspectionDate').value = new Date().toISOString().split
 window.setMode = setMode;
 window.clearAllLayers = clearAllLayers;
 window.geocodeAddress = geocodeAddress;
+
+// Mobile panel toggle
+function togglePanel() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = document.getElementById('panelToggle');
+  if (sidebar) {
+    sidebar.classList.toggle('open');
+    btn.textContent = sidebar.classList.contains('open') ? '\u00D7' : '\u2630';
+  }
+  setTimeout(() => { if (map) map.invalidateSize(true); }, 350);
+}
+window.togglePanel = togglePanel;
+
+// On mobile: update mobile toolbar active state when mode changes
+const origSetMode = window.setMode;
+if (origSetMode) {
+  window.setMode = function(mode) {
+    origSetMode(mode);
+    document.querySelectorAll('.mobile-toolbar button').forEach(b => b.classList.remove('active'));
+    const mob = document.getElementById('mob-' + mode);
+    if (mob) mob.classList.add('active');
+  };
+}
 window.generatePDF = generatePDF;
 window.changePitch = changePitch;
 window.removeFacet = removeFacet;
