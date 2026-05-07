@@ -855,13 +855,37 @@ function generatePDF() {
     }, 1500); // Wait 1.5s for tiles to load after fitBounds
   }
 
-  doCapture(function(mapImg) {
-    buildPDF(mapImg);
-    if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+  // Capture TWO images: 1) satellite only, 2) with tracings
+  function captureSatelliteOnly(cb) {
+    // Temporarily hide all drawn layers
+    const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+    layersToHide.forEach(l => map.removeLayer(l));
+    setTimeout(() => {
+      if (btn) btn.innerHTML = '⏳ Capturing satellite...';
+      if (window.leafletImage) {
+        leafletImage(map, function(err, canvas) {
+          // Restore layers
+          layersToHide.forEach(l => map.addLayer(l));
+          cb(err ? null : canvas.toDataURL('image/jpeg', 0.9));
+        });
+      } else {
+        layersToHide.forEach(l => map.addLayer(l));
+        cb(null);
+      }
+    }, 800);
+  }
+
+  doCapture(function(tracingImg) {
+    if (btn) btn.innerHTML = '⏳ Capturing satellite...';
+    // Now capture satellite without tracings
+    captureSatelliteOnly(function(satelliteImg) {
+      buildPDF(tracingImg, satelliteImg);
+      if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+    });
   });
 }
 
-function buildPDF(mapImageDataUrl) {
+function buildPDF(mapImageDataUrl, satelliteImgUrl) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
   const W = 612, M = 40;
@@ -914,18 +938,32 @@ function buildPDF(mapImageDataUrl) {
 
   let y = sumY + 62;
 
-  // Map image
-  if (mapImageDataUrl) {
+  // TWO map images: satellite aerial + traced diagram
+  const imgH = 190;
+  const halfW = (W - M*2 - 10) / 2;
+
+  if (satelliteImgUrl || mapImageDataUrl) {
     doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
-    doc.text('Aerial View with Roof Tracings', M, y); y += 8;
-    const imgH = 220;
-    try {
-      doc.addImage(mapImageDataUrl, 'JPEG', M, y, W-M*2, imgH);
-      y += imgH + 12;
-    } catch(e) {
-      doc.setFontSize(8); doc.setTextColor(150);
-      doc.text('(Map image blocked by browser CORS policy — measurements above are accurate.)', M, y+12);
-      y += 24;
+
+    // Check if we have both images for side-by-side layout
+    if (satelliteImgUrl && mapImageDataUrl) {
+      doc.text('Aerial Photos', M, y); y += 8;
+      try {
+        // Left: satellite only
+        doc.addImage(satelliteImgUrl, 'JPEG', M, y, halfW, imgH);
+        doc.setFontSize(7); doc.setTextColor(100); doc.text('Satellite View', M + halfW/2, y + imgH + 8, {align:'center'});
+      } catch(e) {}
+      try {
+        // Right: with tracings
+        doc.addImage(mapImageDataUrl, 'JPEG', M + halfW + 10, y, halfW, imgH);
+        doc.setFontSize(7); doc.setTextColor(100); doc.text('Roof Tracings', M + halfW + 10 + halfW/2, y + imgH + 8, {align:'center'});
+      } catch(e) {}
+      y += imgH + 20;
+    } else {
+      // Only one image available
+      const img = mapImageDataUrl || satelliteImgUrl;
+      doc.text('Aerial View', M, y); y += 8;
+      try { doc.addImage(img, 'JPEG', M, y, W-M*2, imgH); y += imgH + 12; } catch(e) { y += 24; }
     }
   }
 
