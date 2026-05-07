@@ -3,14 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="icon" href="/icons/icon-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0f172a">
   <title>RoofTrace Pro</title>
-  <link rel="stylesheet" href="/lib/leaflet.min.css" />
-  <link rel="stylesheet" href="/lib/leaflet.draw.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; overflow:hidden; font-family:Arial,sans-serif; background:#0f172a; }
@@ -61,129 +56,6 @@
 
     /* ── Map ── */
     #map { width:100%; height:100%; }
-
-    /* ── Mobile Layout ── */
-    @media (max-width: 768px) {
-      .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr auto; }
-
-      /* Header: compact on mobile */
-      .header { padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
-      .header .claim-fields { display: none; } /* hide claim fields on mobile - use summary button */
-      .header .logo { font-size: 1.1em; }
-
-      /* Sidebar: slide-up panel from bottom */
-      .sidebar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: auto;
-        max-height: 50vh;
-        z-index: 500;
-        border-right: none;
-        border-top: 2px solid #2563eb;
-        border-radius: 16px 16px 0 0;
-        overflow-y: auto;
-        transform: translateY(calc(100% - 120px));
-        transition: transform 0.3s ease;
-        grid-column: unset;
-        grid-row: unset;
-      }
-      .sidebar.open { transform: translateY(0); }
-
-      /* Sidebar handle */
-      .sidebar::before {
-        content: '';
-        display: block;
-        width: 40px;
-        height: 4px;
-        background: #475569;
-        border-radius: 2px;
-        margin: 10px auto 0;
-      }
-
-      /* Mobile toolbar - always visible above sidebar */
-      .mobile-toolbar {
-        display: flex !important;
-        position: fixed;
-        bottom: 110px;
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 600;
-        background: rgba(15,23,42,0.95);
-        border: 1px solid #334155;
-        border-radius: 50px;
-        padding: 6px 10px;
-        gap: 4px;
-        backdrop-filter: blur(8px);
-      }
-      .mobile-toolbar button {
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 13px;
-        font-weight: 700;
-        padding: 8px 10px;
-        border-radius: 30px;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background 0.15s;
-      }
-      .mobile-toolbar button.active { background: #2563eb; }
-      .mobile-toolbar button:active { opacity: 0.7; }
-
-      /* Map takes full screen */
-      .map-wrap { grid-column: 1; grid-row: 2; }
-      #map { height: calc(100vh - 120px) !important; }
-
-      /* Bottom bar: scrollable compact */
-      .bottom-bar {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 56px;
-        z-index: 400;
-        padding: 4px 8px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-      .stat { min-width: 80px; padding: 2px 10px; }
-      .stat .val { font-size: 0.95em; }
-      .stat .lbl { font-size: 0.6em; }
-
-      /* Panel toggle button */
-      .panel-toggle {
-        display: flex !important;
-        position: fixed;
-        bottom: 66px;
-        right: 16px;
-        z-index: 600;
-        background: #f59e0b;
-        color: #000;
-        border: none;
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        font-size: 20px;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
-      }
-
-      /* Hide layer control on mobile */
-      .leaflet-control-layers { display: none; }
-
-      /* Bigger touch targets */
-      .addr-row button { padding: 10px 16px; font-size: 1em; }
-      .addr-row input { font-size: 1em; padding: 10px; }
-      .mode-btn { padding: 12px 6px; font-size: 0.85em; }
-    }
-
-    /* Desktop: hide mobile-only elements */
-    .mobile-toolbar { display: none; }
-    .panel-toggle { display: none; }
 
     /* ── Bottom Bar ── */
     .bottom-bar {
@@ -318,20 +190,7 @@
   </aside>
 
   <!-- Map -->
-  <!-- Mobile toolbar: quick mode switcher floating above map -->
-  <div class="mobile-toolbar" id="mobileToolbar">
-    <button onclick="setMode('ridge')" id="mob-ridge" style="color:#ef4444">Ridge</button>
-    <button onclick="setMode('hip')" id="mob-hip" style="color:#f97316">Hip</button>
-    <button onclick="setMode('valley')" id="mob-valley" style="color:#22c55e">Valley</button>
-    <button onclick="setMode('eaves')" id="mob-eaves" style="color:#f59e0b">Eaves</button>
-    <button onclick="setMode('rake')" id="mob-rake" style="color:#a855f7">Rake</button>
-    <button onclick="undoLast()" style="color:#94a3b8">&#8617;</button>
-  </div>
-
-  <!-- Mobile panel toggle button -->
-  <button class="panel-toggle" id="panelToggle" onclick="togglePanel()" title="Toggle panel">&#9776;</button>
-
-  <div id="map" style="width:100%;height:100%;min-height:400px"></div>
+  <div id="map"></div>
 
   <!-- Bottom Bar -->
   <div class="bottom-bar">
@@ -385,35 +244,14 @@
 
 </div>
 
-<script src="/lib/leaflet.min.js"></script>
-<script src="/lib/leaflet.draw.min.js"></script>
-<script src="/lib/leaflet.geometryutil.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+<script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js"></script>
 <script>
-// Stubs for optional CDN libs — loaded async below
-window.turf = window.turf || null;
-window.jspdf = window.jspdf || null;
-window.html2canvas = window.html2canvas || null;
-window.leafletImage = window.leafletImage || function(map, cb) { cb(new Error('not loaded'), null); };
-// Load CDN scripts async so they can't block main script
-['https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js',
- 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
- 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
- 'https://cdn.jsdelivr.net/npm/leaflet-image@0.4.0/leaflet-image.js'
-].forEach(function(src) {
-  var s = document.createElement('script'); s.src = src; s.async = true;
-  s.onerror = function() { console.warn('Optional CDN failed:', src); };
-  document.head.appendChild(s);
-});
-</script>
-<script>
-// ── Guard: ensure Leaflet loaded ─────────────────────────────────────────────
-if (typeof L === 'undefined') {
-  document.body.innerHTML = '<div style="color:white;background:#0f172a;padding:40px;font-family:sans-serif;text-align:center"><h2>⚠️ Map library failed to load</h2><p>Please hard refresh: <strong>Ctrl+Shift+R</strong></p><button onclick="location.reload(true)" style="margin-top:20px;padding:12px 24px;background:#f59e0b;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:16px">Reload Page</button></div>';
-  throw new Error('Leaflet not loaded');
-}
-
-window.onerror = function(msg, src, line, col, err) { console.error('ROOFTRACE CRASH at line', line, ':', msg, err); return false; };
-try {
 // ── Config ──────────────────────────────────────────────────────────────────
 const pitchMultipliers = {
   '2/12':1.014,'3/12':1.031,'4/12':1.054,'5/12':1.083,'6/12':1.118,
@@ -431,15 +269,10 @@ const googleSat = L.tileLayer(
 
 const esriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri World Imagery', maxZoom:22, maxNativeZoom:19 }
+  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
 );
 
-const osmLayer = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { attribution:'&copy; OpenStreetMap', maxZoom:19 }
-);
-
-L.control.layers({'&#127758; Google Satellite (Default)':googleSat,'&#128506; Esri Satellite':esriSat,'&#128506; Street Map':osmLayer}, null, {position:'topright',collapsed:false}).addTo(map);
+L.control.layers({'&#127758; Google':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:false}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
@@ -753,13 +586,11 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
-    // Auto-detect facets after every segment (not facet mode itself)
-    if (currentMode !== 'facet') {
-      setTimeout(() => {
-        detectAndFillFacet(snappedPt);
-        if (lineStartPt) detectAndFillFacet(lineStartPt);
-      }, 200);
-    }
+    // Check both endpoints for closed facets
+    setTimeout(() => {
+      detectAndFillFacet(snappedPt);
+      if (lineStartPt) detectAndFillFacet(lineStartPt);
+    }, 150);
   }
 });
 
@@ -994,49 +825,16 @@ function generatePDF() {
   const btn = document.querySelector('.btn-report');
   if (btn) { btn.innerHTML = '⏳ Capturing...'; btn.disabled = true; }
 
-  // Capture map using html2canvas (works with Google tiles)
+  // Try to capture map with leaflet-image, fall back to html2canvas
   function doCapture(cb) {
-    if (typeof html2canvas !== 'undefined') {
-      // Pan map to fit all drawn layers
-      const allLayers = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
-      const bounds = [];
-      allLayers.forEach(lg => lg.getLayers().forEach(l => {
-        try { const b = l.getBounds ? l.getBounds() : null; if (b) bounds.push(b); } catch(e){}
-      }));
-      if (bounds.length) {
-        const combined = bounds.reduce((acc, b) => acc.extend(b));
-        map.fitBounds(combined, { padding: [60, 60], maxZoom: 21 });
-      }
-      // Hide layer control for clean capture
-      const layerCtrl = document.querySelector('.leaflet-control-layers');
-      if (layerCtrl) layerCtrl.style.display = 'none';
-      const zoomCtrl = document.querySelector('.leaflet-control-zoom');
-      if (zoomCtrl) zoomCtrl.style.display = 'none';
-
-      setTimeout(() => {
-        html2canvas(document.getElementById('map'), {
-          useCORS: true,
-          allowTaint: true,
-          scale: 1.5,
-          logging: false,
-          ignoreElements: el => el.classList && (el.classList.contains('leaflet-control-container'))
-        }).then(c => {
-          // Restore controls
-          if (layerCtrl) layerCtrl.style.display = '';
-          if (zoomCtrl) zoomCtrl.style.display = '';
-          cb(c.toDataURL('image/jpeg', 0.9));
-        }).catch(() => {
-          if (layerCtrl) layerCtrl.style.display = '';
-          if (zoomCtrl) zoomCtrl.style.display = '';
-          cb(null);
-        });
-      }, 1500); // wait longer for map tiles to load after fitBounds
-    } else if (window.leafletImage) {
+    if (window.leafletImage) {
       leafletImage(map, function(err, canvas) {
         cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
       });
     } else {
-      cb(null);
+      html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true })
+        .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
+        .catch(() => cb(null));
     }
   }
 
@@ -1061,10 +859,10 @@ function buildPDF(mapImageDataUrl) {
   // Header
   doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
   doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
-  doc.text('RoofTrace Pro', M, 28);
+  doc.text('First Call Public Adjusters', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
-  doc.text('Aerial Roof Measurement Report  |  Powered by Licensed Public Adjusters', M, 44);
-  doc.text('rooftracepro.thepublicadjustertx.com', M, 57);
+  doc.text('Aerial Roof Measurement Report  |  TX #1921679 | OK #3000772279 | CO #906301 | (817) 618-9884', M, 44);
+  doc.text('thepublicadjustertx.com', M, 57);
 
   // Property info
   doc.setTextColor(30,30,30); doc.setFontSize(9);
@@ -1160,12 +958,10 @@ function buildPDF(mapImageDataUrl) {
 }
 
 // ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
-const MERGE_M = 1.5; // meters to consider points the same vertex (tight — only truly snapped points merge)
+const MERGE_M = 15; // meters to consider points the same vertex (generous for real-world use)
 
 function buildGraph() {
   const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
-  const counts = [ridgeLayer,hipLayer,valleyLayer,dripLayer,eavesLayer,rakeLayer].map(l=>l.getLayers().length);
-  console.log('buildGraph layer counts [ridge,hip,valley,drip,eave,rake]:', counts);
   const verts = [];
 
   function vidOf(ll) {
@@ -1195,22 +991,24 @@ function buildGraph() {
 }
 
 function findAllSimpleCycles(verts, adj) {
-  // Find all simple cycles of length 3-6 using DFS (max 6 vertices = complex hip roofs)
+  // Find all simple cycles of length 3-7 using DFS
   const cycles = [];
   const n = verts.length;
 
   function dfs(start, current, path) {
-    if (path.length > 6) return; // max 6 vertices per facet
+    if (path.length > 7) return;
     const neighbors = adj[current] || [];
     for (const next of neighbors) {
       if (next === start && path.length >= 3) {
+        // Found a cycle � store it with canonical key to avoid duplicates
         const sorted = [...path].sort((a,b)=>a-b).join(',');
         if (!cycles.some(c => c.key === sorted)) {
           cycles.push({ key: sorted, vids: [...path] });
         }
         continue;
       }
-      if (!path.includes(next)) {
+      if (!path.includes(next) && next > start) {
+        // Only explore vertices > start to avoid duplicates
         dfs(start, next, [...path, next]);
       }
     }
@@ -1224,104 +1022,41 @@ function findAllSimpleCycles(verts, adj) {
 
 function detectAndFillFacet(snappedPt) {
   const { verts, adj } = buildGraph();
-  console.log('detectAndFillFacet: verts=', verts.length, 'adj keys=', Object.keys(adj).length);
-  if (verts.length < 3) { console.log('not enough verts'); return; }
+  if (verts.length < 3) return;
 
   // Find all simple cycles
   const cycles = findAllSimpleCycles(verts, adj);
-  console.log('cycles found:', cycles.length, cycles.map(c=>c.vids.length+'pts'));
   if (!cycles.length) return;
 
-  // Calculate area for each cycle, collect valid ones
-  const candidates = [];
+  // For each cycle, calculate area and check if it's new
   for (const { vids } of cycles) {
     const polyPts = vids.map(i => verts[i]);
     if (polyPts.length < 3) continue;
+
     try {
-      // Geodesic Shoelace formula — works without turf, accurate for small polygons
-      function geodesicAreaSqFt(pts) {
-        const R = 6378137; // Earth radius meters
-        let area = 0;
-        for (let i = 0; i < pts.length; i++) {
-          const j = (i + 1) % pts.length;
-          const lat1 = pts[i].lat * Math.PI / 180;
-          const lat2 = pts[j].lat * Math.PI / 180;
-          const dLng = (pts[j].lng - pts[i].lng) * Math.PI / 180;
-          area += dLng * (2 + Math.sin(lat1) + Math.sin(lat2));
-        }
-        const areaM2 = Math.abs(area * R * R / 2);
-        return areaM2 * 10.7639; // sq meters to sq feet
-      }
-      const areaSqFt = geodesicAreaSqFt(polyPts);
-      console.log('candidate area sqft:', areaSqFt.toFixed(0));
-      if (areaSqFt < 30 || areaSqFt > 50000) { console.log('skipped - out of range'); continue; }
-      candidates.push({ polyPts, areaSqFt });
-    } catch(e) { console.warn('area calc error', e); }
-  }
+      const ring = [...polyPts.map(p => [p.lng, p.lat]), [polyPts[0].lng, polyPts[0].lat]];
+      const areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
 
-  // Sort by area ascending
-  candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
+      // Skip tiny slivers and huge areas
+      if (areaSqFt < 50 || areaSqFt > 20000) continue;
 
-  // Remove impossibly tiny slivers (< 20 sq ft)
-  const valid = candidates.filter(c => c.areaSqFt >= 20);
-  if (valid.length === 0) return;
+      // Skip if already have a facet of very similar area
+      const duplicate = facets.some(f => Math.abs((f.flatSqFt || 0) - areaSqFt) < areaSqFt * 0.05);
+      if (duplicate) continue;
 
-  // Sort by size ascending
-  valid.sort((a,b) => a.areaSqFt - b.areaSqFt);
+      // Create facet!
+      const poly = L.polygon(polyPts, {
+        color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
+      });
+      facetLayer.addLayer(poly);
+      addFacet(poly);
 
-  // Only check composite against "real" facets (> 80 sq ft) to avoid slivers polluting the check
-  const toKeep = [];
-  for (const cand of valid) {
-    const realKeepers = toKeep.filter(k => k.areaSqFt >= 80);
-    let isComposite = false;
-    for (let i = 0; i < realKeepers.length && !isComposite; i++) {
-      for (let j = i; j < realKeepers.length && !isComposite; j++) {
-        const pairSum = realKeepers[i].areaSqFt + realKeepers[j].areaSqFt;
-        if (Math.abs(cand.areaSqFt - pairSum) < pairSum * 0.10) isComposite = true;
-      }
-    }
-    if (!isComposite) toKeep.push(cand);
-  }
-  candidates.length = 0;
-  toKeep.forEach(c => candidates.push(c));
-
-  // Only take the single smallest new polygon per detection run
-  for (const { polyPts, areaSqFt } of candidates) {
-    // Skip if center is already inside an existing facet (overlap check)
-    const cx = polyPts.reduce((s,p) => s+p.lat, 0) / polyPts.length;
-    const cy = polyPts.reduce((s,p) => s+p.lng, 0) / polyPts.length;
-
-    // Skip duplicates: same center AND similar area
-    const duplicate = facets.some(f => {
-      if (!f.layer || !f.layer.getLatLngs) return false;
-      const pts = f.layer.getLatLngs()[0] || f.layer.getLatLngs() || [];
-      const flatPts = Array.isArray(pts[0]) ? pts[0] : pts;
-      if (!flatPts.length) return false;
-      const fcx = flatPts.reduce((s,p) => s+(p.lat||0), 0) / flatPts.length;
-      const fcy = flatPts.reduce((s,p) => s+(p.lng||0), 0) / flatPts.length;
-      const dist = map.distance({lat:cx,lng:cy}, {lat:fcx,lng:fcy});
-      // Duplicate if centers are close OR area is nearly identical
-      // Only duplicate if center is very close (same polygon) AND area is nearly identical
-      return dist < 2 && Math.abs((f.flatSqFt||0) - areaSqFt) < areaSqFt * 0.05;
-    });
-    if (duplicate) continue;
-
-    // Skip if this polygon's area is close to sum of existing facets (composite polygon)
-    const totalExisting = facets.reduce((s,f) => s + (f.flatSqFt||0), 0);
-    if (facets.length > 0 && areaSqFt > totalExisting * 0.85) continue;
-
-    // Create facet!
-    const poly = L.polygon(polyPts, {
-      color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
-    });
-    facetLayer.addLayer(poly);
-    addFacet(poly);
-    document.getElementById('modeHint').textContent =
-      `✅ Facet created: ${Math.round(areaSqFt).toLocaleString()} sq ft. Continue drawing.`;
-    setTimeout(() => {
-      document.getElementById('modeHint').textContent = modeHints[currentMode] || '';
-    }, 3000);
-    break; // Only create ONE facet per snap — avoid filling everything at once
+      document.getElementById('modeHint').textContent =
+        `Auto-detected facet: ${Math.round(areaSqFt).toLocaleString()} sq ft. Keep drawing to complete the roof.`;
+      setTimeout(() => {
+        if (currentMode !== 'facet') document.getElementById('modeHint').textContent = modeHints[currentMode];
+      }, 4000);
+    } catch (e) { /* invalid polygon */ }
   }
 }
 window.detectAndFillFacet = detectAndFillFacet;
@@ -1364,7 +1099,7 @@ function autoCompleteFacets() {
   }
 
   // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = 1.5; // meters — tight snap tolerance, only truly connected endpoints merge
+  const MERGE_DIST = 5; // meters
   const vertices = [];
 
   function findOrAddVertex(latlng) {
@@ -1461,29 +1196,6 @@ document.getElementById('inspectionDate').value = new Date().toISOString().split
 window.setMode = setMode;
 window.clearAllLayers = clearAllLayers;
 window.geocodeAddress = geocodeAddress;
-
-// Mobile panel toggle
-function togglePanel() {
-  const sidebar = document.querySelector('.sidebar');
-  const btn = document.getElementById('panelToggle');
-  if (sidebar) {
-    sidebar.classList.toggle('open');
-    btn.textContent = sidebar.classList.contains('open') ? '\u00D7' : '\u2630';
-  }
-  setTimeout(() => { if (map) map.invalidateSize(true); }, 350);
-}
-window.togglePanel = togglePanel;
-
-// On mobile: update mobile toolbar active state when mode changes
-const origSetMode = window.setMode;
-if (origSetMode) {
-  window.setMode = function(mode) {
-    origSetMode(mode);
-    document.querySelectorAll('.mobile-toolbar button').forEach(b => b.classList.remove('active'));
-    const mob = document.getElementById('mob-' + mode);
-    if (mob) mob.classList.add('active');
-  };
-}
 window.generatePDF = generatePDF;
 window.changePitch = changePitch;
 window.removeFacet = removeFacet;
@@ -1509,36 +1221,38 @@ function showSummary() {
     ['Hips',        fmt(hipFt,0) + "'"],
     ['Drip Edge',   fmt(dripFt,0) + "'"],
     ['Perimeter',   fmt(perimFt,0) + "'"],
-  ].map(([l,v]) => `<tr style="border-bottom:1px solid #334155"><td style="padding:10px 16px;color:#94a3b8;font-size:0.9em">${l}</td><td style="padding:10px 16px;color:white;font-weight:600;text-align:right">${v}</td></tr>`).join('');
+  ].map(([l,v]) => <tr style="border-bottom:1px solid #334155"><td style="padding:10px 16px;color:#94a3b8;font-size:0.9em">\</td><td style="padding:10px 16px;color:white;font-weight:600;text-align:right">\</td></tr>).join('');
 
   const wasteRows = [10,12,15,17,20].map(w => {
-    const sq = (squares * (1 + w/100)).toFixed(1);
-    return `<tr style="border-bottom:1px solid #334155"><td style="padding:8px 16px;color:#94a3b8;font-size:0.85em">${w}% Waste</td><td style="padding:8px 16px;color:white;font-weight:600;text-align:right">${sq} SQs</td></tr>`;
+    const sq = squares * (1 + w/100);
+    return <tr style="border-bottom:1px solid #334155"><td style="padding:8px 16px;color:#94a3b8;font-size:0.85em">Waste \%</td><td style="padding:8px 16px;color:white;font-weight:600;text-align:right">\ SQs</td></tr>;
   }).join('');
 
-  const html = `<div id="summaryModal" onclick="if(event.target===this)closeSummary()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
-    <div style="background:#1e293b;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">
-      <div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
-        <div style="font-weight:900;color:white;font-size:1.1em">Measurement Summary</div>
-        <button onclick="closeSummary()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">&#10005;</button>
-      </div>
-      <table style="width:100%;border-collapse:collapse">${rows}</table>
-      <div style="background:#0f172a;padding:12px 16px">
-        <div style="color:#f59e0b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Roof Area</div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Flat Area</span><span style="color:white;font-weight:600">${fmt(flatSqFt,0)} sq ft</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Sloped Area</span><span style="color:white;font-weight:600">${fmt(slopedSqFt,0)} sq ft</span></div>
-        <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #f59e0b"><span style="color:white;font-weight:700;font-size:1.05em">Total Squares</span><span style="color:#f59e0b;font-weight:900;font-size:1.2em">${squares.toFixed(2)} SQs</span></div>
-      </div>
-      <div style="background:#0f172a;padding:12px 16px">
-        <div style="color:#64748b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Waste Factor</div>
-        <table style="width:100%;border-collapse:collapse">${wasteRows}</table>
-      </div>
-      <div style="padding:16px;display:flex;gap:10px">
-        <button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>
-        <button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>
+  const html = 
+    <div id="summaryModal" onclick="if(event.target===this)closeSummary()" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px">
+      <div style="background:#1e293b;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">
+        <div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">
+          <div style="font-weight:900;color:white;font-size:1.1em">Measurement Summary</div>
+          <button onclick="closeSummary()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">&#10005;</button>
+        </div>
+        <table style="width:100%;border-collapse:collapse">\</table>
+        <div style="background:#0f172a;padding:12px 16px;margin:0 0 0 0">
+          <div style="color:#f59e0b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Roof Area</div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Flat Area</span><span style="color:white;font-weight:600">\ sq ft</span></div>
+          <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Sloped Area</span><span style="color:white;font-weight:600">\ sq ft</span></div>
+          <div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #f59e0b"><span style="color:white;font-weight:700;font-size:1.05em">Total Squares</span><span style="color:#f59e0b;font-weight:900;font-size:1.2em">\ SQs</span></div>
+        </div>
+        <div style="background:#0f172a;padding:12px 16px;border-radius:0 0 0 0">
+          <div style="color:#64748b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">Waste Factor</div>
+          <table style="width:100%;border-collapse:collapse">\</table>
+        </div>
+        <div style="padding:16px;display:flex;gap:10px">
+          <button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>
+          <button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>
+        </div>
       </div>
     </div>
-  </div>`;
+  ;
   document.body.insertAdjacentHTML('beforeend', html);
 }
 function closeSummary() { document.getElementById('summaryModal')?.remove(); }
@@ -1562,9 +1276,7 @@ window.undoLast = function() {
 // Delay initial setMode so L.Draw is fully loaded
 window.addEventListener('load', () => {
   setTimeout(() => setMode('facet'), 200);
-  setTimeout(() => { if (typeof map !== 'undefined' && map) map.invalidateSize(true); }, 500);
 });
-} catch(e) { console.error('ROOFTRACE INIT ERROR:', e.message, e.stack); }
 </script>
 </body>
 </html>
