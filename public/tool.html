@@ -1248,20 +1248,29 @@ function detectAndFillFacet(snappedPt) {
   // Sort by area ascending — smallest closed polygon first (individual facets, not whole roof)
   candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
 
+  // Only take the single smallest new polygon per detection run
   for (const { polyPts, areaSqFt } of candidates) {
-    // Skip if already have a facet covering nearly the same area AND same approximate center
+    // Skip if center is already inside an existing facet (overlap check)
     const cx = polyPts.reduce((s,p) => s+p.lat, 0) / polyPts.length;
     const cy = polyPts.reduce((s,p) => s+p.lng, 0) / polyPts.length;
+
+    // Skip duplicates: same center AND similar area
     const duplicate = facets.some(f => {
       if (!f.layer || !f.layer.getLatLngs) return false;
-      const pts = f.layer.getLatLngs()[0] || [];
-      if (!pts.length) return false;
-      const fcx = pts.reduce((s,p) => s+p.lat, 0) / pts.length;
-      const fcy = pts.reduce((s,p) => s+p.lng, 0) / pts.length;
+      const pts = f.layer.getLatLngs()[0] || f.layer.getLatLngs() || [];
+      const flatPts = Array.isArray(pts[0]) ? pts[0] : pts;
+      if (!flatPts.length) return false;
+      const fcx = flatPts.reduce((s,p) => s+(p.lat||0), 0) / flatPts.length;
+      const fcy = flatPts.reduce((s,p) => s+(p.lng||0), 0) / flatPts.length;
       const dist = map.distance({lat:cx,lng:cy}, {lat:fcx,lng:fcy});
-      return dist < 5 && Math.abs((f.flatSqFt||0) - areaSqFt) < areaSqFt * 0.15;
+      // Duplicate if centers are close OR area is nearly identical
+      return dist < 3 || Math.abs((f.flatSqFt||0) - areaSqFt) < 20;
     });
     if (duplicate) continue;
+
+    // Skip if this polygon's area is close to sum of existing facets (composite polygon)
+    const totalExisting = facets.reduce((s,f) => s + (f.flatSqFt||0), 0);
+    if (facets.length > 0 && areaSqFt > totalExisting * 0.85) continue;
 
     // Create facet!
     const poly = L.polygon(polyPts, {
