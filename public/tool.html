@@ -1247,19 +1247,28 @@ function detectAndFillFacet(snappedPt) {
   // Sort by area ascending
   candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
 
-  // Filter out tiny slivers (< 200 sq ft) and huge composites (> 5000 sq ft)
-  // Find the "main" facet size by clustering areas
-  const valid = candidates.filter(c => c.areaSqFt >= 150);
+  // Remove only impossibly tiny slivers (< 20 sq ft) and very large composites
+  const valid = candidates.filter(c => c.areaSqFt >= 20);
   if (valid.length === 0) return;
 
-  // Find the median area of valid candidates to use as reference
-  const sorted = [...valid].sort((a,b) => a.areaSqFt - b.areaSqFt);
-  const medianArea = sorted[Math.floor(sorted.length / 2)].areaSqFt;
+  // Sort by size
+  valid.sort((a,b) => a.areaSqFt - b.areaSqFt);
 
-  // Only accept polygons within 0.2x to 5x of median — filters slivers and whole-roof composites
-  const inRange = valid.filter(c => c.areaSqFt >= medianArea * 0.2 && c.areaSqFt <= medianArea * 5);
+  // Filter out composites: a polygon whose area is close to the sum of 2+ smaller ones is composite
+  const toKeep = [];
+  for (const cand of valid) {
+    // Check if this area is approximately equal to sum of any 2 existing keepers
+    let isComposite = false;
+    for (let i = 0; i < toKeep.length && !isComposite; i++) {
+      for (let j = i; j < toKeep.length && !isComposite; j++) {
+        const pairSum = toKeep[i].areaSqFt + toKeep[j].areaSqFt;
+        if (Math.abs(cand.areaSqFt - pairSum) < pairSum * 0.12) isComposite = true;
+      }
+    }
+    if (!isComposite) toKeep.push(cand);
+  }
   candidates.length = 0;
-  inRange.forEach(c => candidates.push(c));
+  toKeep.forEach(c => candidates.push(c));
 
   // Only take the single smallest new polygon per detection run
   for (const { polyPts, areaSqFt } of candidates) {
