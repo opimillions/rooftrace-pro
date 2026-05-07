@@ -994,16 +994,34 @@ function generatePDF() {
   const btn = document.querySelector('.btn-report');
   if (btn) { btn.innerHTML = '⏳ Capturing...'; btn.disabled = true; }
 
-  // Try to capture map with leaflet-image, fall back to html2canvas
+  // Capture map using html2canvas (works with Google tiles)
   function doCapture(cb) {
-    if (window.leafletImage) {
+    if (typeof html2canvas !== 'undefined') {
+      // Pan map to fit all drawn layers
+      const allLayers = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+      const bounds = [];
+      allLayers.forEach(lg => lg.getLayers().forEach(l => {
+        try { const b = l.getBounds ? l.getBounds() : null; if (b) bounds.push(b); } catch(e){}
+      }));
+      if (bounds.length) {
+        const combined = bounds.reduce((acc, b) => acc.extend(b));
+        map.fitBounds(combined, { padding: [40, 40] });
+      }
+      setTimeout(() => {
+        html2canvas(document.getElementById('map'), {
+          useCORS: true,
+          allowTaint: true,
+          scale: 2,
+          logging: false
+        }).then(c => cb(c.toDataURL('image/jpeg', 0.9)))
+          .catch(() => cb(null));
+      }, 800); // wait for map to settle after fitBounds
+    } else if (window.leafletImage) {
       leafletImage(map, function(err, canvas) {
         cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
       });
     } else {
-      html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true })
-        .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
-        .catch(() => cb(null));
+      cb(null);
     }
   }
 
