@@ -1127,7 +1127,7 @@ function buildPDF(mapImageDataUrl) {
 }
 
 // ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
-const MERGE_M = 25; // meters to consider points the same vertex (generous for real-world use)
+const MERGE_M = 1.5; // meters to consider points the same vertex (tight — only truly snapped points merge)
 
 function buildGraph() {
   const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
@@ -1299,7 +1299,7 @@ function autoCompleteFacets() {
   }
 
   // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = 25; // meters — generous snap tolerance for field use
+  const MERGE_DIST = 1.5; // meters — tight snap tolerance, only truly connected endpoints merge
   const vertices = [];
 
   function findOrAddVertex(latlng) {
