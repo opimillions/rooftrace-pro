@@ -1190,10 +1190,12 @@ function findAllSimpleCycles(verts, adj) {
 
 function detectAndFillFacet(snappedPt) {
   const { verts, adj } = buildGraph();
-  if (verts.length < 3) return;
+  console.log('detectAndFillFacet: verts=', verts.length, 'adj keys=', Object.keys(adj).length);
+  if (verts.length < 3) { console.log('not enough verts'); return; }
 
   // Find all simple cycles
   const cycles = findAllSimpleCycles(verts, adj);
+  console.log('cycles found:', cycles.length, cycles.map(c=>c.vids.length+'pts'));
   if (!cycles.length) return;
 
   // Calculate area for each cycle, collect valid ones
@@ -1217,7 +1219,8 @@ function detectAndFillFacet(snappedPt) {
         return areaM2 * 10.7639; // sq meters to sq feet
       }
       const areaSqFt = geodesicAreaSqFt(polyPts);
-      if (areaSqFt < 30 || areaSqFt > 50000) continue;
+      console.log('candidate area sqft:', areaSqFt.toFixed(0));
+      if (areaSqFt < 30 || areaSqFt > 50000) { console.log('skipped - out of range'); continue; }
       candidates.push({ polyPts, areaSqFt });
     } catch(e) { console.warn('area calc error', e); }
   }
