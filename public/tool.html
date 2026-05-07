@@ -1244,15 +1244,22 @@ function detectAndFillFacet(snappedPt) {
     } catch(e) { console.warn('area calc error', e); }
   }
 
-  // Sort by area ascending — smallest closed polygon first (individual facets, not whole roof)
+  // Sort by area ascending
   candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
 
-  // Only consider polygons up to 3x the smallest candidate area
-  // This prevents large composite polygons from being created
-  const minArea = candidates.length > 0 ? candidates[0].areaSqFt : 0;
-  const filtered = candidates.filter(c => c.areaSqFt <= minArea * 3.5);
+  // Filter out tiny slivers (< 200 sq ft) and huge composites (> 5000 sq ft)
+  // Find the "main" facet size by clustering areas
+  const valid = candidates.filter(c => c.areaSqFt >= 150);
+  if (valid.length === 0) return;
+
+  // Find the median area of valid candidates to use as reference
+  const sorted = [...valid].sort((a,b) => a.areaSqFt - b.areaSqFt);
+  const medianArea = sorted[Math.floor(sorted.length / 2)].areaSqFt;
+
+  // Only accept polygons within 0.2x to 5x of median — filters slivers and whole-roof composites
+  const inRange = valid.filter(c => c.areaSqFt >= medianArea * 0.2 && c.areaSqFt <= medianArea * 5);
   candidates.length = 0;
-  filtered.forEach(c => candidates.push(c));
+  inRange.forEach(c => candidates.push(c));
 
   // Only take the single smallest new polygon per detection run
   for (const { polyPts, areaSqFt } of candidates) {
