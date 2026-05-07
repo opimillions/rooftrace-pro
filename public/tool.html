@@ -1066,23 +1066,24 @@ function detectAndFillFacet(snappedPt) {
     const polyPts = vids.map(i => verts[i]);
     if (polyPts.length < 3) continue;
     try {
-      const ring = [...polyPts.map(p => [p.lng, p.lat]), [polyPts[0].lng, polyPts[0].lat]];
-      let areaSqFt;
-      if (typeof turf !== 'undefined' && turf.area) {
-        areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
-      } else {
+      // Geodesic Shoelace formula — works without turf, accurate for small polygons
+      function geodesicAreaSqFt(pts) {
+        const R = 6378137; // Earth radius meters
         let area = 0;
-        for (let i = 0; i < polyPts.length; i++) {
-          const j = (i + 1) % polyPts.length;
-          const xi = map.project(polyPts[i]).x, yi = map.project(polyPts[i]).y;
-          const xj = map.project(polyPts[j]).x, yj = map.project(polyPts[j]).y;
-          area += xi * yj - xj * yi;
+        for (let i = 0; i < pts.length; i++) {
+          const j = (i + 1) % pts.length;
+          const lat1 = pts[i].lat * Math.PI / 180;
+          const lat2 = pts[j].lat * Math.PI / 180;
+          const dLng = (pts[j].lng - pts[i].lng) * Math.PI / 180;
+          area += dLng * (2 + Math.sin(lat1) + Math.sin(lat2));
         }
-        areaSqFt = Math.abs(area / 2) * 0.092903 * 10.7639;
+        const areaM2 = Math.abs(area * R * R / 2);
+        return areaM2 * 10.7639; // sq meters to sq feet
       }
-      if (areaSqFt < 30 || areaSqFt > 15000) continue;
+      const areaSqFt = geodesicAreaSqFt(polyPts);
+      if (areaSqFt < 30 || areaSqFt > 50000) continue;
       candidates.push({ polyPts, areaSqFt });
-    } catch(e) {}
+    } catch(e) { console.warn('area calc error', e); }
   }
 
   // Sort by area ascending — smallest closed polygon first (individual facets, not whole roof)
