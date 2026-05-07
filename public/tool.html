@@ -1131,6 +1131,8 @@ const MERGE_M = 25; // meters to consider points the same vertex (generous for r
 
 function buildGraph() {
   const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+  const counts = [ridgeLayer,hipLayer,valleyLayer,dripLayer,eavesLayer,rakeLayer].map(l=>l.getLayers().length);
+  console.log('buildGraph layer counts [ridge,hip,valley,drip,eave,rake]:', counts);
   const verts = [];
 
   function vidOf(ll) {
