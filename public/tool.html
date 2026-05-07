@@ -823,19 +823,36 @@ function clearAllLayers() {
 // ── PDF Report ────────────────────────────────────────────────────────────────
 function generatePDF() {
   const btn = document.querySelector('.btn-report');
-  if (btn) { btn.innerHTML = '⏳ Capturing...'; btn.disabled = true; }
+  if (btn) { btn.innerHTML = '⏳ Loading tiles...'; btn.disabled = true; }
 
-  // Try to capture map with leaflet-image, fall back to html2canvas
+  // Fit map to all drawn features first, then wait for tiles
+  const allFacets = facetLayer.getLayers();
+  if (allFacets.length > 0) {
+    const bounds = L.featureGroup(allFacets).getBounds().pad(0.15);
+    map.fitBounds(bounds);
+  }
+
   function doCapture(cb) {
-    if (window.leafletImage) {
-      leafletImage(map, function(err, canvas) {
-        cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
-      });
-    } else {
-      html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true })
-        .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
-        .catch(() => cb(null));
-    }
+    if (btn) btn.innerHTML = '⏳ Capturing map...';
+    // Wait for tiles to render after fitBounds
+    setTimeout(() => {
+      if (window.leafletImage) {
+        leafletImage(map, function(err, canvas) {
+          if (!err && canvas.width > 10) {
+            cb(canvas.toDataURL('image/jpeg', 0.9));
+          } else {
+            // Fallback: html2canvas
+            html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true, logging:false })
+              .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
+              .catch(() => cb(null));
+          }
+        });
+      } else {
+        html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true, logging:false })
+          .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
+          .catch(() => cb(null));
+      }
+    }, 1500); // Wait 1.5s for tiles to load after fitBounds
   }
 
   doCapture(function(mapImg) {
@@ -1000,7 +1017,7 @@ function findAllSimpleCycles(verts, adj) {
     const neighbors = adj[current] || [];
     for (const next of neighbors) {
       if (next === start && path.length >= 3) {
-        // Found a cycle � store it with canonical key to avoid duplicates
+        // Found a cycle � store it with canonical key to avoid duplicates
         const sorted = [...path].sort((a,b)=>a-b).join(',');
         if (!cycles.some(c => c.key === sorted)) {
           cycles.push({ key: sorted, vids: [...path] });
