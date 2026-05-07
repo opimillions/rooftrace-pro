@@ -1005,17 +1005,32 @@ function generatePDF() {
       }));
       if (bounds.length) {
         const combined = bounds.reduce((acc, b) => acc.extend(b));
-        map.fitBounds(combined, { padding: [40, 40] });
+        map.fitBounds(combined, { padding: [60, 60], maxZoom: 21 });
       }
+      // Hide layer control for clean capture
+      const layerCtrl = document.querySelector('.leaflet-control-layers');
+      if (layerCtrl) layerCtrl.style.display = 'none';
+      const zoomCtrl = document.querySelector('.leaflet-control-zoom');
+      if (zoomCtrl) zoomCtrl.style.display = 'none';
+
       setTimeout(() => {
         html2canvas(document.getElementById('map'), {
           useCORS: true,
           allowTaint: true,
-          scale: 2,
-          logging: false
-        }).then(c => cb(c.toDataURL('image/jpeg', 0.9)))
-          .catch(() => cb(null));
-      }, 800); // wait for map to settle after fitBounds
+          scale: 1.5,
+          logging: false,
+          ignoreElements: el => el.classList && (el.classList.contains('leaflet-control-container'))
+        }).then(c => {
+          // Restore controls
+          if (layerCtrl) layerCtrl.style.display = '';
+          if (zoomCtrl) zoomCtrl.style.display = '';
+          cb(c.toDataURL('image/jpeg', 0.9));
+        }).catch(() => {
+          if (layerCtrl) layerCtrl.style.display = '';
+          if (zoomCtrl) zoomCtrl.style.display = '';
+          cb(null);
+        });
+      }, 1500); // wait longer for map tiles to load after fitBounds
     } else if (window.leafletImage) {
       leafletImage(map, function(err, canvas) {
         cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
@@ -1046,10 +1061,10 @@ function buildPDF(mapImageDataUrl) {
   // Header
   doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
   doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
-  doc.text('First Call Public Adjusters', M, 28);
+  doc.text('RoofTrace Pro', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
-  doc.text('Aerial Roof Measurement Report  |  TX #1921679 | OK #3000772279 | CO #906301 | (817) 618-9884', M, 44);
-  doc.text('thepublicadjustertx.com', M, 57);
+  doc.text('Aerial Roof Measurement Report  |  Powered by Licensed Public Adjusters', M, 44);
+  doc.text('rooftracepro.thepublicadjustertx.com', M, 57);
 
   // Property info
   doc.setTextColor(30,30,30); doc.setFontSize(9);
