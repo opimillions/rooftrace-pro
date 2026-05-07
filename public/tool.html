@@ -1262,22 +1262,22 @@ function detectAndFillFacet(snappedPt) {
   // Sort by area ascending
   candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
 
-  // Remove only impossibly tiny slivers (< 20 sq ft) and very large composites
+  // Remove impossibly tiny slivers (< 20 sq ft)
   const valid = candidates.filter(c => c.areaSqFt >= 20);
   if (valid.length === 0) return;
 
-  // Sort by size
+  // Sort by size ascending
   valid.sort((a,b) => a.areaSqFt - b.areaSqFt);
 
-  // Filter out composites: a polygon whose area is close to the sum of 2+ smaller ones is composite
+  // Only check composite against "real" facets (> 80 sq ft) to avoid slivers polluting the check
   const toKeep = [];
   for (const cand of valid) {
-    // Check if this area is approximately equal to sum of any 2 existing keepers
+    const realKeepers = toKeep.filter(k => k.areaSqFt >= 80);
     let isComposite = false;
-    for (let i = 0; i < toKeep.length && !isComposite; i++) {
-      for (let j = i; j < toKeep.length && !isComposite; j++) {
-        const pairSum = toKeep[i].areaSqFt + toKeep[j].areaSqFt;
-        if (Math.abs(cand.areaSqFt - pairSum) < pairSum * 0.12) isComposite = true;
+    for (let i = 0; i < realKeepers.length && !isComposite; i++) {
+      for (let j = i; j < realKeepers.length && !isComposite; j++) {
+        const pairSum = realKeepers[i].areaSqFt + realKeepers[j].areaSqFt;
+        if (Math.abs(cand.areaSqFt - pairSum) < pairSum * 0.10) isComposite = true;
       }
     }
     if (!isComposite) toKeep.push(cand);
@@ -1301,7 +1301,8 @@ function detectAndFillFacet(snappedPt) {
       const fcy = flatPts.reduce((s,p) => s+(p.lng||0), 0) / flatPts.length;
       const dist = map.distance({lat:cx,lng:cy}, {lat:fcx,lng:fcy});
       // Duplicate if centers are close OR area is nearly identical
-      return dist < 3 || Math.abs((f.flatSqFt||0) - areaSqFt) < 20;
+      // Only duplicate if center is very close (same polygon) AND area is nearly identical
+      return dist < 2 && Math.abs((f.flatSqFt||0) - areaSqFt) < areaSqFt * 0.05;
     });
     if (duplicate) continue;
 
