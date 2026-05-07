@@ -1180,16 +1180,15 @@ function buildGraph() {
 }
 
 function findAllSimpleCycles(verts, adj) {
-  // Find all simple cycles of length 3-7 using DFS
+  // Find all simple cycles of length 3-6 using DFS (max 6 vertices = complex hip roofs)
   const cycles = [];
   const n = verts.length;
 
   function dfs(start, current, path) {
-    if (path.length > 7) return;
+    if (path.length > 6) return; // max 6 vertices per facet
     const neighbors = adj[current] || [];
     for (const next of neighbors) {
       if (next === start && path.length >= 3) {
-        // Found a cycle � store it with canonical key to avoid duplicates
         const sorted = [...path].sort((a,b)=>a-b).join(',');
         if (!cycles.some(c => c.key === sorted)) {
           cycles.push({ key: sorted, vids: [...path] });
@@ -1247,6 +1246,13 @@ function detectAndFillFacet(snappedPt) {
 
   // Sort by area ascending — smallest closed polygon first (individual facets, not whole roof)
   candidates.sort((a, b) => a.areaSqFt - b.areaSqFt);
+
+  // Only consider polygons up to 3x the smallest candidate area
+  // This prevents large composite polygons from being created
+  const minArea = candidates.length > 0 ? candidates[0].areaSqFt : 0;
+  const filtered = candidates.filter(c => c.areaSqFt <= minArea * 3.5);
+  candidates.length = 0;
+  filtered.forEach(c => candidates.push(c));
 
   // Only take the single smallest new polygon per detection run
   for (const { polyPts, areaSqFt } of candidates) {
