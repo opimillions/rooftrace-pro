@@ -586,11 +586,7 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
-    // Check both endpoints for closed facets
-    setTimeout(() => {
-      detectAndFillFacet(snappedPt);
-      if (lineStartPt) detectAndFillFacet(lineStartPt);
-    }, 150);
+    // Auto-detect disabled — use Auto-Complete Facets button for clean control
   }
 });
 
@@ -1207,44 +1203,38 @@ function autoCompleteFacets() {
   // Sort largest first
   scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
 
-  // Build a set of perimeter edges (eaves, drip, rake) — real facets must include at least one
-  const perimSources = [eavesLayer, dripLayer, rakeLayer];
-  const perimEdges = new Set();
-  perimSources.forEach(lg => {
-    lg.getLayers().forEach(l => {
-      let raw = l.getLatLngs();
-      if (raw.length > 0 && Array.isArray(raw[0])) raw = raw[0];
-      if (raw.length < 2) return;
-      // Find which vertex ids these correspond to
-      const va = verts.findIndex(v => v.distanceTo(L.latLng(raw[0])) < MERGE_M);
-      const vb = verts.findIndex(v => v.distanceTo(L.latLng(raw[raw.length-1])) < MERGE_M);
-      if (va >= 0 && vb >= 0 && va !== vb) {
-        perimEdges.add(Math.min(va,vb)+','+Math.max(va,vb));
-      }
-    });
-  });
-  console.log('[AutoComplete] perimeter edges:', [...perimEdges]);
+  // Keep only non-overlapping facets:
+  // A cycle is "interior only" if ALL its edges are shared with other cycles (ridge/hip only)
+  // Strategy: build edge usage count — perimeter edges appear in exactly ONE cycle
+  const edgeCount = {};
+  for (const c of scored) {
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1) % c.vids.length];
+      const key = Math.min(a,b)+','+Math.max(a,b);
+      edgeCount[key] = (edgeCount[key]||0) + 1;
+    }
+  }
 
-  function cycleHasPerimEdge(vids) {
-    if (perimEdges.size === 0) return true; // if no perimeter drawn, don't filter
+  // A real boundary facet has at least one edge that appears in only ONE cycle (outer edge)
+  function hasBoundaryEdge(vids) {
     for (let i = 0; i < vids.length; i++) {
       const a = vids[i], b = vids[(i+1) % vids.length];
-      if (perimEdges.has(Math.min(a,b)+','+Math.max(a,b))) return true;
+      const key = Math.min(a,b)+','+Math.max(a,b);
+      if ((edgeCount[key]||0) === 1) return true;
     }
     return false;
   }
 
-  // Keep largest non-overlapping cycles that touch the perimeter
   const accepted = [];
   for (const c of scored) {
-    const vidSet = new Set(c.vids);
-    // Must include a perimeter edge
-    if (!cycleHasPerimEdge(c.vids)) continue;
+    // Must have at least one boundary edge (not interior-only)
+    if (!hasBoundaryEdge(c.vids)) continue;
     // Skip near-duplicate areas (within 5%)
     const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.05);
     if (isDup) continue;
-    accepted.push({ ...c, vidSet });
+    accepted.push({ ...c, vidSet: new Set(c.vids) });
   }
+  console.log('[AutoComplete] accepted after boundary filter:', accepted.length);
 
   let added = 0;
   for (const { vids, areaSqFt } of accepted) {
