@@ -1013,7 +1013,7 @@ function buildPDF(mapImageDataUrl, satelliteImgUrl) {
 }
 
 // ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
-const MERGE_M = 20; // meters to consider points the same vertex (generous for real-world use)
+const MERGE_M = 1.5; // meters to consider points the same vertex - must be SMALL or all pts merge to one
 
 function buildGraph() {
   const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
