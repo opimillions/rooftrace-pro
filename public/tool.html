@@ -1201,8 +1201,8 @@ function autoCompleteFacets(silent) {
 
   console.log('[AutoComplete] valid facets after area filter:', scored.length);
 
-  // Sort largest first
-  scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
+  // Sort SMALLEST first — real facets are the minimal faces, not the large composite polygons
+  scored.sort((a,b) => a.areaSqFt - b.areaSqFt);
 
   // Greedy non-overlapping cover:
   // Accept cycles whose vertex sets don't heavily overlap already-accepted cycles.
