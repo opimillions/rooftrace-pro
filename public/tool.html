@@ -1253,7 +1253,7 @@ function autoCompleteFacets(silent) {
     accepted.push({ ...c, vidSet: new Set(c.vids) });
   }
   console.log('[AutoComplete] accepted after greedy cover:', accepted.length, 'covering', coveredEdges.size, 'of', allEdges.size, 'edges');
-  alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
+  console.log('[AutoComplete] debug: scored=' + scored.length + ' accepted=' + accepted.length + ' cycles=' + cycles.length + ' verts=' + verts.length);
 
   // Clear existing auto-detected facets before redrawing
   facets.forEach(f => facetLayer.removeLayer(f.layer));
