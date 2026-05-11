@@ -1224,6 +1224,7 @@ function autoCompleteFacets() {
     accepted.push({ ...c, vidSet });
   }
   console.log('[AutoComplete] accepted after vertex-overlap filter:', accepted.length);
+  alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
 
   let added = 0;
   for (const { vids, areaSqFt } of accepted) {
