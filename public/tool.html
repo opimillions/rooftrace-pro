@@ -1215,14 +1215,14 @@ function autoCompleteFacets() {
 
     if (unionSoFar) {
       try {
-        const intersection = turf.intersect(turf.featureCollection([unionSoFar, turfPoly]));
+        const intersection = turf.intersect(unionSoFar, turfPoly);
         if (intersection) {
           const overlapSqFt = turf.area(intersection) * 10.7639;
           const overlapPct = overlapSqFt / c.areaSqFt;
           console.log('[AutoComplete] overlap with existing:', overlapPct.toFixed(2));
           if (overlapPct > 0.3) continue; // skip if >30% overlaps existing facets
         }
-        unionSoFar = turf.union(turf.featureCollection([unionSoFar, turfPoly]));
+        unionSoFar = turf.union(unionSoFar, turfPoly);
       } catch(e) { unionSoFar = turfPoly; }
     } else {
       unionSoFar = turfPoly;
