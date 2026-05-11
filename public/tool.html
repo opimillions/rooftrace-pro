@@ -1207,23 +1207,40 @@ function autoCompleteFacets() {
   // Accept cycles whose vertex sets don't heavily overlap already-accepted cycles.
   // A cycle is redundant if >50% of its vertices already appear in an accepted cycle
   // AND it is smaller than that cycle (i.e. it's a sub-face).
+  // Track which edges are already "used" by accepted facets.
+  // An edge can only belong to 2 facets max (shared between adjacent facets).
+  // Reject a cycle if ALL its edges are already used twice (pure interior).
+  const edgeUseCount = {};
   const accepted = [];
+
   for (const c of scored) {
     const vidSet = new Set(c.vids);
-    let redundant = false;
-    for (const a of accepted) {
-      const shared = c.vids.filter(v => a.vidSet.has(v)).length;
-      const pct = shared / c.vids.length;
-      // If this cycle shares >60% of its vertices with a LARGER accepted cycle, skip it
-      if (pct > 0.6 && a.areaSqFt > c.areaSqFt) { redundant = true; break; }
+
+    // Check if all edges of this cycle are already used 2+ times
+    let allEdgesSaturated = true;
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      if ((edgeUseCount[k]||0) < 2) { allEdgesSaturated = false; break; }
     }
-    if (redundant) { console.log('[AutoComplete] skip redundant cycle:', c.vids.join(',')); continue; }
+    if (allEdgesSaturated && accepted.length > 0) {
+      console.log('[AutoComplete] skip saturated cycle:', c.vids.join(','));
+      continue;
+    }
+
     // Skip near-duplicate areas (within 8%)
     const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.08);
     if (isDup) continue;
+
+    // Accept — mark its edges as used
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      edgeUseCount[k] = (edgeUseCount[k]||0)+1;
+    }
     accepted.push({ ...c, vidSet });
   }
-  console.log('[AutoComplete] accepted after vertex-overlap filter:', accepted.length);
+  console.log('[AutoComplete] accepted after edge-saturation filter:', accepted.length);
   alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
 
   let added = 0;
