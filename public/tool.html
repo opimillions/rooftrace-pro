@@ -586,7 +586,8 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
-    // Auto-detect disabled — use Auto-Complete Facets button for clean control
+    // Auto-detect on each completed line
+    setTimeout(() => autoCompleteFacets(true), 200);
   }
 });
 
@@ -1153,7 +1154,7 @@ function calcPerimeter() {
 window.calcPerimeter = calcPerimeter;
 
 // ── Auto-Complete Facets from connected lines ─────────────────────────────
-function autoCompleteFacets() {
+function autoCompleteFacets(silent) {
   // Use the same buildGraph() used by detectAndFillFacet — most reliable approach
   const { verts, adj } = buildGraph();
 
@@ -1252,7 +1253,12 @@ function autoCompleteFacets() {
     accepted.push({ ...c, vidSet: new Set(c.vids) });
   }
   console.log('[AutoComplete] accepted after greedy cover:', accepted.length, 'covering', coveredEdges.size, 'of', allEdges.size, 'edges');
+  if (!silent) alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
   alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
+
+  // Clear existing auto-detected facets before redrawing
+  facets.forEach(f => facetLayer.removeLayer(f.layer));
+  facets.length = 0;
 
   let added = 0;
   for (const { vids, areaSqFt } of accepted) {
@@ -1265,10 +1271,12 @@ function autoCompleteFacets() {
     added++;
   }
 
-  if (added === 0) {
-    document.getElementById('modeHint').textContent = '⚠️ No valid facets detected. Check browser console (F12) for details.';
-  } else {
-    document.getElementById('modeHint').textContent = '✅ Auto-detected ' + added + ' facet(s)! Adjust pitch values in the sidebar.';
+  if (!silent) {
+    if (added === 0) {
+      document.getElementById('modeHint').textContent = '⚠️ No valid facets detected. Check browser console (F12) for details.';
+    } else {
+      document.getElementById('modeHint').textContent = '✅ Auto-detected ' + added + ' facet(s)! Adjust pitch values in the sidebar.';
+    }
   }
   renderFacets();
 }
