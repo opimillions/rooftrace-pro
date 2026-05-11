@@ -1203,41 +1203,27 @@ function autoCompleteFacets() {
   // Sort largest first
   scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
 
-  // Find the minimum face cover:
-  // Count how many scored cycles each EDGE appears in.
-  // An edge that appears in exactly 1 cycle = outer boundary edge.
-  // A valid facet MUST contain at least one outer boundary edge.
-  // This correctly filters interior sub-triangles formed by ridge+hip intersections.
-  const edgeUsage = {};
-  for (const c of scored) {
-    for (let i = 0; i < c.vids.length; i++) {
-      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
-      const k = Math.min(a,b)+':'+Math.max(a,b);
-      edgeUsage[k] = (edgeUsage[k]||0)+1;
-    }
-  }
-  console.log('[AutoComplete] edge usage:', JSON.stringify(edgeUsage));
-
-  // Outer edges appear in exactly 1 cycle among ALL scored cycles
-  const outerEdges = new Set(Object.keys(edgeUsage).filter(k => edgeUsage[k] === 1));
-  console.log('[AutoComplete] outer edges:', outerEdges.size);
-
+  // Greedy non-overlapping cover:
+  // Accept cycles whose vertex sets don't heavily overlap already-accepted cycles.
+  // A cycle is redundant if >50% of its vertices already appear in an accepted cycle
+  // AND it is smaller than that cycle (i.e. it's a sub-face).
   const accepted = [];
   for (const c of scored) {
-    // Check if this cycle has at least one outer edge
-    let hasOuter = false;
-    for (let i = 0; i < c.vids.length; i++) {
-      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
-      const k = Math.min(a,b)+':'+Math.max(a,b);
-      if (outerEdges.has(k)) { hasOuter = true; break; }
+    const vidSet = new Set(c.vids);
+    let redundant = false;
+    for (const a of accepted) {
+      const shared = c.vids.filter(v => a.vidSet.has(v)).length;
+      const pct = shared / c.vids.length;
+      // If this cycle shares >60% of its vertices with a LARGER accepted cycle, skip it
+      if (pct > 0.6 && a.areaSqFt > c.areaSqFt) { redundant = true; break; }
     }
-    if (!hasOuter) { console.log('[AutoComplete] skip interior cycle:', c.vids.join(',')); continue; }
-    // Skip near-duplicate areas
-    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.05);
+    if (redundant) { console.log('[AutoComplete] skip redundant cycle:', c.vids.join(',')); continue; }
+    // Skip near-duplicate areas (within 8%)
+    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.08);
     if (isDup) continue;
-    accepted.push(c);
+    accepted.push({ ...c, vidSet });
   }
-  console.log('[AutoComplete] accepted after outer-edge filter:', accepted.length);
+  console.log('[AutoComplete] accepted after vertex-overlap filter:', accepted.length);
 
   let added = 0;
   for (const { vids, areaSqFt } of accepted) {
