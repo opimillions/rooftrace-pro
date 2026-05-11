@@ -1148,101 +1148,69 @@ window.calcPerimeter = calcPerimeter;
 
 // ── Auto-Complete Facets from connected lines ─────────────────────────────
 function autoCompleteFacets() {
-  // Collect all line segment endpoints from ridge, hip, valley, drip, eave, rake
-  const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
-  const segments = [];
+  // Use the same buildGraph() used by detectAndFillFacet — most reliable approach
+  const { verts, adj } = buildGraph();
 
-  lineSources.forEach(lg => {
-    lg.getLayers().forEach(l => {
-      const pts = l.getLatLngs();
-      if (pts.length >= 2) {
-        segments.push({ a: pts[0], b: pts[pts.length-1], layer: l });
-      }
-    });
-  });
+  console.log('[AutoComplete] verts:', verts.length, 'adj:', JSON.stringify(adj));
 
-  if (segments.length < 3) {
-    document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected segments to auto-complete a facet';
+  if (verts.length < 3) {
+    document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected line endpoints. Draw hips, ridge, and eaves first.';
     return;
   }
 
-  // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = MERGE_M; // use same threshold as global graph builder
-  const vertices = [];
-
-  function findOrAddVertex(latlng) {
-    for (let i = 0; i < vertices.length; i++) {
-      if (map.distance(vertices[i], latlng) < MERGE_DIST) return i;
-    }
-    vertices.push(latlng);
-    return vertices.length - 1;
-  }
-
-  const edges = segments.map(seg => ({
-    a: findOrAddVertex(seg.a),
-    b: findOrAddVertex(seg.b)
-  }));
-
-  // Build adjacency list
-  const adj = {};
-  edges.forEach(({ a, b }) => {
-    if (!adj[a]) adj[a] = [];
-    if (!adj[b]) adj[b] = [];
-    if (!adj[a].includes(b)) adj[a].push(b);
-    if (!adj[b].includes(a)) adj[b].push(a);
-  });
-
-  // Find cycles (closed polygons) using DFS
-  const foundPolygons = [];
-  const visited = new Set();
-
-  function dfs(start, current, path, depth) {
-    if (depth > 8) return; // max facet complexity
-    if (adj[current]) {
-      for (const next of adj[current]) {
-        if (next === start && path.length >= 3) {
-          // Found a closed polygon!
-          const poly = path.map(i => vertices[i]);
-          foundPolygons.push(poly);
-          return;
-        }
-        if (!path.includes(next)) {
-          dfs(start, next, [...path, next], depth + 1);
-        }
-      }
-    }
-  }
-
-  Object.keys(adj).forEach(v => {
-    dfs(parseInt(v), parseInt(v), [parseInt(v)], 0);
-  });
-
-  // Deduplicate polygons (same vertices, different order)
-  const unique = [];
-  foundPolygons.forEach(poly => {
-    const key = [...poly.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).sort()].join('|');
-    if (!unique.find(u => u.key === key)) {
-      unique.push({ key, poly });
-    }
-  });
-
-  if (unique.length === 0) {
-    document.getElementById('modeHint').textContent = '⚠️ No closed facets detected. Make sure all line endpoints are connected (use snap).';
+  // Check connectivity — warn if no vertex has 2+ connections
+  const connected = Object.keys(adj).filter(k => (adj[k]||[]).length >= 2);
+  console.log('[AutoComplete] vertices with 2+ connections:', connected.length);
+  if (connected.length < 3) {
+    document.getElementById('modeHint').textContent = '⚠️ Lines not connected. Endpoints must touch — zoom in and snap each line end to an existing point.';
     return;
   }
 
-  // Draw detected facets
+  const cycles = findAllSimpleCycles(verts, adj);
+  console.log('[AutoComplete] cycles found:', cycles.length);
+
+  if (!cycles.length) {
+    document.getElementById('modeHint').textContent = '⚠️ No closed loops found. Make sure all line segments form a closed shape.';
+    return;
+  }
+
+  // Score cycles by area, filter tiny ones
+  const scored = [];
+  for (const c of cycles) {
+    try {
+      const pts = c.vids.map(i => verts[i]);
+      const ring = [...pts.map(p => [p.lng, p.lat]), [pts[0].lng, pts[0].lat]];
+      const areaSqFt = turf.area(turf.polygon([ring])) * 10.7639;
+      if (areaSqFt > 80 && areaSqFt < 30000) scored.push({ vids: c.vids, areaSqFt });
+    } catch(e) { /* skip degenerate */ }
+  }
+
+  console.log('[AutoComplete] valid facets after area filter:', scored.length);
+
+  // Sort largest first, deduplicate by area similarity
+  scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
+  const used = [];
   let added = 0;
-  unique.forEach(({ poly }) => {
+
+  for (const { vids, areaSqFt } of scored) {
+    const isDup = used.some(u => Math.abs(u - areaSqFt) < areaSqFt * 0.08);
+    if (isDup) continue;
+    used.push(areaSqFt);
+
+    const poly = vids.map(i => verts[i]);
     const leafPoly = L.polygon(poly, {
       color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.22, weight: 2.5
     });
     facetLayer.addLayer(leafPoly);
     addFacet(leafPoly);
     added++;
-  });
+  }
 
-  document.getElementById('modeHint').textContent = `✅ Auto-detected ${added} facet(s)! Check pitch values in the sidebar.`;
+  if (added === 0) {
+    document.getElementById('modeHint').textContent = '⚠️ No valid facets detected. Check browser console (F12) for details.';
+  } else {
+    document.getElementById('modeHint').textContent = '✅ Auto-detected ' + added + ' facet(s)! Adjust pitch values in the sidebar.';
+  }
   renderFacets();
 }
 window.autoCompleteFacets = autoCompleteFacets;
