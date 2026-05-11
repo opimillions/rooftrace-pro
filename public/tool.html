@@ -1203,38 +1203,33 @@ function autoCompleteFacets() {
   // Sort largest first
   scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
 
-  // Keep only non-overlapping facets:
-  // A cycle is "interior only" if ALL its edges are shared with other cycles (ridge/hip only)
-  // Strategy: build edge usage count — perimeter edges appear in exactly ONE cycle
-  const edgeCount = {};
-  for (const c of scored) {
-    for (let i = 0; i < c.vids.length; i++) {
-      const a = c.vids[i], b = c.vids[(i+1) % c.vids.length];
-      const key = Math.min(a,b)+','+Math.max(a,b);
-      edgeCount[key] = (edgeCount[key]||0) + 1;
-    }
-  }
-
-  // A real boundary facet has at least one edge that appears in only ONE cycle (outer edge)
-  function hasBoundaryEdge(vids) {
-    for (let i = 0; i < vids.length; i++) {
-      const a = vids[i], b = vids[(i+1) % vids.length];
-      const key = Math.min(a,b)+','+Math.max(a,b);
-      if ((edgeCount[key]||0) === 1) return true;
-    }
-    return false;
-  }
-
+  // Use Turf to check overlap: greedily accept cycles that don't significantly overlap already-accepted ones
   const accepted = [];
+  let unionSoFar = null;
+
   for (const c of scored) {
-    // Must have at least one boundary edge (not interior-only)
-    if (!hasBoundaryEdge(c.vids)) continue;
-    // Skip near-duplicate areas (within 5%)
-    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.05);
-    if (isDup) continue;
-    accepted.push({ ...c, vidSet: new Set(c.vids) });
+    const pts = c.vids.map(i => verts[i]);
+    const ring = [...pts.map(p => [p.lng, p.lat]), [pts[0].lng, pts[0].lat]];
+    let turfPoly;
+    try { turfPoly = turf.polygon([ring]); } catch(e) { continue; }
+
+    if (unionSoFar) {
+      try {
+        const intersection = turf.intersect(turf.featureCollection([unionSoFar, turfPoly]));
+        if (intersection) {
+          const overlapSqFt = turf.area(intersection) * 10.7639;
+          const overlapPct = overlapSqFt / c.areaSqFt;
+          console.log('[AutoComplete] overlap with existing:', overlapPct.toFixed(2));
+          if (overlapPct > 0.3) continue; // skip if >30% overlaps existing facets
+        }
+        unionSoFar = turf.union(turf.featureCollection([unionSoFar, turfPoly]));
+      } catch(e) { unionSoFar = turfPoly; }
+    } else {
+      unionSoFar = turfPoly;
+    }
+    accepted.push({ ...c, turfPoly });
   }
-  console.log('[AutoComplete] accepted after boundary filter:', accepted.length);
+  console.log('[AutoComplete] accepted after overlap filter:', accepted.length);
 
   let added = 0;
   for (const { vids, areaSqFt } of accepted) {
