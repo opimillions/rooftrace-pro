@@ -829,57 +829,41 @@ function generatePDF() {
     map.fitBounds(bounds);
   }
 
-  function doCapture(cb) {
-    if (btn) btn.innerHTML = '⏳ Capturing map...';
-    // Wait for tiles to render after fitBounds
-    setTimeout(() => {
-      if (window.leafletImage) {
-        leafletImage(map, function(err, canvas) {
-          if (!err && canvas.width > 10) {
-            cb(canvas.toDataURL('image/jpeg', 0.9));
-          } else {
-            // Fallback: html2canvas
-            html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true, logging:false })
-              .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
-              .catch(() => cb(null));
-          }
-        });
-      } else {
-        html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true, logging:false })
-          .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
-          .catch(() => cb(null));
-      }
-    }, 1500); // Wait 1.5s for tiles to load after fitBounds
-  }
+  const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
 
-  // Capture TWO images: 1) satellite only, 2) with tracings
-  function captureSatelliteOnly(cb) {
-    // Temporarily hide all drawn layers
-    const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
-    layersToHide.forEach(l => map.removeLayer(l));
-    setTimeout(() => {
+  // Step 1: capture WITH tracings using html2canvas (captures SVG overlays)
+  setTimeout(() => {
+    if (btn) btn.innerHTML = '⏳ Capturing tracings...';
+    html2canvas(document.getElementById('map'), {
+      useCORS: true, allowTaint: true, logging: false,
+      foreignObjectRendering: false
+    }).then(tracingCanvas => {
+      const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.88);
+
+      // Step 2: hide tracings, wait a frame, capture satellite only
+      layersToHide.forEach(l => map.removeLayer(l));
       if (btn) btn.innerHTML = '⏳ Capturing satellite...';
-      if (window.leafletImage) {
-        leafletImage(map, function(err, canvas) {
+      setTimeout(() => {
+        html2canvas(document.getElementById('map'), {
+          useCORS: true, allowTaint: true, logging: false,
+          foreignObjectRendering: false
+        }).then(satCanvas => {
           // Restore layers
           layersToHide.forEach(l => map.addLayer(l));
-          cb(err ? null : canvas.toDataURL('image/jpeg', 0.9));
+          const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.88);
+          buildPDF(tracingImg, satelliteImg);
+          if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+        }).catch(() => {
+          layersToHide.forEach(l => map.addLayer(l));
+          buildPDF(tracingImg, null);
+          if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
         });
-      } else {
-        layersToHide.forEach(l => map.addLayer(l));
-        cb(null);
-      }
-    }, 800);
-  }
-
-  doCapture(function(tracingImg) {
-    if (btn) btn.innerHTML = '⏳ Capturing satellite...';
-    // Now capture satellite without tracings
-    captureSatelliteOnly(function(satelliteImg) {
-      buildPDF(tracingImg, satelliteImg);
+      }, 600);
+    }).catch(() => {
+      buildPDF(null, null);
       if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
     });
-  });
+  }, 1800); // Wait for tiles after fitBounds
 }
 
 function buildPDF(mapImageDataUrl, satelliteImgUrl) {
