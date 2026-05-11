@@ -1030,9 +1030,13 @@ function buildGraph() {
   const adj = {};
   lineSources.forEach(lg => {
     lg.getLayers().forEach(l => {
-      const pts = l.getLatLngs();
-      const a = vidOf(pts[0]);
-      const b = vidOf(pts[pts.length - 1]);
+      let raw = l.getLatLngs();
+      // Flatten nested arrays (Leaflet sometimes returns [[pt,pt,...]] instead of [pt,pt,...])
+      if (raw.length > 0 && Array.isArray(raw[0])) raw = raw[0];
+      if (raw.length < 2) return;
+      const a = vidOf(raw[0]);
+      const b = vidOf(raw[raw.length - 1]);
+      console.log('[buildGraph] seg:', raw[0].lat.toFixed(5), raw[0].lng.toFixed(5), '->', raw[raw.length-1].lat.toFixed(5), raw[raw.length-1].lng.toFixed(5), '=> verts', a, b);
       if (a !== b) {
         if (!adj[a]) adj[a] = [];
         if (!adj[b]) adj[b] = [];
@@ -1042,6 +1046,7 @@ function buildGraph() {
     });
   });
 
+  console.log('[buildGraph] total verts:', verts.length, 'adj:', JSON.stringify(adj));
   return { verts, adj };
 }
 
@@ -1151,7 +1156,12 @@ function autoCompleteFacets() {
   // Use the same buildGraph() used by detectAndFillFacet — most reliable approach
   const { verts, adj } = buildGraph();
 
+  // Deep diagnostic: count layers
+  const diagCounts = {};
+  [['ridge',ridgeLayer],['hip',hipLayer],['valley',valleyLayer],['drip',dripLayer],['eaves',eavesLayer],['rake',rakeLayer]].forEach(([n,lg])=>{ diagCounts[n]=lg.getLayers().length; });
+  console.log('[AutoComplete] layer counts:', JSON.stringify(diagCounts));
   console.log('[AutoComplete] verts:', verts.length, 'adj:', JSON.stringify(adj));
+  alert('[Debug] Layers: ' + JSON.stringify(diagCounts) + '\nVerts: ' + verts.length + '\nAdj: ' + JSON.stringify(adj));
 
   if (verts.length < 3) {
     document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected line endpoints. Draw hips, ridge, and eaves first.';
