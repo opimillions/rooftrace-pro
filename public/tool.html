@@ -1207,15 +1207,41 @@ function autoCompleteFacets() {
   // Sort largest first
   scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
 
-  // Only keep cycles whose vertex set is NOT a subset of any already-accepted cycle
+  // Build a set of perimeter edges (eaves, drip, rake) — real facets must include at least one
+  const perimSources = [eavesLayer, dripLayer, rakeLayer];
+  const perimEdges = new Set();
+  perimSources.forEach(lg => {
+    lg.getLayers().forEach(l => {
+      let raw = l.getLatLngs();
+      if (raw.length > 0 && Array.isArray(raw[0])) raw = raw[0];
+      if (raw.length < 2) return;
+      // Find which vertex ids these correspond to
+      const va = verts.findIndex(v => v.distanceTo(L.latLng(raw[0])) < MERGE_M);
+      const vb = verts.findIndex(v => v.distanceTo(L.latLng(raw[raw.length-1])) < MERGE_M);
+      if (va >= 0 && vb >= 0 && va !== vb) {
+        perimEdges.add(Math.min(va,vb)+','+Math.max(va,vb));
+      }
+    });
+  });
+  console.log('[AutoComplete] perimeter edges:', [...perimEdges]);
+
+  function cycleHasPerimEdge(vids) {
+    if (perimEdges.size === 0) return true; // if no perimeter drawn, don't filter
+    for (let i = 0; i < vids.length; i++) {
+      const a = vids[i], b = vids[(i+1) % vids.length];
+      if (perimEdges.has(Math.min(a,b)+','+Math.max(a,b))) return true;
+    }
+    return false;
+  }
+
+  // Keep largest non-overlapping cycles that touch the perimeter
   const accepted = [];
   for (const c of scored) {
     const vidSet = new Set(c.vids);
-    // Skip if all vertices of this cycle are contained in an already accepted cycle
-    const isSubset = accepted.some(a => c.vids.every(v => a.vidSet.has(v)));
-    if (isSubset) continue;
-    // Skip near-duplicate areas (within 3%)
-    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.03);
+    // Must include a perimeter edge
+    if (!cycleHasPerimEdge(c.vids)) continue;
+    // Skip near-duplicate areas (within 5%)
+    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.05);
     if (isDup) continue;
     accepted.push({ ...c, vidSet });
   }
