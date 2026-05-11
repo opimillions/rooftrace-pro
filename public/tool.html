@@ -1204,16 +1204,24 @@ function autoCompleteFacets() {
 
   console.log('[AutoComplete] valid facets after area filter:', scored.length);
 
-  // Sort largest first, deduplicate by area similarity
+  // Sort largest first
   scored.sort((a,b) => b.areaSqFt - a.areaSqFt);
-  const used = [];
-  let added = 0;
 
-  for (const { vids, areaSqFt } of scored) {
-    const isDup = used.some(u => Math.abs(u - areaSqFt) < areaSqFt * 0.03);
+  // Only keep cycles whose vertex set is NOT a subset of any already-accepted cycle
+  const accepted = [];
+  for (const c of scored) {
+    const vidSet = new Set(c.vids);
+    // Skip if all vertices of this cycle are contained in an already accepted cycle
+    const isSubset = accepted.some(a => c.vids.every(v => a.vidSet.has(v)));
+    if (isSubset) continue;
+    // Skip near-duplicate areas (within 3%)
+    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.03);
     if (isDup) continue;
-    used.push(areaSqFt);
+    accepted.push({ ...c, vidSet });
+  }
 
+  let added = 0;
+  for (const { vids, areaSqFt } of accepted) {
     const poly = vids.map(i => verts[i]);
     const leafPoly = L.polygon(poly, {
       color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.22, weight: 2.5
