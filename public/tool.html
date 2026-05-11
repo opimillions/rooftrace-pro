@@ -1020,10 +1020,14 @@ function buildGraph() {
   const verts = [];
 
   function vidOf(ll) {
+    // Ensure we have a proper LatLng object
+    const pt = (ll instanceof L.LatLng) ? ll : L.latLng(ll.lat, ll.lng);
     for (let i = 0; i < verts.length; i++) {
-      if (map.distance(verts[i], ll) < MERGE_M) return i;
+      const v = (verts[i] instanceof L.LatLng) ? verts[i] : L.latLng(verts[i].lat, verts[i].lng);
+      const d = v.distanceTo(pt); // use Leaflet's own distanceTo, not map.distance
+      if (d < MERGE_M) return i;
     }
-    verts.push(ll);
+    verts.push(pt);
     return verts.length - 1;
   }
 
@@ -1036,7 +1040,8 @@ function buildGraph() {
       if (raw.length < 2) return;
       const a = vidOf(raw[0]);
       const b = vidOf(raw[raw.length - 1]);
-      console.log('[buildGraph] seg:', raw[0].lat.toFixed(5), raw[0].lng.toFixed(5), '->', raw[raw.length-1].lat.toFixed(5), raw[raw.length-1].lng.toFixed(5), '=> verts', a, b);
+      const distM = L.latLng(raw[0]).distanceTo(L.latLng(raw[raw.length-1]));
+      console.log('[buildGraph] seg:', raw[0].lat.toFixed(5), raw[0].lng.toFixed(5), '->', raw[raw.length-1].lat.toFixed(5), raw[raw.length-1].lng.toFixed(5), 'dist:', distM.toFixed(1)+'m', '=> verts', a, b);
       if (a !== b) {
         if (!adj[a]) adj[a] = [];
         if (!adj[b]) adj[b] = [];
