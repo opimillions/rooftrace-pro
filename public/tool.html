@@ -1163,7 +1163,7 @@ function autoCompleteFacets(silent) {
   [['ridge',ridgeLayer],['hip',hipLayer],['valley',valleyLayer],['drip',dripLayer],['eaves',eavesLayer],['rake',rakeLayer]].forEach(([n,lg])=>{ diagCounts[n]=lg.getLayers().length; });
   console.log('[AutoComplete] layer counts:', JSON.stringify(diagCounts));
   console.log('[AutoComplete] verts:', verts.length, 'adj:', JSON.stringify(adj));
-  alert('[Debug] Layers: ' + JSON.stringify(diagCounts) + '\nVerts: ' + verts.length + '\nAdj: ' + JSON.stringify(adj));
+  console.log('[AutoComplete] layer counts:', JSON.stringify(diagCounts));
 
   if (verts.length < 3) {
     document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected line endpoints. Draw hips, ridge, and eaves first.';
@@ -1240,7 +1240,7 @@ function autoCompleteFacets(silent) {
       if (!coveredEdges.has(k)) newEdges++;
     }
     // Only accept if it covers at least 2 new edges (not a pure sub-face)
-    if (newEdges < 2) { console.log('[AutoComplete] skip - only', newEdges, 'new edges:', c.vids.join(',')); continue; }
+    if (newEdges < 1) { console.log('[AutoComplete] skip - only', newEdges, 'new edges:', c.vids.join(',')); continue; }
     // Skip near-duplicate areas
     const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.08);
     if (isDup) continue;
@@ -1253,7 +1253,6 @@ function autoCompleteFacets(silent) {
     accepted.push({ ...c, vidSet: new Set(c.vids) });
   }
   console.log('[AutoComplete] accepted after greedy cover:', accepted.length, 'covering', coveredEdges.size, 'of', allEdges.size, 'edges');
-  if (!silent) alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
   alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
 
   // Clear existing auto-detected facets before redrawing
