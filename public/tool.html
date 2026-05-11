@@ -1207,40 +1207,51 @@ function autoCompleteFacets() {
   // Accept cycles whose vertex sets don't heavily overlap already-accepted cycles.
   // A cycle is redundant if >50% of its vertices already appear in an accepted cycle
   // AND it is smaller than that cycle (i.e. it's a sub-face).
-  // Track which edges are already "used" by accepted facets.
-  // An edge can only belong to 2 facets max (shared between adjacent facets).
-  // Reject a cycle if ALL its edges are already used twice (pure interior).
-  const edgeUseCount = {};
+  // Find the minimum planar face cover using a greedy approach:
+  // 1. Build edge->cycle map
+  // 2. Repeatedly pick the cycle that covers the most uncovered edges
+  // 3. Stop when all edges are covered or no progress
+  const allEdges = new Set();
+  const edgeToCycles = {};
+  scored.forEach((c, ci) => {
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      allEdges.add(k);
+      if (!edgeToCycles[k]) edgeToCycles[k] = [];
+      edgeToCycles[k].push(ci);
+    }
+  });
+
+  // Each graph edge should be covered by exactly 1 or 2 faces
+  // Use greedy set cover: pick cycles that cover new edges
+  const coveredEdges = new Set();
   const accepted = [];
 
-  for (const c of scored) {
-    const vidSet = new Set(c.vids);
-
-    // Check if all edges of this cycle are already used 2+ times
-    let allEdgesSaturated = true;
+  // Sort scored by area desc (already done), then greedily accept
+  for (let ci = 0; ci < scored.length; ci++) {
+    const c = scored[ci];
+    // Count how many NEW (uncovered) edges this cycle covers
+    let newEdges = 0;
     for (let i = 0; i < c.vids.length; i++) {
       const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
       const k = Math.min(a,b)+':'+Math.max(a,b);
-      if ((edgeUseCount[k]||0) < 2) { allEdgesSaturated = false; break; }
+      if (!coveredEdges.has(k)) newEdges++;
     }
-    if (allEdgesSaturated && accepted.length > 0) {
-      console.log('[AutoComplete] skip saturated cycle:', c.vids.join(','));
-      continue;
-    }
-
-    // Skip near-duplicate areas (within 8%)
+    // Only accept if it covers at least 2 new edges (not a pure sub-face)
+    if (newEdges < 2) { console.log('[AutoComplete] skip - only', newEdges, 'new edges:', c.vids.join(',')); continue; }
+    // Skip near-duplicate areas
     const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.08);
     if (isDup) continue;
-
-    // Accept — mark its edges as used
+    // Mark edges covered
     for (let i = 0; i < c.vids.length; i++) {
       const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
       const k = Math.min(a,b)+':'+Math.max(a,b);
-      edgeUseCount[k] = (edgeUseCount[k]||0)+1;
+      coveredEdges.add(k);
     }
-    accepted.push({ ...c, vidSet });
+    accepted.push({ ...c, vidSet: new Set(c.vids) });
   }
-  console.log('[AutoComplete] accepted after edge-saturation filter:', accepted.length);
+  console.log('[AutoComplete] accepted after greedy cover:', accepted.length, 'covering', coveredEdges.size, 'of', allEdges.size, 'edges');
   alert('Debug: scored=' + scored.length + ' accepted=' + accepted.length + '\nCycles: ' + cycles.length + '\nVerts: ' + verts.length);
 
   let added = 0;
