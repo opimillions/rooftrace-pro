@@ -936,38 +936,38 @@ function generatePDF() {
     setTimeout(cb, 2000);
   }
 
-  // Step 1: capture WITH tracings using html2canvas (captures SVG overlays)
+  // Capture both images at the SAME map position
+  // Step 1: wait for tiles to load, then capture satellite FIRST (no tracings)
   waitForMapTiles(() => {
-    if (btn) btn.innerHTML = '⏳ Capturing tracings...';
-    html2canvas(document.getElementById('map'), {
-      useCORS: true, allowTaint: true, logging: false,
-      foreignObjectRendering: false
-    }).then(tracingCanvas => {
-      const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.88);
-
-      // Step 2: hide tracings, wait a frame, capture satellite only
-      layersToHide.forEach(l => map.removeLayer(l));
-      if (btn) btn.innerHTML = '⏳ Capturing satellite...';
-      setTimeout(() => {
-        html2canvas(document.getElementById('map'), {
-          useCORS: true, allowTaint: true, logging: false,
-          foreignObjectRendering: false
-        }).then(satCanvas => {
-          // Restore layers
-          layersToHide.forEach(l => map.addLayer(l));
-          const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.88);
-          buildPDF(tracingImg, satelliteImg);
-          if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
-        }).catch(() => {
-          layersToHide.forEach(l => map.addLayer(l));
-          buildPDF(tracingImg, null);
-          if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
-        });
-      }, 600);
-    }).catch(() => {
-      buildPDF(null, null);
-      if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
-    });
+    if (btn) btn.innerHTML = '⏳ Capturing satellite...';
+    // Hide tracings for satellite capture
+    layersToHide.forEach(l => map.removeLayer(l));
+    setTimeout(() => {
+      html2canvas(document.getElementById('map'), {
+        useCORS: true, allowTaint: true, logging: false, foreignObjectRendering: false
+      }).then(satCanvas => {
+        const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.90);
+        // Step 2: restore tracings, capture WITH tracings (same zoom/pan)
+        layersToHide.forEach(l => map.addLayer(l));
+        if (btn) btn.innerHTML = '⏳ Capturing tracings...';
+        setTimeout(() => {
+          html2canvas(document.getElementById('map'), {
+            useCORS: true, allowTaint: true, logging: false, foreignObjectRendering: false
+          }).then(tracingCanvas => {
+            const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.90);
+            buildPDF(tracingImg, satelliteImg);
+            if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+          }).catch(() => {
+            buildPDF(null, satelliteImg);
+            if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+          });
+        }, 400);
+      }).catch(() => {
+        layersToHide.forEach(l => map.addLayer(l));
+        buildPDF(null, null);
+        if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+      });
+    }, 500);
   }); // waitForMapTiles
 }
 
