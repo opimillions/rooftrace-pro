@@ -550,8 +550,11 @@ function refreshStats() {
   const ridgeFt     = totalLayerFt(ridgeLayer);
   const hipFt       = totalLayerFt(hipLayer);
   const valleyFt    = totalLayerFt(valleyLayer);
-  const dripFt      = totalLayerFt(dripLayer);
+  const dripDrawnFt = totalLayerFt(dripLayer);
   const rakeFt      = totalLayerFt(rakeLayer);
+  const eavesFt     = totalLayerFt(eavesLayer);
+  // Drip edge = drawn drip lines OR (eaves + rake) if no drip lines drawn
+  const dripFt      = dripDrawnFt > 0 ? dripDrawnFt : (eavesFt + rakeFt);
 
   document.getElementById('statFlatArea').textContent   = flatTotal   ? fmt(flatTotal,0)   + ' sq ft' : '— sq ft';
   document.getElementById('statSlopedArea').textContent = slopedTotal ? fmt(slopedTotal,0) + ' sq ft' : '— sq ft';
@@ -561,8 +564,7 @@ function refreshStats() {
   document.getElementById('statValley').textContent     = valleyFt    ? fmt(valleyFt,0)    + ' ft'    : '— ft';
   document.getElementById('statDrip').textContent       = dripFt      ? fmt(dripFt,0)      + ' ft'    : '— ft';
   document.getElementById('statRake').textContent       = rakeFt      ? fmt(rakeFt,0)      + ' ft'    : '— ft';
-  const eavesFt = totalLayerFt(eavesLayer);
-  document.getElementById('statEaves').textContent    = eavesFt     ? fmt(eavesFt,0)     + ' ft'    : '— ft';
+  document.getElementById('statEaves').textContent      = eavesFt     ? fmt(eavesFt,0)     + ' ft'    : '— ft';
 
   // Waste pills
   document.getElementById('wastePills').innerHTML = squares
@@ -906,10 +908,18 @@ function generatePDF() {
   const btn = document.querySelector('.btn-report');
   if (btn) { btn.innerHTML = '⏳ Loading tiles...'; btn.disabled = true; }
 
-  // Fit map to all drawn features first, then wait for tiles
-  const allFacets = facetLayer.getLayers();
-  if (allFacets.length > 0) {
-    const bounds = L.featureGroup(allFacets).getBounds().pad(0.15);
+  // Fit map to ALL drawn features (facets + all line layers)
+  const allDrawnLayers = [
+    ...facetLayer.getLayers(),
+    ...ridgeLayer.getLayers(),
+    ...hipLayer.getLayers(),
+    ...valleyLayer.getLayers(),
+    ...dripLayer.getLayers(),
+    ...eavesLayer.getLayers(),
+    ...rakeLayer.getLayers()
+  ];
+  if (allDrawnLayers.length > 0) {
+    const bounds = L.featureGroup(allDrawnLayers).getBounds().pad(0.2);
     map.fitBounds(bounds);
   }
 
@@ -988,7 +998,7 @@ function buildPDF(mapImageDataUrl, satelliteImgUrl) {
     ['Ridge', fmt(totalLayerFt(ridgeLayer),0)+' ft'],
     ['Hip', fmt(totalLayerFt(hipLayer),0)+' ft'],
     ['Valley', fmt(totalLayerFt(valleyLayer),0)+' ft'],
-    ['Drip Edge', fmt(totalLayerFt(dripLayer),0)+' ft'],
+    ['Drip Edge', fmt(totalLayerFt(dripLayer)>0 ? totalLayerFt(dripLayer) : totalLayerFt(eavesLayer)+totalLayerFt(rakeLayer),0)+' ft'],
     ['Rake', fmt(totalLayerFt(rakeLayer),0)+' ft'],
     ['Eaves', fmt(totalLayerFt(eavesLayer),0)+' ft'],
   ];
