@@ -919,14 +919,25 @@ function generatePDF() {
     ...rakeLayer.getLayers()
   ];
   if (allDrawnLayers.length > 0) {
-    const bounds = L.featureGroup(allDrawnLayers).getBounds().pad(0.2);
-    map.fitBounds(bounds);
+    const bounds = L.featureGroup(allDrawnLayers).getBounds().pad(0.25);
+    map.fitBounds(bounds, { animate: false });
   }
+  map.invalidateSize(true);
 
   const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
 
+  // Wait for map to finish rendering after fitBounds
+  function waitForMapTiles(cb) {
+    // Listen for moveend, then wait extra time for tiles
+    map.once('moveend', () => {
+      setTimeout(cb, 1200);
+    });
+    // Fallback if moveend doesn't fire (already at position)
+    setTimeout(cb, 2000);
+  }
+
   // Step 1: capture WITH tracings using html2canvas (captures SVG overlays)
-  setTimeout(() => {
+  waitForMapTiles(() => {
     if (btn) btn.innerHTML = '⏳ Capturing tracings...';
     html2canvas(document.getElementById('map'), {
       useCORS: true, allowTaint: true, logging: false,
@@ -957,7 +968,7 @@ function generatePDF() {
       buildPDF(null, null);
       if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
     });
-  }, 1800); // Wait for tiles after fitBounds
+  }); // waitForMapTiles
 }
 
 function buildPDF(mapImageDataUrl, satelliteImgUrl) {
