@@ -103,6 +103,55 @@
 
     /* PDF hidden */
     @media print { .sidebar,.header,.bottom-bar { display:none; } #map { height:100vh; } }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 700px) {
+      .app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto 1fr auto auto;
+        height: auto;
+        min-height: 100vh;
+      }
+      .header {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 8px 12px;
+      }
+      .header .claim-fields {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .header input { min-width: 100px; font-size: 0.78em; }
+      .sidebar {
+        grid-column: 1;
+        grid-row: 2;
+        overflow-y: visible;
+        border-right: none;
+        border-bottom: 1px solid #334155;
+        max-height: 60vh;
+        overflow-y: auto;
+      }
+      #map {
+        grid-column: 1;
+        grid-row: 3;
+        height: 55vw;
+        min-height: 280px;
+        max-height: 420px;
+        width: 100%;
+      }
+      .bottom-bar {
+        grid-column: 1;
+        grid-row: 4;
+        flex-wrap: wrap;
+        gap: 0;
+        overflow-x: auto;
+      }
+      .stat { min-width: 90px; padding: 4px 12px; }
+      .mode-grid { grid-template-columns: 1fr 1fr; }
+      .facet-list { max-height: 160px; }
+      .header .logo { font-size: 0.95em; }
+      .btn-report { font-size: 0.78em; padding: 6px 12px; }
+    }
   </style>
 </head>
 <body>
