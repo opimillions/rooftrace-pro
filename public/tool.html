@@ -107,51 +107,85 @@
     /* ── Mobile Responsive ── */
     @media (max-width: 700px) {
       .app {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto 1fr auto auto;
-        height: auto;
-        min-height: 100vh;
+        display: block;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
       }
+      /* Header: slim strip at top */
       .header {
-        flex-wrap: wrap;
-        gap: 8px;
-        padding: 8px 12px;
-      }
-      .header .claim-fields {
-        flex-wrap: wrap;
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 500;
+        padding: 6px 10px;
         gap: 6px;
+        flex-wrap: nowrap;
       }
-      .header input { min-width: 100px; font-size: 0.78em; }
-      .sidebar {
-        grid-column: 1;
-        grid-row: 2;
-        overflow-y: visible;
-        border-right: none;
-        border-bottom: 1px solid #334155;
-        max-height: 60vh;
-        overflow-y: auto;
-      }
+      .header .claim-fields { display: none; } /* hide on mobile, accessible in drawer */
+      .header .logo { font-size: 0.9em; white-space: nowrap; }
+      .header .btn-report { font-size: 0.75em; padding: 5px 10px; margin-left: auto; }
+      /* Map: full screen below header */
       #map {
-        grid-column: 1;
-        grid-row: 3;
-        height: 55vw;
-        min-height: 280px;
-        max-height: 420px;
-        width: 100%;
+        position: fixed;
+        top: 44px; left: 0; right: 0; bottom: 56px;
+        height: auto !important;
+        width: 100% !important;
+        z-index: 1;
       }
+      /* Bottom bar: slim fixed strip */
       .bottom-bar {
-        grid-column: 1;
-        grid-row: 4;
-        flex-wrap: wrap;
-        gap: 0;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 500;
+        padding: 4px 8px;
         overflow-x: auto;
+        gap: 0;
       }
-      .stat { min-width: 90px; padding: 4px 12px; }
-      .mode-grid { grid-template-columns: 1fr 1fr; }
+      .stat { min-width: 80px; padding: 2px 10px; }
+      .stat .lbl { font-size: 0.6em; }
+      .stat .val { font-size: 0.95em; }
+      .waste-pills { display: none; }
+      /* Sidebar: hidden by default, slides up as bottom drawer */
+      .sidebar {
+        position: fixed;
+        bottom: 56px; left: 0; right: 0;
+        z-index: 600;
+        max-height: 70vh;
+        overflow-y: auto;
+        border-right: none;
+        border-top: 2px solid #2563eb;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        border-radius: 16px 16px 0 0;
+      }
+      .sidebar.mobile-open {
+        transform: translateY(0);
+      }
+      /* Mobile toggle button */
+      #mobileDrawerBtn {
+        display: flex;
+        position: fixed;
+        bottom: 62px;
+        right: 14px;
+        z-index: 700;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        font-size: 1.4em;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        cursor: pointer;
+      }
+      /* Mode buttons: show in a horizontal scroll strip above map */
+      .mode-grid { grid-template-columns: repeat(4, auto); overflow-x: auto; }
       .facet-list { max-height: 160px; }
-      .header .logo { font-size: 0.95em; }
-      .btn-report { font-size: 0.78em; padding: 6px 12px; }
     }
+    /* Hide mobile button on desktop */
+    #mobileDrawerBtn { display: none; }
   </style>
 </head>
 <body>
@@ -240,6 +274,7 @@
 
   <!-- Map -->
   <div id="map"></div>
+  <button id="mobileDrawerBtn" onclick="toggleMobileDrawer()" title="Tools">🛠️</button>
 
   <!-- Bottom Bar -->
   <div class="bottom-bar">
@@ -1313,6 +1348,21 @@ function autoCompleteFacets(silent) {
   renderFacets();
 }
 window.autoCompleteFacets = autoCompleteFacets;
+
+// Mobile drawer toggle
+function toggleMobileDrawer() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = document.getElementById('mobileDrawerBtn');
+  if (sidebar.classList.contains('mobile-open')) {
+    sidebar.classList.remove('mobile-open');
+    btn.textContent = '🛠️';
+  } else {
+    sidebar.classList.add('mobile-open');
+    btn.textContent = '✕';
+    setTimeout(() => map.invalidateSize(true), 350);
+  }
+}
+window.toggleMobileDrawer = toggleMobileDrawer;
 
 // Update perimeter in refreshStats
 const _origRefreshStats = refreshStats;
