@@ -475,17 +475,17 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
-const googleSat = L.tileLayer(
-  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-  { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
-).addTo(map);
-
 const esriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
+).addTo(map); // Esri default — accurate Leaflet alignment
+
+const googleSat = L.tileLayer(
+  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
 );
 
-L.control.layers({'&#127758; Google':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:false}).addTo(map);
+L.control.layers({'&#128506; Esri (Default)':esriSat,'&#127758; Google':googleSat}, null, {position:'topright',collapsed:true}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
@@ -1075,60 +1075,33 @@ function generatePDF() {
 
   const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
 
-  // Wait for map tiles to fully render
-  function waitForMapTiles(cb) {
-    map.once('moveend', () => setTimeout(cb, 2500));
-    setTimeout(cb, 3500); // fallback
+  // Use leaflet-image for pixel-perfect tile capture (no CORS/offset issues)
+  function captureLeaflet(withTracings, cb) {
+    if (!withTracings) layersToHide.forEach(l => map.removeLayer(l));
+    leafletImage(map, function(err, canvas) {
+      if (!withTracings) layersToHide.forEach(l => map.addLayer(l));
+      if (err || !canvas) { cb(null); return; }
+      cb(canvas.toDataURL('image/jpeg', 0.88));
+    });
   }
 
-  // Hide UI controls for clean capture
-  function hideMapControls() {
-    document.querySelectorAll('.leaflet-control-container,.leaflet-control-zoom').forEach(el => el.style.visibility='hidden');
-  }
-  function showMapControls() {
-    document.querySelectorAll('.leaflet-control-container,.leaflet-control-zoom').forEach(el => el.style.visibility='');
+  // Wait for map to settle after fitBounds
+  function waitForSettle(cb) {
+    map.once('moveend', () => setTimeout(cb, 1800));
+    setTimeout(cb, 2800);
   }
 
-  waitForMapTiles(() => {
-    if (btn) btn.innerHTML = '⏳ Capturing map...';
-    hideMapControls();
-
-    // Capture WITH tracings first
-    setTimeout(() => {
-      html2canvas(document.getElementById('map'), {
-        useCORS: true, allowTaint: true, logging: false,
-        foreignObjectRendering: false, scale: 1.5,
-        ignoreElements: el => el.classList && el.classList.contains('leaflet-control-container')
-      }).then(tracingCanvas => {
-        const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.85);
-
-        // Now hide tracings and capture satellite only
-        layersToHide.forEach(l => map.removeLayer(l));
-        setTimeout(() => {
-          html2canvas(document.getElementById('map'), {
-            useCORS: true, allowTaint: true, logging: false,
-            foreignObjectRendering: false, scale: 1.5,
-            ignoreElements: el => el.classList && el.classList.contains('leaflet-control-container')
-          }).then(satCanvas => {
-            layersToHide.forEach(l => map.addLayer(l));
-            showMapControls();
-            const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.85);
-            buildPDF(tracingImg, satelliteImg);
-            if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
-          }).catch(() => {
-            layersToHide.forEach(l => map.addLayer(l));
-            showMapControls();
-            buildPDF(tracingImg, null);
-            if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
-          });
-        }, 800);
-      }).catch(() => {
-        layersToHide.forEach(l => map.addLayer(l));
-        showMapControls();
-        buildPDF(null, null);
+  waitForSettle(() => {
+    if (btn) btn.innerHTML = '⏳ Capturing...';
+    // Capture satellite (no tracings)
+    captureLeaflet(false, satImg => {
+      if (btn) btn.innerHTML = '⏳ Capturing tracings...';
+      // Capture with tracings
+      captureLeaflet(true, tracingImg => {
+        buildPDF(tracingImg, satImg);
         if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
       });
-    }, 1000);
+    });
   });
 }
 
