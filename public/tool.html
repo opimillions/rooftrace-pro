@@ -186,7 +186,7 @@
       .sidebar .sidebar-section:nth-child(2) { display: none; }
       /* Mobile mode toolbar — always visible strip above bottom bar */
       #mobileToolbar {
-        display: flex !important;
+        display: flex;
         position: fixed;
         bottom: 48px; left: 0; right: 0;
         z-index: 600;
@@ -221,7 +221,7 @@
       }
       /* Mobile address bar pinned below header */
       #mobileAddrBar {
-        display: flex !important;
+        display: flex;
         position: fixed;
         top: 44px; left: 0; right: 0;
         z-index: 490;
@@ -260,9 +260,9 @@
       }
     }
     /* Hide mobile-only elements on desktop */
-    #mobileDrawerBtn { display: none !important; }
-    #mobileToolbar { display: none !important; }
-    #mobileAddrBar { display: none !important; }
+    #mobileDrawerBtn { display: none; }
+    #mobileToolbar { display: none; }
+    #mobileAddrBar { display: none; }
   </style>
 </head>
 <body>
@@ -1603,7 +1603,16 @@ window.undoLast = function() {
 
 // Delay initial setMode so L.Draw is fully loaded
 window.addEventListener('load', () => {
-  setTimeout(() => setMode('facet'), 200);
+  setTimeout(() => setMode('ridge'), 200);
+  // Show mobile-only elements on small screens
+  if (window.innerWidth <= 700) {
+    const bar = document.getElementById('mobileAddrBar');
+    const tb = document.getElementById('mobileToolbar');
+    const btn = document.getElementById('mobileDrawerBtn');
+    if (bar) bar.style.display = 'flex';
+    if (tb) tb.style.display = 'flex';
+    if (btn) btn.style.display = 'flex';
+  }
 });
 </script>
 </body>
