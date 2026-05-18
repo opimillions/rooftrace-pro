@@ -180,12 +180,48 @@
         box-shadow: 0 4px 16px rgba(0,0,0,0.4);
         cursor: pointer;
       }
-      /* Mode buttons: show in a horizontal scroll strip above map */
       .mode-grid { grid-template-columns: repeat(4, auto); overflow-x: auto; }
       .facet-list { max-height: 160px; }
+      /* Mobile mode toolbar — always visible strip above bottom bar */
+      #mobileToolbar {
+        display: flex !important;
+        position: fixed;
+        bottom: 48px; left: 0; right: 0;
+        z-index: 600;
+        background: #0f172a;
+        border-top: 1px solid #2563eb;
+        overflow-x: auto;
+        gap: 4px;
+        padding: 6px 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+      #mobileToolbar .mtb-btn {
+        flex: 0 0 auto;
+        padding: 7px 12px;
+        border-radius: 8px;
+        border: 2px solid;
+        font-size: 0.75em;
+        font-weight: 700;
+        cursor: pointer;
+        background: transparent;
+        white-space: nowrap;
+        color: white;
+      }
+      #mobileToolbar .mtb-btn.active {
+        color: #0f172a !important;
+      }
+      /* shift map up to make room for toolbar */
+      #map {
+        bottom: 96px !important;
+      }
+      /* drawer btn still available for address/facets */
+      #mobileDrawerBtn {
+        bottom: 106px !important;
+      }
     }
-    /* Hide mobile button on desktop */
+    /* Hide mobile toolbar and drawer btn on desktop */
     #mobileDrawerBtn { display: none; }
+    #mobileToolbar { display: none; }
   </style>
 </head>
 <body>
@@ -275,6 +311,18 @@
   <!-- Map -->
   <div id="map"></div>
   <button id="mobileDrawerBtn" onclick="toggleMobileDrawer()" title="Tools">🛠️</button>
+
+  <!-- Mobile Drawing Toolbar (always visible on mobile) -->
+  <div id="mobileToolbar">
+    <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">🔴 Ridge</button>
+    <button class="mtb-btn" id="mtb-hip"   style="border-color:#ea580c;color:#ea580c" onclick="setMode('hip');updateMtb('hip')">🟠 Hip</button>
+    <button class="mtb-btn" id="mtb-valley" style="border-color:#16a34a;color:#16a34a" onclick="setMode('valley');updateMtb('valley')">🟢 Valley</button>
+    <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">🟡 Eaves</button>
+    <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">🟣 Rake</button>
+    <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">🔵 Drip</button>
+    <button class="mtb-btn" id="mtb-undo"  style="border-color:#475569;color:#94a3b8" onclick="undoLast()">↩ Undo</button>
+    <button class="mtb-btn" id="mtb-clear" style="border-color:#7f1d1d;color:#f87171" onclick="if(confirm('Clear all?'))clearAllLayers()">🗑 Clear</button>
+  </div>
 
   <!-- Bottom Bar -->
   <div class="bottom-bar">
@@ -406,8 +454,26 @@ function buildDrawControl(mode) {
   });
 }
 
+function updateMtb(activeMode) {
+  const modes = ['ridge','hip','valley','eaves','rake','drip'];
+  modes.forEach(m => {
+    const btn = document.getElementById('mtb-' + m);
+    if (!btn) return;
+    const colors = {ridge:'#dc2626',hip:'#ea580c',valley:'#16a34a',eaves:'#d97706',rake:'#7c3aed',drip:'#0891b2'};
+    const c = colors[m] || '#fff';
+    if (m === activeMode) {
+      btn.style.background = c;
+      btn.style.color = '#fff';
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = c;
+    }
+  });
+}
+
 function setMode(mode) {
   currentMode = mode;
+  updateMtb(mode);
   // Reset any pending segment
   segmentStart = null;
   if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
