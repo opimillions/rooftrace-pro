@@ -182,6 +182,8 @@
       }
       .mode-grid { grid-template-columns: repeat(4, auto); overflow-x: auto; }
       .facet-list { max-height: 160px; }
+      /* Hide duplicate draw section in sidebar on mobile — toolbar handles it */
+      .sidebar .sidebar-section:nth-child(2) { display: none; }
       /* Mobile mode toolbar — always visible strip above bottom bar */
       #mobileToolbar {
         display: flex !important;
@@ -365,8 +367,8 @@
     <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">&#8213; Eaves</button>
     <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">&#8213; Rake</button>
     <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">&#8213; Drip</button>
-    <button class="mtb-btn" id="mtb-undo"  style="border-color:#64748b;color:#cbd5e1;background:#1e293b" onclick="undoLast()">&#8617; Undo</button>
-    <button class="mtb-btn" id="mtb-clear" style="border-color:#dc2626;color:#fca5a5;background:#450a0a" onclick="if(confirm('Clear all drawings?'))clearAllLayers()">&#10005; Clear</button>
+    <button class="mtb-btn" id="mtb-undo"  style="border-color:#94a3b8;color:#fff;background:#334155;flex:0 0 auto;padding:8px 14px" onclick="undoLast()">&#8617; Undo</button>
+    <button class="mtb-btn" id="mtb-clear" style="border-color:#dc2626;color:#fff;background:#7f1d1d;flex:0 0 auto;padding:8px 14px" onclick="if(confirm('Clear all drawings?'))clearAllLayers()">&#10005; Clear</button>
   </div>
 
   <!-- Bottom Bar -->
@@ -1577,17 +1579,25 @@ window.showSummary = showSummary;
 window.closeSummary = closeSummary;
 window.closeSummary = closeSummary;
 window.undoLast = function() {
+  // First: cancel any in-progress segment
+  if (segmentStart) {
+    if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
+    if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
+    segmentStart = null;
+    return;
+  }
+  // Then: remove last drawn line or facet
   if (undoStack.length > 0) {
     const last = undoStack.pop();
     last.group.removeLayer(last.layer);
     refreshStats();
+    // Flash confirmation
+    const flash = document.getElementById('mtb-undo');
+    if (flash) { const orig = flash.style.background; flash.style.background='#22c55e'; setTimeout(()=>flash.style.background=orig,400); }
   } else {
-    // If nothing in undo stack, cancel in-progress segment
-    if (segmentStart) {
-      if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
-      if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
-      segmentStart = null;
-    }
+    // Nothing to undo — shake the button
+    const btn = document.getElementById('mtb-undo');
+    if (btn) { btn.style.borderColor='#ef4444'; setTimeout(()=>btn.style.borderColor='#64748b',500); }
   }
 };
 
