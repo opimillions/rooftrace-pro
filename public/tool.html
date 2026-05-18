@@ -1031,49 +1031,61 @@ function generatePDF() {
 
   const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
 
-  // Wait for map to finish rendering after fitBounds
+  // Wait for map tiles to fully render
   function waitForMapTiles(cb) {
-    // Listen for moveend, then wait extra time for tiles
-    map.once('moveend', () => {
-      setTimeout(cb, 1200);
-    });
-    // Fallback if moveend doesn't fire (already at position)
-    setTimeout(cb, 2000);
+    map.once('moveend', () => setTimeout(cb, 2500));
+    setTimeout(cb, 3500); // fallback
   }
 
-  // Capture both images at the SAME map position
-  // Step 1: wait for tiles to load, then capture satellite FIRST (no tracings)
+  // Hide UI controls for clean capture
+  function hideMapControls() {
+    document.querySelectorAll('.leaflet-control-container,.leaflet-control-zoom').forEach(el => el.style.visibility='hidden');
+  }
+  function showMapControls() {
+    document.querySelectorAll('.leaflet-control-container,.leaflet-control-zoom').forEach(el => el.style.visibility='');
+  }
+
   waitForMapTiles(() => {
-    if (btn) btn.innerHTML = '⏳ Capturing satellite...';
-    // Hide tracings for satellite capture
-    layersToHide.forEach(l => map.removeLayer(l));
+    if (btn) btn.innerHTML = '⏳ Capturing map...';
+    hideMapControls();
+
+    // Capture WITH tracings first
     setTimeout(() => {
       html2canvas(document.getElementById('map'), {
-        useCORS: true, allowTaint: true, logging: false, foreignObjectRendering: false
-      }).then(satCanvas => {
-        const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.90);
-        // Step 2: restore tracings, capture WITH tracings (same zoom/pan)
-        layersToHide.forEach(l => map.addLayer(l));
-        if (btn) btn.innerHTML = '⏳ Capturing tracings...';
+        useCORS: true, allowTaint: true, logging: false,
+        foreignObjectRendering: false, scale: 1.5,
+        ignoreElements: el => el.classList && el.classList.contains('leaflet-control-container')
+      }).then(tracingCanvas => {
+        const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.85);
+
+        // Now hide tracings and capture satellite only
+        layersToHide.forEach(l => map.removeLayer(l));
         setTimeout(() => {
           html2canvas(document.getElementById('map'), {
-            useCORS: true, allowTaint: true, logging: false, foreignObjectRendering: false
-          }).then(tracingCanvas => {
-            const tracingImg = tracingCanvas.toDataURL('image/jpeg', 0.90);
+            useCORS: true, allowTaint: true, logging: false,
+            foreignObjectRendering: false, scale: 1.5,
+            ignoreElements: el => el.classList && el.classList.contains('leaflet-control-container')
+          }).then(satCanvas => {
+            layersToHide.forEach(l => map.addLayer(l));
+            showMapControls();
+            const satelliteImg = satCanvas.toDataURL('image/jpeg', 0.85);
             buildPDF(tracingImg, satelliteImg);
             if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
           }).catch(() => {
-            buildPDF(null, satelliteImg);
+            layersToHide.forEach(l => map.addLayer(l));
+            showMapControls();
+            buildPDF(tracingImg, null);
             if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
           });
-        }, 400);
+        }, 800);
       }).catch(() => {
         layersToHide.forEach(l => map.addLayer(l));
+        showMapControls();
         buildPDF(null, null);
         if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
       });
-    }, 500);
-  }); // waitForMapTiles
+    }, 1000);
+  });
 }
 
 function buildPDF(mapImageDataUrl, satelliteImgUrl) {
@@ -1091,10 +1103,10 @@ function buildPDF(mapImageDataUrl, satelliteImgUrl) {
   // Header
   doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
   doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
-  doc.text('First Call Public Adjusters', M, 28);
+  doc.text('RoofTrace Pro', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
-  doc.text('Aerial Roof Measurement Report  |  TX #1921679 | OK #3000772279 | CO #906301 | (817) 618-9884', M, 44);
-  doc.text('thepublicadjustertx.com', M, 57);
+  doc.text('Aerial Roof Measurement Report  |  Powered by Licensed Public Adjusters', M, 44);
+  doc.text('rooftracepro.thepublicadjustertx.com', M, 57);
 
   // Property info
   doc.setTextColor(30,30,30); doc.setFontSize(9);
@@ -1197,7 +1209,7 @@ function buildPDF(mapImageDataUrl, satelliteImgUrl) {
   // Footer
   doc.setFontSize(7); doc.setTextColor(160);
   doc.text('Measurements traced from aerial satellite imagery. Field verification recommended.', M, 755);
-  doc.text('First Call Public Adjusters | (817) 618-9884 | thepublicadjustertx.com | TX #1921679 | OK #3000772279 | CO #906301', M, 765);
+  doc.text('RoofTrace Pro | rooftracepro.thepublicadjustertx.com | Measurements are estimates only — field verification recommended.', M, 765);
 
   const fn = `roof-report-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
   doc.save(fn);
