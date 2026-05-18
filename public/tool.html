@@ -223,10 +223,11 @@
         position: fixed;
         top: 44px; left: 0; right: 0;
         z-index: 490;
-        background: #0f172a;
-        border-bottom: 1px solid #334155;
-        padding: 5px 8px;
-        gap: 6px;
+        background: #172235;
+        border-bottom: 2px solid #2563eb;
+        padding: 6px 10px;
+        gap: 8px;
+        align-items: center;
       }
       #mobileAddrBar input {
         flex: 1;
@@ -346,14 +347,14 @@
   <button id="mobileDrawerBtn" onclick="toggleMobileDrawer()" title="Tools">🛠️</button>
 
   <!-- Mobile Address Bar -->
-  <div id="mobileAddrBar" style="display:none">
+  <div id="mobileAddrBar">
     <input type="text" id="mobileAddressInput" placeholder="&#128205; Search address..." onkeydown="if(event.key==='Enter'){document.getElementById('addressInput').value=this.value;geocodeAddress();}">
     <button onclick="document.getElementById('addressInput').value=document.getElementById('mobileAddressInput').value;geocodeAddress()">Go</button>
   </div>
 
   <!-- Mobile Drawing Toolbar (always visible on mobile) -->
   <div id="mobileToolbar">
-    <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">&#8213; Ridge</button>
+    <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626;color:#fff" onclick="setMode('ridge');updateMtb('ridge')">&#8213; Ridge</button>
     <button class="mtb-btn" id="mtb-hip"   style="border-color:#ea580c;color:#ea580c" onclick="setMode('hip');updateMtb('hip')">&#8213; Hip</button>
     <button class="mtb-btn" id="mtb-valley" style="border-color:#16a34a;color:#16a34a" onclick="setMode('valley');updateMtb('valley')">&#8213; Valley</button>
     <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">&#8213; Eaves</button>
@@ -502,10 +503,12 @@ function updateMtb(activeMode) {
     const c = colors[m] || '#fff';
     if (m === activeMode) {
       btn.style.background = c;
-      btn.style.color = '#fff';
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = c;
     } else {
       btn.style.background = 'transparent';
       btn.style.color = c;
+      btn.style.borderColor = c;
     }
   });
 }
