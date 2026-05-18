@@ -196,16 +196,18 @@
         -webkit-overflow-scrolling: touch;
       }
       #mobileToolbar .mtb-btn {
-        flex: 0 0 auto;
-        padding: 7px 12px;
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 8px 4px;
         border-radius: 8px;
         border: 2px solid;
-        font-size: 0.75em;
+        font-size: 0.7em;
         font-weight: 700;
         cursor: pointer;
         background: transparent;
         white-space: nowrap;
         color: white;
+        text-align: center;
       }
       #mobileToolbar .mtb-btn.active {
         color: #0f172a !important;
@@ -314,14 +316,14 @@
 
   <!-- Mobile Drawing Toolbar (always visible on mobile) -->
   <div id="mobileToolbar">
-    <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">🔴 Ridge</button>
-    <button class="mtb-btn" id="mtb-hip"   style="border-color:#ea580c;color:#ea580c" onclick="setMode('hip');updateMtb('hip')">🟠 Hip</button>
-    <button class="mtb-btn" id="mtb-valley" style="border-color:#16a34a;color:#16a34a" onclick="setMode('valley');updateMtb('valley')">🟢 Valley</button>
-    <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">🟡 Eaves</button>
-    <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">🟣 Rake</button>
-    <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">🔵 Drip</button>
-    <button class="mtb-btn" id="mtb-undo"  style="border-color:#475569;color:#94a3b8" onclick="undoLast()">↩ Undo</button>
-    <button class="mtb-btn" id="mtb-clear" style="border-color:#7f1d1d;color:#f87171" onclick="if(confirm('Clear all?'))clearAllLayers()">🗑 Clear</button>
+    <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">&#8213; Ridge</button>
+    <button class="mtb-btn" id="mtb-hip"   style="border-color:#ea580c;color:#ea580c" onclick="setMode('hip');updateMtb('hip')">&#8213; Hip</button>
+    <button class="mtb-btn" id="mtb-valley" style="border-color:#16a34a;color:#16a34a" onclick="setMode('valley');updateMtb('valley')">&#8213; Valley</button>
+    <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">&#8213; Eaves</button>
+    <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">&#8213; Rake</button>
+    <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">&#8213; Drip</button>
+    <button class="mtb-btn" id="mtb-undo"  style="border-color:#475569;color:#94a3b8" onclick="undoLast()">&#8617; Undo</button>
+    <button class="mtb-btn" id="mtb-clear" style="border-color:#7f1d1d;color:#f87171" onclick="if(confirm('Clear all?'))clearAllLayers()">&#128465; Clear</button>
   </div>
 
   <!-- Bottom Bar -->
