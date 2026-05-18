@@ -212,18 +212,49 @@
       #mobileToolbar .mtb-btn.active {
         color: #0f172a !important;
       }
-      /* shift map up to make room for toolbar */
+      /* shift map up to make room for toolbar + address bar */
       #map {
+        top: 84px !important;
         bottom: 96px !important;
       }
-      /* drawer btn still available for address/facets */
+      /* Mobile address bar pinned below header */
+      #mobileAddrBar {
+        display: flex !important;
+        position: fixed;
+        top: 44px; left: 0; right: 0;
+        z-index: 490;
+        background: #0f172a;
+        border-bottom: 1px solid #334155;
+        padding: 5px 8px;
+        gap: 6px;
+      }
+      #mobileAddrBar input {
+        flex: 1;
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: white;
+        padding: 7px 10px;
+        border-radius: 6px;
+        font-size: 0.85em;
+      }
+      #mobileAddrBar button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        padding: 7px 14px;
+        font-weight: 700;
+        font-size: 0.85em;
+      }
+      /* drawer btn still available for facets/pitch */
       #mobileDrawerBtn {
         bottom: 106px !important;
       }
     }
-    /* Hide mobile toolbar and drawer btn on desktop */
+    /* Hide mobile-only elements on desktop */
     #mobileDrawerBtn { display: none; }
     #mobileToolbar { display: none; }
+    #mobileAddrBar { display: none !important; }
   </style>
 </head>
 <body>
@@ -314,6 +345,12 @@
   <div id="map"></div>
   <button id="mobileDrawerBtn" onclick="toggleMobileDrawer()" title="Tools">🛠️</button>
 
+  <!-- Mobile Address Bar -->
+  <div id="mobileAddrBar" style="display:none">
+    <input type="text" id="mobileAddressInput" placeholder="&#128205; Search address..." onkeydown="if(event.key==='Enter'){document.getElementById('addressInput').value=this.value;geocodeAddress();}">
+    <button onclick="document.getElementById('addressInput').value=document.getElementById('mobileAddressInput').value;geocodeAddress()">Go</button>
+  </div>
+
   <!-- Mobile Drawing Toolbar (always visible on mobile) -->
   <div id="mobileToolbar">
     <button class="mtb-btn active" id="mtb-ridge" style="border-color:#dc2626;background:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">&#8213; Ridge</button>
@@ -322,8 +359,8 @@
     <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">&#8213; Eaves</button>
     <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">&#8213; Rake</button>
     <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">&#8213; Drip</button>
-    <button class="mtb-btn" id="mtb-undo"  style="border-color:#475569;color:#94a3b8" onclick="undoLast()">&#8617; Undo</button>
-    <button class="mtb-btn" id="mtb-clear" style="border-color:#7f1d1d;color:#f87171" onclick="if(confirm('Clear all?'))clearAllLayers()">&#128465; Clear</button>
+    <button class="mtb-btn" id="mtb-undo"  style="border-color:#64748b;color:#cbd5e1;background:#1e293b" onclick="undoLast()">&#8617; Undo</button>
+    <button class="mtb-btn" id="mtb-clear" style="border-color:#dc2626;color:#fca5a5;background:#450a0a" onclick="if(confirm('Clear all drawings?'))clearAllLayers()">&#10005; Clear</button>
   </div>
 
   <!-- Bottom Bar -->
