@@ -121,13 +121,42 @@
         gap: 6px;
         flex-wrap: nowrap;
       }
-      .header .claim-fields { display: none; } /* hide on mobile, accessible in drawer */
-      .header .logo { font-size: 0.9em; white-space: nowrap; }
-      .header .btn-report { font-size: 0.75em; padding: 5px 10px; margin-left: auto; }
-      /* Map: full screen, below header + address bar + toolbar */
+      .header .claim-fields { display: none; }
+      .header .logo { display: none; } /* hide logo on mobile to save space */
+      .header .btn-report { font-size: 0.75em; padding: 5px 8px; flex-shrink: 0; }
+      /* Show mobile address search in header */
+      #mobileHeaderSearch {
+        display: flex !important;
+        flex: 1;
+        gap: 6px;
+        align-items: center;
+      }
+      #mobileHeaderSearch input {
+        flex: 1;
+        background: #0f172a;
+        border: 1.5px solid #2563eb;
+        color: white;
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        outline: none;
+        min-width: 0;
+      }
+      #mobileHeaderSearch input::placeholder { color: #64748b; }
+      #mobileHeaderSearch button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-weight: 800;
+        font-size: 0.85em;
+        flex-shrink: 0;
+      }
+      /* Map: full screen, below header + toolbar */
       #map {
         position: fixed;
-        top: 90px; left: 0; right: 0; bottom: 96px;
+        top: 50px; left: 0; right: 0; bottom: 96px;
         height: auto !important;
         width: 100% !important;
         z-index: 1;
@@ -271,6 +300,11 @@
   <!-- Header -->
   <header class="header">
     <div class="logo"><img src="logo-icon.svg" style="height:28px;vertical-align:middle;margin-right:8px">Roof<span>Trace</span> Pro</div>
+    <!-- Mobile address search (shown in header on small screens) -->
+    <div id="mobileHeaderSearch" style="display:none;flex:1;gap:6px;align-items:center">
+      <input type="text" id="mobileHeaderAddr" placeholder="&#128205; Search address..." style="flex:1;background:#0f172a;border:1.5px solid #2563eb;color:white;padding:7px 10px;border-radius:8px;font-size:16px;outline:none;min-width:0" onkeydown="if(event.key==='Enter')mobileGeocode()">
+      <button onclick="mobileGeocode()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:7px 14px;font-weight:800;font-size:0.85em;flex-shrink:0">Go</button>
+    </div>
     <div class="claim-fields">
       <input type="text" id="claimNumber" placeholder="Claim #" style="max-width:130px">
       <input type="text" id="inspectorName" placeholder="Inspector Name" style="max-width:150px">
@@ -1601,17 +1635,27 @@ window.undoLast = function() {
   }
 };
 
+window.mobileGeocode = function() {
+  const val = document.getElementById('mobileHeaderAddr').value.trim();
+  if (val) {
+    document.getElementById('addressInput').value = val;
+    geocodeAddress();
+  }
+};
+
 // Delay initial setMode so L.Draw is fully loaded
 window.addEventListener('load', () => {
   setTimeout(() => setMode('ridge'), 200);
   // Show mobile-only elements on small screens
   if (window.innerWidth <= 700) {
-    const bar = document.getElementById('mobileAddrBar');
+    const search = document.getElementById('mobileHeaderSearch');
     const tb = document.getElementById('mobileToolbar');
-    const btn = document.getElementById('mobileDrawerBtn');
-    if (bar) bar.style.display = 'flex';
+    const drawerBtn = document.getElementById('mobileDrawerBtn');
+    const oldBar = document.getElementById('mobileAddrBar');
+    if (search) search.style.display = 'flex';
     if (tb) tb.style.display = 'flex';
-    if (btn) btn.style.display = 'flex';
+    if (drawerBtn) drawerBtn.style.display = 'flex';
+    if (oldBar) oldBar.style.display = 'none'; // hide old bar
   }
 });
 </script>
