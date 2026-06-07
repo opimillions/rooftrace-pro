@@ -485,7 +485,12 @@ const esriSat = L.tileLayer(
   { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
 );
 
-L.control.layers({'&#127758; Google (Default)':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:true}).addTo(map);
+const usgsNaip = L.tileLayer(
+  'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'Imagery &copy; USGS NAIP', maxZoom:22, maxNativeZoom:19 }
+); // USGS NAIP — US aerial imagery, public domain, often sharper for rural/residential
+
+L.control.layers({'&#127758; Google (Default)':googleSat,'&#128506; Esri':esriSat,'&#127482;&#127480; USGS NAIP':usgsNaip}, null, {position:'topright',collapsed:true}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
