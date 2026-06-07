@@ -475,17 +475,17 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
-const esriSat = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
-).addTo(map); // Esri default — accurate Leaflet alignment
-
 const googleSat = L.tileLayer(
   'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
   { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
+).addTo(map); // Google default — high-resolution satellite imagery
+
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
 );
 
-L.control.layers({'&#128506; Esri (Default)':esriSat,'&#127758; Google':googleSat}, null, {position:'topright',collapsed:true}).addTo(map);
+L.control.layers({'&#127758; Google (Default)':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:true}).addTo(map);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
