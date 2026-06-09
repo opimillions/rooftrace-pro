@@ -475,14 +475,17 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
-const googleSat = L.tileLayer(
-  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
-  { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
-).addTo(map); // Google default — high-resolution satellite imagery
-
+// Imagery providers — different providers fly aerials on different cycles; freshest tile for a given
+// address varies by provider. Esri is the default because it tends to have fresher residential
+// imagery in DFW than Google's public mt.google.com/vt endpoint.
 const esriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
   { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
+).addTo(map);
+
+const googleSat = L.tileLayer(
+  'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
+  { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
 );
 
 const usgsNaip = L.tileLayer(
@@ -490,7 +493,49 @@ const usgsNaip = L.tileLayer(
   { attribution:'Imagery &copy; USGS NAIP', maxZoom:22, maxNativeZoom:19 }
 ); // USGS NAIP — US aerial imagery, public domain, often sharper for rural/residential
 
-L.control.layers({'&#127758; Google (Default)':googleSat,'&#128506; Esri':esriSat,'&#127482;&#127480; USGS NAIP':usgsNaip}, null, {position:'topright',collapsed:true}).addTo(map);
+const imageryLayers = {
+  esri:   { layer: esriSat,  label: 'Esri'      },
+  google: { layer: googleSat, label: 'Google'    },
+  usgs:   { layer: usgsNaip,  label: 'USGS NAIP' }
+};
+let activeImagery = 'esri';
+function switchImagery(key) {
+  if (!imageryLayers[key] || key === activeImagery) return;
+  map.removeLayer(imageryLayers[activeImagery].layer);
+  imageryLayers[key].layer.addTo(map);
+  // Keep imagery beneath drawn vectors
+  if (imageryLayers[key].layer.bringToBack) imageryLayers[key].layer.bringToBack();
+  activeImagery = key;
+  // Update button states
+  document.querySelectorAll('#imagerySwitcher button').forEach(b => {
+    b.classList.toggle('active', b.dataset.imagery === key);
+  });
+}
+window.switchImagery = switchImagery;
+
+// On-map imagery switcher — visible, one-click compare between providers
+const imagerySwitcher = L.control({ position: 'topright' });
+imagerySwitcher.onAdd = function() {
+  const div = L.DomUtil.create('div', 'leaflet-bar');
+  div.id = 'imagerySwitcher';
+  div.style.cssText = 'background:white;padding:4px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.2);font-size:11px;display:flex;gap:2px;';
+  div.innerHTML = `
+    <div style="font-weight:700;color:#475569;padding:4px 6px;align-self:center;">Imagery:</div>
+    <button data-imagery="esri" class="active" onclick="switchImagery('esri')" style="padding:4px 8px;border:1px solid #cbd5e1;background:#2563eb;color:white;border-radius:4px;cursor:pointer;font-weight:600;">Esri</button>
+    <button data-imagery="google" onclick="switchImagery('google')" style="padding:4px 8px;border:1px solid #cbd5e1;background:white;color:#334155;border-radius:4px;cursor:pointer;font-weight:600;">Google</button>
+    <button data-imagery="usgs" onclick="switchImagery('usgs')" style="padding:4px 8px;border:1px solid #cbd5e1;background:white;color:#334155;border-radius:4px;cursor:pointer;font-weight:600;">USGS</button>
+  `;
+  // Prevent map drag/zoom when clicking the control
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+  return div;
+};
+imagerySwitcher.addTo(map);
+
+// Add CSS so the active-imagery state is obvious
+const _imgStyle = document.createElement('style');
+_imgStyle.textContent = `#imagerySwitcher button.active { background:#2563eb !important; color:white !important; border-color:#1d4ed8 !important; }`;
+document.head.appendChild(_imgStyle);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
