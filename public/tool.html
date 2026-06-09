@@ -478,9 +478,12 @@ const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 // Imagery providers — different providers fly aerials on different cycles; freshest tile for a given
 // address varies by provider. Esri is the default because it tends to have fresher residential
 // imagery in DFW than Google's public mt.google.com/vt endpoint.
+// Esri World_Imagery's native max is z19 in most of the US (z20 in a few metros).
+// Setting maxNativeZoom:19 makes Leaflet upscale z19 tiles for z20-22 instead of
+// requesting non-existent tiles and showing "Map data not yet available".
 const esriSat = L.tileLayer(
   'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
+  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:19 }
 ).addTo(map);
 
 const googleSat = L.tileLayer(
