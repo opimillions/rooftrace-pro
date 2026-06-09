@@ -908,25 +908,67 @@ map.on(L.Draw.Event.DELETED, () => {
 });
 
 // ── Address Geocode ───────────────────────────────────────────────────────────
+// Try US Census first (rooftop-accurate, free, no key), then Nominatim as fallback.
+async function geocodeViaCensus(addr) {
+  try {
+    const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=Public_AR_Current&format=json`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const m = d?.result?.addressMatches;
+    if (!m || !m.length) return null;
+    const c = m[0].coordinates;
+    // Census returns x=lon, y=lat
+    return { lat: c.y, lon: c.x, source: 'census', matched: m[0].matchedAddress };
+  } catch (e) { console.warn('Census geocode failed', e); return null; }
+}
+
+async function geocodeViaNominatim(addr) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&addressdetails=1&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'en-US'} });
+    const d = await r.json();
+    if (!d || !d.length) return null;
+    return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), source: 'nominatim', matched: d[0].display_name };
+  } catch (e) { console.warn('Nominatim geocode failed', e); return null; }
+}
+
+let pendingPinMarker = null;
+function showPendingPin(lat, lon, sourceLabel) {
+  if (pendingPinMarker) { map.removeLayer(pendingPinMarker); pendingPinMarker = null; }
+  pendingPinMarker = L.marker([lat, lon], { draggable: true, title: 'Drag to correct location, then click to load footprint' }).addTo(map);
+  pendingPinMarker.bindTooltip(`Geocoded via ${sourceLabel} — drag if wrong, then click to load roof`, { permanent: false, direction: 'top' }).openTooltip();
+  pendingPinMarker.on('click', async () => {
+    const ll = pendingPinMarker.getLatLng();
+    map.removeLayer(pendingPinMarker); pendingPinMarker = null;
+    await fetchBuildingFootprint(ll.lat, ll.lng);
+  });
+}
+
 async function geocodeAddress() {
   const addr = document.getElementById('addressInput').value.trim();
   if (!addr) return;
   const btn = document.querySelector('.addr-row button');
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   try {
-    // Step 1: Geocode the address
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'en-US'} });
-    const d = await r.json();
-    if (!d.length) { alert('Address not found.'); return; }
-    const lat = parseFloat(d[0].lat);
-    const lon = parseFloat(d[0].lon);
-    map.setView([lat, lon], 21);
+    // Step 1: Geocode the address — Census first, Nominatim fallback
+    let hit = await geocodeViaCensus(addr);
+    if (!hit) hit = await geocodeViaNominatim(addr);
+    if (!hit) { alert('Address not found. Try including city, state, and ZIP.'); return; }
 
-    // Step 2: Try to fetch building footprint from Overpass API (OpenStreetMap)
-    await fetchBuildingFootprint(lat, lon);
+    map.setView([hit.lat, hit.lon], 21);
 
-    // Step 3: If no OSM footprint found, try Microsoft Building Footprints
-    // (OSM usually has good coverage in DFW/TX suburbs)
+    // Step 2: Drop a draggable confirmation pin so the user can nudge if it's off
+    showPendingPin(hit.lat, hit.lon, hit.source === 'census' ? 'US Census' : 'OSM');
+
+    // Step 3: Auto-fetch footprint after a brief delay if user doesn't nudge
+    // (Comment this block out if you'd rather force a click-to-confirm.)
+    setTimeout(async () => {
+      if (pendingPinMarker) {
+        const ll = pendingPinMarker.getLatLng();
+        map.removeLayer(pendingPinMarker); pendingPinMarker = null;
+        await fetchBuildingFootprint(ll.lat, ll.lng);
+      }
+    }, 2500);
   } catch(e) {
     console.error('Geocode error:', e);
     alert('Geocoding error. Please try again.');
