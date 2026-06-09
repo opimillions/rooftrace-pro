@@ -1002,18 +1002,12 @@ async function geocodeAddress() {
 
     map.setView([hit.lat, hit.lon], 21);
 
-    // Step 2: Drop a draggable confirmation pin so the user can nudge if it's off
+    // Step 2: Drop a draggable confirmation pin. User MUST click it to load the footprint —
+    // this prevents the wrong neighbor's roof from auto-tracing when the geocoded point sits
+    // near a property line.
     showPendingPin(hit.lat, hit.lon, hit.source === 'census' ? 'US Census' : 'OSM');
-
-    // Step 3: Auto-fetch footprint after a brief delay if user doesn't nudge
-    // (Comment this block out if you'd rather force a click-to-confirm.)
-    setTimeout(async () => {
-      if (pendingPinMarker) {
-        const ll = pendingPinMarker.getLatLng();
-        map.removeLayer(pendingPinMarker); pendingPinMarker = null;
-        await fetchBuildingFootprint(ll.lat, ll.lng);
-      }
-    }, 2500);
+    document.getElementById('modeHint').textContent =
+      '📍 Pin dropped on geocoded address. Drag it onto the correct roof, then CLICK the pin to trace.';
   } catch(e) {
     console.error('Geocode error:', e);
     alert('Geocoding error. Please try again.');
@@ -1044,17 +1038,38 @@ async function fetchBuildingFootprint(lat, lon) {
       return;
     }
 
-    // Find the closest building to the geocoded point
+    // Prefer the building that CONTAINS the pin (point-in-polygon).
+    // Only if no polygon contains the pin do we fall back to nearest-centroid.
+    function pointInPolygon(pt, vs) {
+      // ray-cast algorithm; pt = {lat,lon}, vs = [{lat,lon}, ...]
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i].lon, yi = vs[i].lat;
+        const xj = vs[j].lon, yj = vs[j].lat;
+        const intersect = ((yi > pt.lat) !== (yj > pt.lat)) &&
+          (pt.lon < (xj - xi) * (pt.lat - yi) / (yj - yi + 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
     let bestBuilding = null;
     let bestDist = Infinity;
-    data.elements.forEach(el => {
-      if (!el.geometry || el.geometry.length < 3) return;
-      // Calculate centroid
-      const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
-      const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
-      const dist = Math.sqrt(Math.pow(centLat-lat,2) + Math.pow(centLon-lon,2));
-      if (dist < bestDist) { bestDist = dist; bestBuilding = el; }
-    });
+    // Pass 1: point-in-polygon
+    for (const el of data.elements) {
+      if (!el.geometry || el.geometry.length < 3) continue;
+      if (pointInPolygon({ lat, lon }, el.geometry)) { bestBuilding = el; break; }
+    }
+    // Pass 2: nearest centroid (only if no containing polygon found)
+    if (!bestBuilding) {
+      data.elements.forEach(el => {
+        if (!el.geometry || el.geometry.length < 3) return;
+        const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
+        const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
+        const dist = Math.sqrt(Math.pow(centLat-lat,2) + Math.pow(centLon-lon,2));
+        if (dist < bestDist) { bestDist = dist; bestBuilding = el; }
+      });
+    }
 
     if (!bestBuilding) {
       await fetchMSBuildingFootprint(lat, lon);
