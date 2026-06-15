@@ -312,6 +312,7 @@
       <input type="date" id="inspectionDate" style="max-width:140px">
     </div>
     <button class="btn-report" onclick="showSummary()" style="background:#16a34a;margin-right:4px">&#128203; Summary</button>
+    <button class="btn-report" onclick="showEstimate()" style="background:#f59e0b;margin-right:4px">&#128176; Estimate</button>
     <button class="btn-report" onclick="generatePDF()">&#128196; PDF Report</button>
   </header>
 
@@ -1694,7 +1695,347 @@ function showSummary() {
 function closeSummary() { document.getElementById('summaryModal')?.remove(); }
 window.showSummary = showSummary;
 window.closeSummary = closeSummary;
-window.closeSummary = closeSummary;
+
+// ── Estimate ─────────────────────────────────────────────────────────────────
+// Tear-off is ALWAYS included on every estimate.
+// Decking is an optional checkbox.
+// Waste defaults to 15% with dropdown for other factors.
+const estimateState = {
+  waste: 15,
+  decking: false,
+  // unit prices (editable in modal)
+  shingleSqPrice: 425,   // $/SQ installed (3-tab base, edit per market)
+  tearOffSqPrice: 75,    // $/SQ tear-off + haul (always applied)
+  deckingSqPrice: 250,   // $/SQ if decking checked (avg 50% replacement assumed)
+  deckingPct: 100,       // % of squares getting new decking (default replace all when checked)
+  underlaymentSqPrice: 35,
+  starterLfPrice: 2.25,
+  ridgeCapLfPrice: 7.50,
+  dripEdgeLfPrice: 2.85,
+  valleyLfPrice: 9.00,
+  flashingLot: 350,
+  ventLot: 225,
+  permitLot: 175,
+  taxPct: 0,
+  overheadPct: 10,
+  profitPct: 10
+};
+
+function computeEstimate() {
+  const slopedTotal = facets.reduce((s,f) => s + (f.slopedSqFt||0), 0);
+  const baseSq = slopedTotal / 100;
+  const sqWithWaste = baseSq * (1 + estimateState.waste/100);
+
+  const ridgeFt  = totalLayerFt(ridgeLayer);
+  const hipFt    = totalLayerFt(hipLayer);
+  const valleyFt = totalLayerFt(valleyLayer);
+  const dripFt   = totalLayerFt(dripLayer);
+  const eavesFt  = totalLayerFt(eavesLayer);
+  const rakeFt   = totalLayerFt(rakeLayer);
+  const ridgeCapLf = ridgeFt + hipFt;
+  const dripEdgeLf = dripFt > 0 ? dripFt : (eavesFt + rakeFt);
+  const starterLf  = eavesFt > 0 ? eavesFt : dripEdgeLf;
+
+  const lines = [];
+  // Tear-off — always
+  lines.push({
+    desc: 'Tear off existing roof — haul & dispose',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.tearOffSqPrice,
+    total: sqWithWaste * estimateState.tearOffSqPrice,
+    required: true
+  });
+  // Decking — optional
+  if (estimateState.decking) {
+    const deckSq = sqWithWaste * (estimateState.deckingPct/100);
+    lines.push({
+      desc: `Replace roof decking (${estimateState.deckingPct}% of area)`,
+      qty: deckSq, unit: 'SQ',
+      price: estimateState.deckingSqPrice,
+      total: deckSq * estimateState.deckingSqPrice
+    });
+  }
+  // Underlayment
+  lines.push({
+    desc: 'Synthetic underlayment',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.underlaymentSqPrice,
+    total: sqWithWaste * estimateState.underlaymentSqPrice
+  });
+  // Shingles (main material + labor)
+  lines.push({
+    desc: 'Composition shingles — supply & install',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.shingleSqPrice,
+    total: sqWithWaste * estimateState.shingleSqPrice
+  });
+  // Starter strip
+  if (starterLf > 0) lines.push({
+    desc: 'Starter strip at eaves',
+    qty: starterLf, unit: 'LF',
+    price: estimateState.starterLfPrice,
+    total: starterLf * estimateState.starterLfPrice
+  });
+  // Ridge cap (ridges + hips)
+  if (ridgeCapLf > 0) lines.push({
+    desc: 'Ridge cap shingles (ridges + hips)',
+    qty: ridgeCapLf, unit: 'LF',
+    price: estimateState.ridgeCapLfPrice,
+    total: ridgeCapLf * estimateState.ridgeCapLfPrice
+  });
+  // Drip edge
+  if (dripEdgeLf > 0) lines.push({
+    desc: 'Drip edge metal',
+    qty: dripEdgeLf, unit: 'LF',
+    price: estimateState.dripEdgeLfPrice,
+    total: dripEdgeLf * estimateState.dripEdgeLfPrice
+  });
+  // Valley
+  if (valleyFt > 0) lines.push({
+    desc: 'Valley metal / ice & water',
+    qty: valleyFt, unit: 'LF',
+    price: estimateState.valleyLfPrice,
+    total: valleyFt * estimateState.valleyLfPrice
+  });
+  // Flashing lot
+  lines.push({
+    desc: 'Flashing, step & counter (lot)',
+    qty: 1, unit: 'LOT',
+    price: estimateState.flashingLot,
+    total: estimateState.flashingLot
+  });
+  // Vents
+  lines.push({
+    desc: 'Pipe boots, vents & accessories',
+    qty: 1, unit: 'LOT',
+    price: estimateState.ventLot,
+    total: estimateState.ventLot
+  });
+  // Permit
+  lines.push({
+    desc: 'Permit & inspection',
+    qty: 1, unit: 'LOT',
+    price: estimateState.permitLot,
+    total: estimateState.permitLot
+  });
+
+  const subtotal = lines.reduce((s,l) => s+l.total, 0);
+  const overhead = subtotal * (estimateState.overheadPct/100);
+  const profit   = subtotal * (estimateState.profitPct/100);
+  const taxable  = subtotal + overhead + profit;
+  const tax      = taxable * (estimateState.taxPct/100);
+  const grand    = taxable + tax;
+
+  return { baseSq, sqWithWaste, lines, subtotal, overhead, profit, tax, grand };
+}
+
+function _fmt$(n) { return '$' + (n||0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function showEstimate() {
+  const old = document.getElementById('estimateModal'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'estimateModal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+  el.onclick = function(e) { if(e.target===el) closeEstimate(); };
+  el.innerHTML = '<div id="estimateBody" style="background:#1e293b;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;color:white"></div>';
+  document.body.appendChild(el);
+  renderEstimate();
+}
+
+function renderEstimate() {
+  const body = document.getElementById('estimateBody');
+  if (!body) return;
+  const e = computeEstimate();
+  const wasteOptions = [10,12,15,17,20,22,25];
+
+  const wasteSelect = '<select id="estWaste" onchange="updateEstimate({waste:+this.value})" style="background:#0f172a;border:1px solid #334155;color:white;padding:6px 10px;border-radius:6px;font-weight:700">'
+    + wasteOptions.map(w => `<option value="${w}" ${w===estimateState.waste?'selected':''}>${w}%</option>`).join('')
+    + '</select>';
+
+  const lineRows = e.lines.map((l,i) => {
+    return '<tr style="border-bottom:1px solid #334155">'
+      + '<td style="padding:8px 10px;font-size:0.85em">'+ l.desc + (l.required?' <span style="color:#f59e0b;font-size:0.75em">(always)</span>':'') +'</td>'
+      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ fmt(l.qty,2) +' '+ l.unit +'</td>'
+      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ _fmt$(l.price) +'</td>'
+      + '<td style="padding:8px 10px;text-align:right;font-weight:700">'+ _fmt$(l.total) +'</td>'
+      + '</tr>';
+  }).join('');
+
+  body.innerHTML =
+      '<div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2">'
+    + '<div style="font-weight:900;font-size:1.1em">💰 Roofing Estimate</div>'
+    + '<button onclick="closeEstimate()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">×</button>'
+    + '</div>'
+    + '<div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#0f172a">'
+    + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Base Sloped Area</div><div style="font-weight:700">'+ fmt(e.baseSq,2) +' SQ</div></div>'
+    + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">With Waste</div><div style="font-weight:700;color:#f59e0b">'+ fmt(e.sqWithWaste,2) +' SQ</div></div>'
+    + '</div>'
+    + '<div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#1e293b;border-bottom:1px solid #334155">'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:0.95"><input type="checkbox" checked disabled style="accent-color:#16a34a"><span>Tear-off (always included)</span></label>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="estDecking" '+ (estimateState.decking?'checked':'') +' onchange="updateEstimate({decking:this.checked})" style="accent-color:#2563eb"><span>Decking needed</span></label>'
+    + '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:0.85em;color:#cbd5e1">Waste:</span>'+ wasteSelect +'</div>'
+    + (estimateState.decking ? '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:0.85em;color:#cbd5e1">Decking %:</span><input type="number" min="1" max="100" value="'+ estimateState.deckingPct +'" onchange="updateEstimate({deckingPct:+this.value})" style="width:70px;background:#0f172a;border:1px solid #334155;color:white;padding:4px 6px;border-radius:6px"></div>' : '')
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse">'
+    +   '<thead><tr style="background:#0f172a;color:#94a3b8;font-size:0.72em;text-transform:uppercase;letter-spacing:1px">'
+    +     '<th style="padding:8px 10px;text-align:left">Description</th>'
+    +     '<th style="padding:8px 6px;text-align:right">Qty</th>'
+    +     '<th style="padding:8px 6px;text-align:right">Unit $</th>'
+    +     '<th style="padding:8px 10px;text-align:right">Total</th>'
+    +   '</tr></thead>'
+    +   '<tbody>'+ lineRows +'</tbody>'
+    + '</table>'
+    + '<div style="padding:14px 18px;background:#0f172a">'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1"><span>Subtotal</span><span>'+ _fmt$(e.subtotal) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Overhead <input type="number" min="0" max="50" value="'+ estimateState.overheadPct +'" onchange="updateEstimate({overheadPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.overhead) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Profit <input type="number" min="0" max="50" value="'+ estimateState.profitPct +'" onchange="updateEstimate({profitPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.profit) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Tax <input type="number" min="0" max="15" step="0.25" value="'+ estimateState.taxPct +'" onchange="updateEstimate({taxPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.tax) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:6px;border-top:2px solid #f59e0b"><span style="font-weight:900;font-size:1.1em">Grand Total</span><span style="color:#f59e0b;font-weight:900;font-size:1.25em">'+ _fmt$(e.grand) +'</span></div>'
+    + '</div>'
+    + '<details style="background:#0f172a;border-top:1px solid #334155;padding:0 18px">'
+    +   '<summary style="padding:12px 0;cursor:pointer;color:#94a3b8;font-size:0.85em">⚙️ Edit unit prices</summary>'
+    +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 0 14px 0;font-size:0.82em">'
+    +     _priceInput('Shingles $/SQ', 'shingleSqPrice')
+    +     _priceInput('Tear-off $/SQ', 'tearOffSqPrice')
+    +     _priceInput('Decking $/SQ', 'deckingSqPrice')
+    +     _priceInput('Underlayment $/SQ', 'underlaymentSqPrice')
+    +     _priceInput('Starter $/LF', 'starterLfPrice')
+    +     _priceInput('Ridge cap $/LF', 'ridgeCapLfPrice')
+    +     _priceInput('Drip edge $/LF', 'dripEdgeLfPrice')
+    +     _priceInput('Valley $/LF', 'valleyLfPrice')
+    +     _priceInput('Flashing (lot)', 'flashingLot')
+    +     _priceInput('Vents (lot)', 'ventLot')
+    +     _priceInput('Permit (lot)', 'permitLot')
+    +   '</div>'
+    + '</details>'
+    + '<div style="padding:14px 18px;display:flex;gap:10px;background:#0f172a;border-radius:0 0 14px 14px;position:sticky;bottom:0">'
+    +   '<button onclick="generateEstimatePDF()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">📄 Estimate PDF</button>'
+    +   '<button onclick="closeEstimate()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Close</button>'
+    + '</div>';
+}
+
+function _priceInput(label, key) {
+  return '<label style="display:flex;flex-direction:column;gap:3px;color:#cbd5e1"><span style="font-size:0.78em;color:#94a3b8">'+ label +'</span>'
+    + '<input type="number" min="0" step="0.01" value="'+ estimateState[key] +'" onchange="updateEstimate({'+ key +':+this.value})" style="background:#1e293b;border:1px solid #334155;color:white;padding:5px 7px;border-radius:5px"></label>';
+}
+
+function updateEstimate(patch) {
+  Object.assign(estimateState, patch);
+  renderEstimate();
+}
+
+function closeEstimate() { document.getElementById('estimateModal')?.remove(); }
+
+function generateEstimatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
+  const W = 612, M = 40;
+  const e = computeEstimate();
+  const addr = document.getElementById('addressInput').value || 'N/A';
+  const claim = document.getElementById('claimNumber').value || 'N/A';
+  const inspector = document.getElementById('inspectorName').value || 'N/A';
+  const company = document.getElementById('companyName').value || '';
+  const date = document.getElementById('inspectionDate').value || new Date().toLocaleDateString();
+
+  // Header
+  doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
+  doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
+  doc.text('RoofTrace Pro — Estimate', M, 28);
+  doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
+  doc.text((company || 'Roofing Estimate') + '  |  rooftracepro.thepublicadjustertx.com', M, 44);
+  doc.text('Estimate Date: ' + date, M, 57);
+
+  // Property block
+  doc.setTextColor(30,30,30); doc.setFontSize(9);
+  doc.setFont(undefined,'bold'); doc.text('Property:', M, 84); doc.setFont(undefined,'normal'); doc.text(addr, M+55, 84);
+  doc.setFont(undefined,'bold'); doc.text('Claim #:', M, 98); doc.setFont(undefined,'normal'); doc.text(claim, M+50, 98);
+  doc.setFont(undefined,'bold'); doc.text('Prepared by:', M+260, 98); doc.setFont(undefined,'normal'); doc.text(inspector, M+322, 98);
+
+  // Scope summary strip
+  const sumY = 112;
+  doc.setFillColor(240,248,232); doc.rect(M, sumY, W-M*2, 48, 'F');
+  doc.setDrawColor(180,210,150); doc.rect(M, sumY, W-M*2, 48, 'S');
+  const scope = [
+    ['Base SQ', fmt(e.baseSq,2)],
+    ['Waste', estimateState.waste + '%'],
+    ['Total SQ', fmt(e.sqWithWaste,2)],
+    ['Tear-off', 'Included'],
+    ['Decking', estimateState.decking ? (estimateState.deckingPct + '% replace') : 'Not included'],
+  ];
+  const cw = (W-M*2)/scope.length;
+  scope.forEach(([lbl,val],i) => {
+    const cx = M + i*cw + cw/2;
+    doc.setFontSize(7); doc.setFont(undefined,'normal'); doc.setTextColor(80,100,60);
+    doc.text(lbl, cx, sumY+14, {align:'center'});
+    doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(20,50,20);
+    doc.text(val, cx, sumY+32, {align:'center'});
+  });
+
+  let y = sumY + 62;
+
+  // Line items table
+  doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+  doc.text('Scope of Work', M, y); y += 10;
+  doc.setFillColor(23,34,53); doc.rect(M,y,W-M*2,15,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont(undefined,'bold');
+  doc.text('Description', M+8, y+10);
+  doc.text('Qty', M+330, y+10, {align:'right'});
+  doc.text('Unit', M+360, y+10, {align:'right'});
+  doc.text('Price', M+440, y+10, {align:'right'});
+  doc.text('Total', W-M-8, y+10, {align:'right'});
+  y += 15;
+  e.lines.forEach((l,idx) => {
+    if (y > 690) { doc.addPage(); y=40; }
+    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,W-M*2,16,'F'); }
+    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont(undefined,'normal');
+    doc.text(l.desc + (l.required ? '  (always included)' : ''), M+8, y+10);
+    doc.text(fmt(l.qty,2), M+330, y+10, {align:'right'});
+    doc.text(l.unit, M+360, y+10, {align:'right'});
+    doc.text(_fmt$(l.price), M+440, y+10, {align:'right'});
+    doc.setFont(undefined,'bold');
+    doc.text(_fmt$(l.total), W-M-8, y+10, {align:'right'});
+    y += 16;
+  });
+
+  // Totals box
+  y += 6;
+  if (y > 660) { doc.addPage(); y=40; }
+  const boxX = W-M-220, boxW = 220;
+  function row(lbl, val, bold) {
+    doc.setFontSize(9);
+    doc.setFont(undefined, bold ? 'bold' : 'normal');
+    doc.setTextColor(bold ? 20 : 60, bold ? 50 : 70, bold ? 20 : 80);
+    doc.text(lbl, boxX+8, y+10);
+    doc.text(val, boxX+boxW-8, y+10, {align:'right'});
+    y += 15;
+  }
+  doc.setFillColor(247,250,255); doc.rect(boxX, y, boxW, 90, 'F');
+  doc.setDrawColor(200,215,240); doc.rect(boxX, y, boxW, 90, 'S');
+  row('Subtotal', _fmt$(e.subtotal));
+  row('Overhead ('+estimateState.overheadPct+'%)', _fmt$(e.overhead));
+  row('Profit ('+estimateState.profitPct+'%)', _fmt$(e.profit));
+  if (estimateState.taxPct > 0) row('Tax ('+estimateState.taxPct+'%)', _fmt$(e.tax));
+  y += 4;
+  doc.setDrawColor(245,158,11); doc.setLineWidth(1.5);
+  doc.line(boxX+6, y, boxX+boxW-6, y);
+  doc.setLineWidth(0.5);
+  y += 4;
+  row('GRAND TOTAL', _fmt$(e.grand), true);
+
+  // Footer notes
+  y = 740;
+  doc.setFontSize(7); doc.setTextColor(120);
+  doc.text('Tear-off is included on every estimate. Decking is itemized only when needed and field verified.', M, y);
+  doc.text('Estimate based on aerial measurements. Final pricing subject to field verification and material market.', M, y+10);
+
+  const fn = `estimate-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
+  doc.save(fn);
+}
+
+window.showEstimate = showEstimate;
+window.closeEstimate = closeEstimate;
+window.updateEstimate = updateEstimate;
+window.generateEstimatePDF = generateEstimatePDF;
 window.undoLast = function() {
   // First: cancel any in-progress segment
   if (segmentStart) {
