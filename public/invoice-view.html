@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Invoice</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:#f3f4f6;color:#1a1a2e;min-height:100vh;padding:16px}
+.card{background:#fff;border-radius:12px;max-width:600px;margin:0 auto;box-shadow:0 4px 20px rgba(0,0,0,.08);overflow:hidden}
+.top-bar{background:#3b4ed8;padding:20px 24px;color:#fff}
+.top-bar h1{font-size:1.15em;font-weight:800;letter-spacing:.3px}
+.top-bar p{font-size:.82em;opacity:.8;margin-top:3px}
+.body{padding:24px}
+.biz-name{font-size:1.05em;font-weight:800}
+.biz-sub{font-size:.82em;color:#555;margin-top:2px}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-top:18px;padding-top:16px;border-top:2px solid #3b4ed8}
+.inv-label{font-size:.7em;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:#9ca3af}
+.inv-val{font-size:.95em;font-weight:700;margin-top:3px}
+.inv-sub{font-size:.78em;color:#6b7280;margin-top:2px}
+.bal-amount{font-size:1.5em;font-weight:800;color:#1a1a2e}
+.bill-to{margin-top:18px;padding:14px;background:#f9fafb;border-radius:8px}
+.section-label{font-size:.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#9ca3af;margin-bottom:6px}
+.bill-name{font-weight:700;font-size:.95em}
+.bill-contact{font-size:.82em;color:#555;margin-top:2px}
+.items-table{width:100%;border-collapse:collapse;margin-top:18px;font-size:.85em}
+.items-table th{text-align:left;padding:8px 6px;border-bottom:2px solid #1a1a2e;font-size:.75em;letter-spacing:.5px;text-transform:uppercase;color:#555}
+.items-table th:last-child{text-align:right}
+.items-table td{padding:10px 6px;border-bottom:1px solid #f0f0f0;vertical-align:top}
+.items-table td:last-child{text-align:right;font-weight:600}
+.totals{margin-top:12px}
+.total-row{display:flex;justify-content:flex-end;gap:32px;padding:6px 6px;font-size:.85em}
+.total-row.grand{font-size:1em;font-weight:800;border-top:2px solid #1a1a2e;margin-top:6px;padding-top:10px}
+.payment-box{margin-top:18px;background:#f0f4ff;border-radius:8px;padding:14px;border-left:4px solid #3b4ed8}
+.payment-box .pm-label{font-size:.7em;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#3b4ed8;margin-bottom:6px}
+.payment-box .pm-text{font-size:.85em;color:#374151;white-space:pre-wrap}
+.notes-box{margin-top:14px;font-size:.83em;color:#555;font-style:italic;padding:0 6px}
+.footer{margin-top:24px;padding-top:16px;border-top:1px solid #f0f0f0;text-align:center;font-size:.78em;color:#9ca3af}
+.loading{padding:48px;text-align:center;color:#9ca3af;font-size:.9em}
+.error{padding:48px 24px;text-align:center;color:#dc2626}
+</style>
+</head>
+<body>
+<div class="card" id="card">
+  <div class="loading">Loading invoice…</div>
+</div>
+
+<script>
+(async () => {
+  const pathParts = location.pathname.split('/');
+  const id = pathParts[pathParts.length - 1];
+  const token = new URLSearchParams(location.search).get('token');
+  if (!id || !token) { showError('Invalid link.'); return; }
+  try {
+    const r = await fetch('/api/invoices/' + id + '/public?token=' + encodeURIComponent(token));
+    if (!r.ok) { showError((await r.json()).error || 'Invoice not found.'); return; }
+    const inv = await r.json();
+    render(inv);
+  } catch { showError('Could not load invoice. Please try again.'); }
+})();
+
+function render(inv) {
+  const biz = inv.businessInfo || {};
+  const bizName  = biz.businessName   || '';
+  const bizAddr  = biz.businessAddress|| '';
+  const bizPhone = biz.businessPhone  || '';
+  const bizEmail = biz.businessEmail  || '';
+  const payment  = biz.paymentInfo    || '';
+
+  const itemRows = (inv.items || []).map(it => `
+    <tr>
+      <td>${esc(it.description||'')}</td>
+      <td style="text-align:center">${it.qty||1} × $${(it.rate||0).toFixed(2)}</td>
+      <td>$${(it.amount||0).toFixed(2)}</td>
+    </tr>`).join('');
+
+  const discRow = inv.discount ? `<div class="total-row"><span>Discount</span><span>-$${(inv.discount).toFixed(2)}</span></div>` : '';
+  const taxRow  = inv.tax      ? `<div class="total-row"><span>Tax (${inv.taxRate||0}%)</span><span>$${(inv.tax).toFixed(2)}</span></div>` : '';
+
+  const isPaid = inv.status === 'paid';
+
+  document.getElementById('card').innerHTML = `
+    <div class="top-bar">
+      <h1>${esc(bizName || 'Invoice')}</h1>
+      <p>${inv.invoiceNumber} ${isPaid ? '· PAID ✓' : ''}</p>
+    </div>
+    <div class="body">
+      ${bizName ? `<div class="biz-name">${esc(bizName)}</div>` : ''}
+      ${bizAddr  ? `<div class="biz-sub">${esc(bizAddr)}</div>`  : ''}
+      ${bizPhone ? `<div class="biz-sub">${esc(bizPhone)}</div>` : ''}
+      ${bizEmail ? `<div class="biz-sub">${esc(bizEmail)}</div>` : ''}
+
+      <div class="inv-header">
+        <div>
+          <div class="inv-label">Invoice</div>
+          <div class="inv-val">${inv.invoiceNumber}</div>
+          <div class="inv-sub">Date: ${fmtDate(inv.createdAt)}</div>
+          <div class="inv-sub">${inv.dueDate ? 'Due: ' + fmtDate(inv.dueDate) : 'Due on receipt'}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="inv-label">Balance Due</div>
+          <div class="bal-amount" style="${isPaid ? 'color:#16a34a' : ''}">
+            ${isPaid ? '✓ PAID' : '$' + (inv.total||0).toFixed(2)}
+          </div>
+          ${isPaid ? '' : `<div class="inv-sub" style="margin-top:4px">USD $${(inv.total||0).toFixed(2)}</div>`}
+        </div>
+      </div>
+
+      <div class="bill-to">
+        <div class="section-label">Bill To</div>
+        <div class="bill-name">${esc(inv.clientName||'—')}</div>
+        ${inv.clientEmail ? `<div class="bill-contact">${esc(inv.clientEmail)}</div>` : ''}
+        ${inv.clientPhone ? `<div class="bill-contact">${esc(inv.clientPhone)}</div>` : ''}
+      </div>
+
+      <table class="items-table">
+        <thead><tr>
+          <th>Description</th>
+          <th style="text-align:center">Qty × Rate</th>
+          <th style="text-align:right">Amount</th>
+        </tr></thead>
+        <tbody>${itemRows}</tbody>
+      </table>
+
+      <div class="totals">
+        <div class="total-row"><span>Subtotal</span><span>$${(inv.subtotal||0).toFixed(2)}</span></div>
+        ${discRow}${taxRow}
+        <div class="total-row grand"><span>Total Due</span><span>$${(inv.total||0).toFixed(2)}</span></div>
+      </div>
+
+      ${payment ? `<div class="payment-box"><div class="pm-label">Payment Options</div><div class="pm-text">${esc(payment)}</div></div>` : ''}
+      ${inv.notes ? `<div class="notes-box">${esc(inv.notes)}</div>` : ''}
+
+      <div class="footer">
+        Powered by RoofTrace Pro &nbsp;·&nbsp; Questions? Contact ${esc(bizEmail || bizPhone || bizName || 'your adjuster')}
+      </div>
+    </div>
+  `;
+}
+
+function showError(msg) {
+  document.getElementById('card').innerHTML = `<div class="error">⚠ ${msg}</div>`;
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function fmtDate(d) {
+  if (!d) return '—';
+  return new Date(d).toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'numeric'});
+}
+</script>
+</body>
+</html>

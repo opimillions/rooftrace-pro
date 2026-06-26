@@ -15,10 +15,16 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 const users = Datastore.create({ filename: path.join(DATA_DIR, 'users.db'), autoload: true });
 const lookups = Datastore.create({ filename: path.join(DATA_DIR, 'lookups.db'), autoload: true });
 const alerts = Datastore.create({ filename: path.join(DATA_DIR, 'alerts.db'), autoload: true });
+const invoices = Datastore.create({ filename: path.join(DATA_DIR, 'invoices.db'), autoload: true });
+const invoiceEvents = Datastore.create({ filename: path.join(DATA_DIR, 'invoice_events.db'), autoload: true });
 
 // Indexes
 users.ensureIndex({ fieldName: 'email', unique: true });
 users.ensureIndex({ fieldName: 'stripeCustomerId', sparse: true });
+invoices.ensureIndex({ fieldName: 'userId' });
+invoices.ensureIndex({ fieldName: 'trackToken', sparse: true });
+invoices.ensureIndex({ fieldName: 'viewToken', sparse: true });
+invoiceEvents.ensureIndex({ fieldName: 'invoiceId' });
 
 // ── User Operations ───────────────────────────────────────────────────────────
 const userOps = {
@@ -118,6 +124,80 @@ const userOps = {
   async findByStripeCustomer(customerId) {
     return users.findOne({ stripeCustomerId: customerId });
   }
+};
+
+// ── Invoice Operations ────────────────────────────────────────────────────────
+const invoiceOps = {
+  async _nextNumber(userId) {
+    const all = await invoices.find({ userId });
+    if (!all.length) return 'INV0001';
+    const nums = all.map(i => parseInt((i.invoiceNumber || '').replace(/\D/g, '')) || 0);
+    return 'INV' + String(Math.max(...nums) + 1).padStart(4, '0');
+  },
+
+  async create(userId, data) {
+    const crypto = require('crypto');
+    const invoiceNumber = await this._nextNumber(userId);
+    return invoices.insert({
+      userId,
+      invoiceNumber,
+      status: 'draft',
+      clientName: data.clientName || '',
+      clientEmail: data.clientEmail || '',
+      clientPhone: data.clientPhone || '',
+      dueDate: data.dueDate || null,
+      items: data.items || [],
+      subtotal: data.subtotal || 0,
+      discount: data.discount || 0,
+      taxRate: data.taxRate || 0,
+      tax: data.tax || 0,
+      total: data.total || 0,
+      notes: data.notes || '',
+      businessInfo: data.businessInfo || {},
+      trackToken: crypto.randomBytes(24).toString('hex'),
+      viewToken: crypto.randomBytes(24).toString('hex'),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      sentAt: null,
+      paidAt: null,
+    });
+  },
+
+  async findById(id) {
+    return invoices.findOne({ _id: id });
+  },
+
+  async findByTrackToken(token) {
+    return invoices.findOne({ trackToken: token });
+  },
+
+  async findByViewToken(id, token) {
+    return invoices.findOne({ _id: id, viewToken: token });
+  },
+
+  async getForUser(userId) {
+    return invoices.find({ userId }).sort({ createdAt: -1 });
+  },
+
+  async update(id, userId, data) {
+    const allowed = ['clientName','clientEmail','clientPhone','dueDate','items','subtotal','discount','taxRate','tax','total','notes','status','businessInfo','sentAt','paidAt'];
+    const upd = { updatedAt: new Date().toISOString() };
+    for (const k of allowed) { if (k in data) upd[k] = data[k]; }
+    return invoices.update({ _id: id, userId }, { $set: upd });
+  },
+
+  async delete(id, userId) {
+    await invoiceEvents.remove({ invoiceId: id }, { multi: true });
+    return invoices.remove({ _id: id, userId });
+  },
+
+  async addEvent(invoiceId, type, meta = {}) {
+    return invoiceEvents.insert({ invoiceId, type, ...meta, createdAt: new Date().toISOString() });
+  },
+
+  async getEvents(invoiceId) {
+    return invoiceEvents.find({ invoiceId }).sort({ createdAt: -1 });
+  },
 };
 
 // ── Lookup Operations ─────────────────────────────────────────────────────────
@@ -227,4 +307,4 @@ async function seedClientUsers() {
 
 seedClientUsers().catch(console.error);
 
-module.exports = { userOps, lookupOps, alertOps };
+module.exports = { userOps, lookupOps, alertOps, invoiceOps };
