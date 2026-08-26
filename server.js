@@ -8,7 +8,7 @@ const cookieParser = require('cookie-parser');
 const path = require('path');
 const cron = require('node-cron');
 
-const { userOps, lookupOps, alertOps } = require('./db');
+const { userOps, lookupOps, alertOps, invoiceOps } = require('./db');
 const { generateToken, requireAuth, requireAdmin, requireActiveSubscription } = require('./auth');
 
 const app = express();
@@ -203,6 +203,199 @@ app.post('/api/stripe/webhook', express.raw({ type:'application/json' }), async 
     }
   } catch (err) { return res.status(400).send(`Webhook Error: ${err.message}`); }
   res.json({ received: true });
+});
+
+// ── Invoices Page ─────────────────────────────────────────────────────────────
+app.get('/invoices', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'invoices.html')));
+
+// Public invoice view (no auth — uses viewToken for security)
+app.get('/invoice/view/:id', (req, res) => res.sendFile(path.join(__dirname, 'public', 'invoice-view.html')));
+
+// Tracking pixel — fired when client opens the email
+const TRACKING_GIF = Buffer.from('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7', 'base64');
+app.get('/track/:token.gif', async (req, res) => {
+  res.set({ 'Content-Type': 'image/gif', 'Cache-Control': 'no-store, no-cache, must-revalidate', 'Pragma': 'no-cache' });
+  res.send(TRACKING_GIF);
+  try {
+    const inv = await invoiceOps.findByTrackToken(req.params.token);
+    if (inv) {
+      await invoiceOps.addEvent(inv._id, 'email_opened', {
+        recipient: inv.clientEmail,
+        ip: req.headers['x-forwarded-for'] || req.ip,
+        ua: req.headers['user-agent'] || '',
+      });
+    }
+  } catch (_) {}
+});
+
+// ── Invoice API ───────────────────────────────────────────────────────────────
+// List
+app.get('/api/invoices', requireAuth, async (req, res) => {
+  try { res.json(await invoiceOps.getForUser(req.user._id)); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Create
+app.post('/api/invoices', requireAuth, async (req, res) => {
+  try { res.json(await invoiceOps.create(req.user._id, req.body)); }
+  catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get single (authenticated)
+app.get('/api/invoices/:id', requireAuth, async (req, res) => {
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || (inv.userId !== req.user._id && req.user.role !== 'admin')) return res.status(404).json({ error: 'Not found' });
+    res.json(inv);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get single (public — by viewToken)
+app.get('/api/invoices/:id/public', async (req, res) => {
+  const { token } = req.query;
+  if (!token) return res.status(403).json({ error: 'Token required' });
+  try {
+    const inv = await invoiceOps.findByViewToken(req.params.id, token);
+    if (!inv) return res.status(404).json({ error: 'Invoice not found' });
+    // Record view event
+    await invoiceOps.addEvent(inv._id, 'invoice_viewed', {
+      ip: req.headers['x-forwarded-for'] || req.ip,
+      ua: req.headers['user-agent'] || '',
+    });
+    res.json(inv);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Update
+app.patch('/api/invoices/:id', requireAuth, async (req, res) => {
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || inv.userId !== req.user._id) return res.status(404).json({ error: 'Not found' });
+    await invoiceOps.update(req.params.id, req.user._id, req.body);
+    await invoiceOps.addEvent(req.params.id, 'draft_saved', { note: 'Invoice version saved' });
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Delete
+app.delete('/api/invoices/:id', requireAuth, async (req, res) => {
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || inv.userId !== req.user._id) return res.status(404).json({ error: 'Not found' });
+    await invoiceOps.delete(req.params.id, req.user._id);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Get events / history
+app.get('/api/invoices/:id/events', requireAuth, async (req, res) => {
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || inv.userId !== req.user._id) return res.status(404).json({ error: 'Not found' });
+    res.json(await invoiceOps.getEvents(req.params.id));
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Send invoice
+app.post('/api/invoices/:id/send', requireAuth, async (req, res) => {
+  const { method } = req.body; // 'email' | 'sms'
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || inv.userId !== req.user._id) return res.status(404).json({ error: 'Not found' });
+
+    const base = process.env.BASE_URL || `http://localhost:${PORT}`;
+    const viewUrl  = `${base}/invoice/view/${inv._id}?token=${inv.viewToken}`;
+    const trackUrl = `${base}/track/${inv.trackToken}.gif`;
+    const bizName  = inv.businessInfo?.businessName || req.user.company || req.user.name;
+    const total    = `$${(inv.total || 0).toFixed(2)}`;
+
+    if (method === 'email') {
+      if (!inv.clientEmail) return res.status(400).json({ error: 'No client email on this invoice' });
+      if (!process.env.SMTP_HOST) return res.status(400).json({ error: 'Email not configured. Set SMTP_HOST, SMTP_USER, SMTP_PASS, SMTP_FROM in environment.' });
+
+      const nodemailer = require('nodemailer');
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: parseInt(process.env.SMTP_PORT || '587'),
+        secure: process.env.SMTP_SECURE === 'true',
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      });
+
+      const itemRows = (inv.items || []).map(it =>
+        `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${it.description}</td>
+         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:center">${it.qty || 1} × $${Number(it.rate || 0).toFixed(2)}</td>
+         <td style="padding:8px 0;border-bottom:1px solid #eee;text-align:right">$${Number(it.amount || 0).toFixed(2)}</td></tr>`
+      ).join('');
+
+      const html = `<!DOCTYPE html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:24px;color:#1a1a2e">
+<h2 style="margin:0 0 4px">${bizName}</h2>
+${inv.businessInfo?.businessPhone ? `<p style="margin:0;color:#555;font-size:0.9em">${inv.businessInfo.businessPhone}</p>` : ''}
+<hr style="margin:16px 0;border:none;border-top:2px solid #3b4ed8">
+<p style="margin:0 0 4px;font-size:0.85em;color:#888">INVOICE</p>
+<h3 style="margin:0 0 16px">${inv.invoiceNumber} — ${total}</h3>
+<p>Hi ${inv.clientName || 'there'},</p>
+<p>Please find your invoice details below.</p>
+<table style="width:100%;border-collapse:collapse;margin:20px 0;font-size:0.9em">
+  <thead><tr style="background:#f3f4f6">
+    <th style="padding:10px 8px;text-align:left">Description</th>
+    <th style="padding:10px 8px;text-align:center">Qty × Rate</th>
+    <th style="padding:10px 8px;text-align:right">Amount</th>
+  </tr></thead>
+  <tbody>${itemRows}</tbody>
+  <tfoot>
+    ${inv.discount ? `<tr><td colspan="2" style="padding:8px;text-align:right;color:#555">Discount</td><td style="padding:8px;text-align:right;color:#555">-$${Number(inv.discount).toFixed(2)}</td></tr>` : ''}
+    ${inv.tax ? `<tr><td colspan="2" style="padding:8px;text-align:right;color:#555">Tax (${inv.taxRate}%)</td><td style="padding:8px;text-align:right;color:#555">$${Number(inv.tax).toFixed(2)}</td></tr>` : ''}
+    <tr style="font-weight:bold;font-size:1.05em"><td colspan="2" style="padding:10px 8px;text-align:right">Total Due</td><td style="padding:10px 8px;text-align:right">${total}</td></tr>
+  </tfoot>
+</table>
+${inv.businessInfo?.paymentInfo ? `<p style="background:#f9fafb;padding:12px;border-radius:6px;font-size:0.88em"><strong>Payment Options:</strong><br>${inv.businessInfo.paymentInfo.replace(/\n/g,'<br>')}</p>` : ''}
+${inv.notes ? `<p style="margin-top:16px;font-size:0.9em;color:#444">${inv.notes}</p>` : ''}
+<p style="margin-top:24px">
+  <a href="${viewUrl}" style="display:inline-block;background:#3b4ed8;color:white;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:0.95em">View Invoice Online</a>
+</p>
+<p style="margin-top:24px;font-size:0.82em;color:#999">You received this because ${bizName} sent you an invoice.<br>${inv.dueDate ? `Due date: ${new Date(inv.dueDate).toLocaleDateString()}` : 'Due on receipt'}</p>
+<img src="${trackUrl}" width="1" height="1" style="display:block;opacity:0;position:absolute" alt="">
+</body></html>`;
+
+      await transporter.sendMail({
+        from: process.env.SMTP_FROM,
+        to: inv.clientEmail,
+        subject: `Invoice ${inv.invoiceNumber} from ${bizName} — ${total}`,
+        html,
+      });
+
+      await invoiceOps.update(req.params.id, req.user._id, { status: inv.status === 'draft' ? 'sent' : inv.status, sentAt: new Date().toISOString() });
+      await invoiceOps.addEvent(req.params.id, 'sent_email', { recipient: inv.clientEmail });
+      return res.json({ success: true, viewUrl });
+    }
+
+    if (method === 'sms') {
+      if (!inv.clientPhone) return res.status(400).json({ error: 'No client phone number on this invoice' });
+      if (!process.env.TWILIO_ACCOUNT_SID) return res.status(400).json({ error: 'SMS not configured. Set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER in environment.' });
+
+      const twilio = require('twilio')(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+      const smsBody = `Hi ${inv.clientName || 'there'}, your invoice ${inv.invoiceNumber} for ${total} from ${bizName} is ready. View & pay here: ${viewUrl}`;
+      await twilio.messages.create({ body: smsBody, from: process.env.TWILIO_PHONE_NUMBER, to: inv.clientPhone });
+
+      await invoiceOps.update(req.params.id, req.user._id, { status: inv.status === 'draft' ? 'sent' : inv.status, sentAt: new Date().toISOString() });
+      await invoiceOps.addEvent(req.params.id, 'sent_sms', { recipient: inv.clientPhone });
+      return res.json({ success: true, viewUrl });
+    }
+
+    res.status(400).json({ error: 'method must be email or sms' });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Mark paid
+app.post('/api/invoices/:id/mark-paid', requireAuth, async (req, res) => {
+  try {
+    const inv = await invoiceOps.findById(req.params.id);
+    if (!inv || inv.userId !== req.user._id) return res.status(404).json({ error: 'Not found' });
+    await invoiceOps.update(req.params.id, req.user._id, { status: 'paid', paidAt: new Date().toISOString() });
+    await invoiceOps.addEvent(req.params.id, 'marked_paid', {});
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // ── Root ──────────────────────────────────────────────────────────────────────
