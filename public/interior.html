@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Interior — RoofTrace Pro</title>
+<link rel="icon" href="/favicon.svg" />
+<link rel="manifest" href="/manifest.json" />
+<meta name="theme-color" content="#0f172a" />
+<style>
+  :root {
+    --bg:#0f172a; --panel:#1e293b; --panel2:#172235; --line:#334155; --muted:#94a3b8; --dim:#64748b;
+    --text:#f8fafc; --blue:#2563eb; --blue2:#93c5fd; --amber:#f59e0b; --green:#16a34a; --red:#dc2626; --cyan:#0891b2;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { background:var(--bg); color:var(--text); font-family:Arial, sans-serif; min-height:100%; }
+  body { padding-bottom:env(safe-area-inset-bottom); }
+  button, input, select { font:inherit; }
+  a { color:var(--blue2); }
+
+  .header { position:sticky; top:0; z-index:10; background:var(--panel2); border-bottom:2px solid var(--blue);
+    padding:calc(10px + env(safe-area-inset-top)) 16px 10px; display:flex; align-items:center; gap:12px; }
+  .logo { font-weight:900; letter-spacing:.5px; white-space:nowrap; display:flex; align-items:center; gap:8px; }
+  .logo span { color:var(--amber); }
+  .logo small { color:var(--muted); font-weight:700; font-size:.75em; letter-spacing:1px; text-transform:uppercase; }
+  .header .spacer { flex:1; }
+  .hbtn { background:#334155; color:white; border:none; border-radius:8px; padding:8px 12px; font-weight:700; font-size:.85em; cursor:pointer; text-decoration:none; white-space:nowrap; }
+
+  main { max-width:860px; margin:0 auto; padding:16px; }
+  .crumb { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.9em; margin-bottom:12px; }
+  .crumb button { background:none; border:none; color:var(--blue2); cursor:pointer; font-weight:700; padding:4px 0; }
+  h1 { font-size:1.35em; margin-bottom:4px; }
+  .sub { color:var(--muted); font-size:.88em; }
+
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; overflow:hidden; margin-bottom:14px; }
+  .card-pad { padding:14px 16px; }
+  .row { display:flex; align-items:center; gap:12px; padding:14px 16px; border-top:1px solid var(--line); cursor:pointer; }
+  .row:first-child { border-top:none; }
+  .row:active, .row:hover { background:#24324a; }
+  .row .grow { flex:1; min-width:0; }
+  .row .t { font-weight:700; font-size:1.02em; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .row .s { color:var(--muted); font-size:.8em; margin-top:3px; }
+  .row .v { font-weight:700; color:var(--blue2); white-space:nowrap; }
+  .chev { color:var(--dim); font-size:1.2em; }
+  .dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  .floor-head { display:flex; justify-content:space-between; align-items:baseline; padding:12px 16px; background:var(--panel2);
+    color:var(--muted); font-size:.75em; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+  .floor-head b { color:var(--text); letter-spacing:0; font-size:1.2em; }
+
+  .btns { display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .btn { flex:1; min-width:140px; border:none; border-radius:10px; padding:13px 14px; font-weight:800; font-size:.92em; cursor:pointer; color:white; background:var(--blue); text-align:center; text-decoration:none; }
+  .btn.green { background:var(--green); } .btn.amber { background:var(--amber); color:#172235; } .btn.gray { background:#334155; }
+  .btn.red { background:#7f1d1d; color:#fca5a5; } .btn.small { flex:none; min-width:0; padding:9px 12px; font-size:.82em; }
+
+  .totals { display:grid; grid-template-columns:repeat(4, 1fr); gap:1px; background:var(--line); }
+  @media (max-width:560px) { .totals { grid-template-columns:1fr 1fr; } }
+  .totals div { background:var(--panel); padding:11px 14px; }
+  .totals .k { color:var(--muted); font-size:.7em; font-weight:700; letter-spacing:1px; text-transform:uppercase; }
+  .totals .n { font-size:1.1em; font-weight:800; margin-top:3px; white-space:nowrap; }
+
+  .plan { background:#f8fafc; border-radius:12px; margin-bottom:14px; }
+  .plan svg { display:block; width:100%; height:auto; }
+
+  table.q { width:100%; border-collapse:collapse; }
+  table.q td { padding:11px 16px; border-top:1px solid var(--line); font-size:.92em; }
+  table.q tr:first-child td { border-top:none; }
+  table.q td:first-child { color:var(--muted); }
+  table.q td:last-child { text-align:right; font-weight:700; }
+
+  .field { display:block; margin-bottom:12px; }
+  .field span { display:block; color:var(--muted); font-size:.75em; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:6px; }
+  .field input, .field select { width:100%; background:var(--bg); border:1px solid var(--line); color:white; padding:11px 12px; border-radius:8px; font-size:16px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  .modal-bg { position:fixed; inset:0; background:rgba(2,6,23,.75); z-index:50; display:flex; align-items:flex-end; justify-content:center; }
+  .modal { background:var(--panel); width:100%; max-width:520px; border-radius:16px 16px 0 0; padding:18px 16px calc(18px + env(safe-area-inset-bottom)); max-height:92vh; overflow-y:auto; }
+  @media (min-width:700px) { .modal-bg { align-items:center; } .modal { border-radius:16px; } }
+  .modal h2 { font-size:1.1em; margin-bottom:14px; }
+
+  .empty { text-align:center; padding:34px 16px; color:var(--muted); }
+  .empty .big { font-size:2.2em; margin-bottom:8px; }
+  .note { color:var(--muted); font-size:.82em; line-height:1.45; }
+  .tag { display:inline-block; font-size:.68em; font-weight:800; letter-spacing:.8px; padding:2px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
+  .tag.lidar { background:#1e3a8a; color:#bfdbfe; } .tag.manual { background:#3f3f46; color:#e4e4e7; }
+  .err { background:#7f1d1d; color:#fecaca; padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:.88em; }
+  .toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#0b1220; border:1px solid var(--line);
+    padding:10px 16px; border-radius:10px; font-size:.9em; z-index:60; }
+
+  /* Print report */
+  .print-only { display:none; }
+  @media print {
+    html, body { background:white; color:#0f172a; }
+    .header, .no-print, .crumb, .btns { display:none !important; }
+    .print-only { display:block; }
+    main { max-width:none; padding:0; }
+    .card { background:white; border-color:#cbd5e1; break-inside:avoid; }
+    .totals { background:#cbd5e1; } .totals div { background:white; }
+    .totals .k, table.q td:first-child, .sub, .floor-head { color:#475569; }
+    .floor-head { background:#f1f5f9; } .floor-head b { color:#0f172a; }
+    table.q td { border-color:#e2e8f0; }
+    .report-room { break-inside:avoid; page-break-inside:avoid; margin-bottom:18px; }
+    .plan { border:1px solid #cbd5e1; }
+  }
+</style>
+</head>
+<body>
+<header class="header">
+  <div class="logo"><img src="/logo-icon.svg" style="height:26px" alt=""><div>Roof<span>Trace</span> Pro <small>Interior</small></div></div>
+  <div class="spacer"></div>
+  <a class="hbtn" href="/tool">&#127968; Roof Tool</a>
+</header>
+<main id="app"></main>
+
+<script>
+/* ───────────────── helpers ───────────────── */
+const $app = document.getElementById('app');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+const n1 = v => Number(v || 0).toLocaleString(undefined, { minimumFractionDigits:1, maximumFractionDigits:1 });
+function ftIn(ft) {
+  const total = Math.round(Number(ft || 0) * 12);
+  const f = Math.floor(total / 12), i = total % 12;
+  return i ? `${f}' ${i}"` : `${f}'`;
+}
+async function api(path, opts = {}) {
+  const res = await fetch('/api/interior' + path, {
+    method: opts.method || 'GET',
+    headers: opts.body ? { 'Content-Type': 'application/json' } : {},
+    body: opts.body ? JSON.stringify(opts.body) : undefined,
+    credentials: 'same-origin',
+  });
+  if (res.status === 401) { location.href = '/login'; throw new Error('Not signed in'); }
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+function toast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 2600);
+}
+function go(hash) { location.hash = hash; }
+function roomColor(name) {
+  const s = String(name).toLowerCase();
+  if (/bath|wet|laundry|utility|powder/.test(s)) return '#38bdf8';
+  if (/kitchen|dining|living|family|den|great/.test(s)) return '#fbbf24';
+  if (/bed|sitting|office|study/.test(s)) return '#a78bfa';
+  if (/closet|pantry|storage/.test(s)) return '#94a3b8';
+  if (/hall|entry|foyer|stair|landing/.test(s)) return '#d6b98c';
+  return '#64748b';
+}
+function sumMetrics(rooms) {
+  const t = { floorSF:0, wallSF:0, ceilingSF:0, perimeterLF:0, baseboardLF:0 };
+  rooms.forEach(r => { for (const k in t) t[k] += r.metrics?.[k] || 0; });
+  return t;
+}
+
+/* ───────────────── 2D plan (SVG) ───────────────── */
+function planSVG(room, opts = {}) {
+  const poly = room.polygon || [];
+  if (poly.length < 3) return '';
+  const W = opts.width || 640, pad = opts.pad || 64;
+  const xs = poly.map(p => p[0]), ys = poly.map(p => p[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+  const spanX = Math.max(maxX - minX, 1), spanY = Math.max(maxY - minY, 1);
+  const scale = (W - pad * 2) / Math.max(spanX, spanY * 0.9);
+  const H = Math.round(spanY * scale + pad * 2);
+  const ox = (W - spanX * scale) / 2;
+  const P = p => [ox + (p[0] - minX) * scale, pad + (p[1] - minY) * scale];
+  const pts = poly.map(P);
+
+  // signed area tells us which side is "outside" for label placement
+  let sa = 0; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length]; sa += a[0] * b[1] - b[0] * a[1]; }
+  const outSign = sa > 0 ? -1 : 1;
+
+  let labels = '';
+  pts.forEach((a, i) => {
+    const b = pts[(i + 1) % pts.length];
+    const lenFt = Math.hypot(poly[(i + 1) % poly.length][0] - poly[i][0], poly[(i + 1) % poly.length][1] - poly[i][1]);
+    if (lenFt < 0.75) return;
+    const mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+    const dx = b[0] - a[0], dy = b[1] - a[1], L = Math.hypot(dx, dy) || 1;
+    const nx = (-dy / L) * outSign * 18, ny = (dx / L) * outSign * 18;
+    const txt = ftIn(lenFt), w = txt.length * 8.4 + 12;
+    labels += `<g transform="translate(${(mx + nx).toFixed(1)},${(my + ny).toFixed(1)})">
+      <rect x="${-w / 2}" y="-11" width="${w}" height="22" rx="4" fill="#334155"/>
+      <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="700" fill="#fff" font-family="Arial">${txt}</text></g>`;
+  });
+
+  let openings = '';
+  (room.openings || []).forEach(o => {
+    const a = P(o.a), b = P(o.b);
+    if (o.type === 'window') {
+      openings += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#f8fafc" stroke-width="9"/>
+        <line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#0891b2" stroke-width="3"/>`;
+    } else {
+      openings += `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#f8fafc" stroke-width="10"/>`;
+      if (o.type === 'door') {
+        // swing arc into the room
+        const r = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        const cx = (pts.reduce((s, p) => s + p[0], 0) / pts.length), cy = (pts.reduce((s, p) => s + p[1], 0) / pts.length);
+        const dx = b[0] - a[0], dy = b[1] - a[1];
+        let nx = -dy, ny = dx; if ((cx - a[0]) * nx + (cy - a[1]) * ny < 0) { nx = dy; ny = -dx; }
+        const ex = a[0] + nx, ey = a[1] + ny;
+        const sweep = (dx * ny - dy * nx) > 0 ? 0 : 1;
+        openings += `<path d="M${a[0]},${a[1]} L${ex},${ey} A${r},${r} 0 0 ${sweep} ${b[0]},${b[1]}" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="4 3"/>`;
+      }
+    }
+  });
+
+  let objects = '';
+  if (opts.objects !== false) (room.objects || []).forEach(o => {
+    const c = P(o.center), w = (o.widthFt || 0) * scale, d = (o.depthFt || 0) * scale;
+    if (!w || !d) return;
+    objects += `<g transform="translate(${c[0]},${c[1]}) rotate(${o.rotationDeg || 0})">
+      <rect x="${-w / 2}" y="${-d / 2}" width="${w}" height="${d}" fill="rgba(100,116,139,.18)" stroke="#94a3b8" stroke-dasharray="3 2"/>
+      ${w > 40 ? `<text y="4" text-anchor="middle" font-size="10" fill="#475569" font-family="Arial">${esc(o.category)}</text>` : ''}</g>`;
+  });
+
+  const cx = pts.reduce((s, p) => s + p[0], 0) / pts.length, cy = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="${esc(room.name)} floor plan">
+    <polygon points="${pts.map(p => p.join(',')).join(' ')}" fill="#f7f2e1" stroke="#0f172a" stroke-width="7" stroke-linejoin="miter"/>
+    ${objects}${openings}
+    <text x="${cx}" y="${cy - 4}" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a" font-family="Arial">${esc(String(room.name).toUpperCase())}</text>
+    <text x="${cx}" y="${cy + 16}" text-anchor="middle" font-size="13" fill="#475569" font-family="Arial">${n1(room.metrics?.floorSF)} sq ft</text>
+    ${labels}
+  </svg>`;
+}
+
+function quantityTable(m) {
+  const rows = [
+    ['Floor', `${n1(m.floorSF)} SF`], ['Flooring', `${Number(m.floorSY || 0).toFixed(2)} SY`],
+    ['Ceiling', `${n1(m.ceilingSF)} SF`], ['Walls (net of openings)', `${n1(m.wallSF)} SF`],
+    ['Walls & Ceiling', `${n1(m.wallsAndCeilingSF)} SF`], ['Floor Perimeter', `${n1(m.perimeterLF)} LF`],
+    ['Baseboard (less doors)', `${n1(m.baseboardLF)} LF`], ['Ceiling Height', ftIn(m.ceilingHeightFt)],
+    ['Openings deducted', `${n1(m.openingSF)} SF`], ['Doors / Windows', `${m.doors || 0} / ${m.windows || 0}`],
+  ];
+  return `<table class="q">${rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>`;
+}
+
+/* ───────────────── modals ───────────────── */
+function openModal(html, onSubmit) {
+  const bg = document.createElement('div'); bg.className = 'modal-bg';
+  bg.innerHTML = `<form class="modal">${html}</form>`;
+  bg.addEventListener('click', e => { if (e.target === bg) bg.remove(); });
+  const form = bg.querySelector('form');
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const btn = form.querySelector('[type=submit]'); if (btn) btn.disabled = true;
+    try { await onSubmit(Object.fromEntries(new FormData(form)), bg); }
+    catch (err) {
+      let box = form.querySelector('.err'); if (!box) { box = document.createElement('div'); box.className = 'err'; form.prepend(box); }
+      box.textContent = err.message; if (btn) btn.disabled = false;
+    }
+  });
+  form.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', () => bg.remove()));
+  document.body.appendChild(bg);
+  setTimeout(() => form.querySelector('input')?.focus(), 50);
+  return bg;
+}
+
+function floorSelect(floors, current) {
+  return `<label class="field"><span>Floor</span>
+    <select name="floor" data-prev="${esc(current || floors[0] || '')}" onchange="floorPicked(this)">
+    ${floors.map(f => `<option ${f === current ? 'selected' : ''}>${esc(f)}</option>`).join('')}
+    <option value="__new">+ New floor…</option></select></label>`;
+}
+function floorPicked(sel) {
+  if (sel.value !== '__new') { sel.dataset.prev = sel.value; return; }
+  const v = (prompt('New floor name (e.g. Second Floor, Basement)') || '').trim();
+  if (!v) { sel.value = sel.dataset.prev; return; }
+  sel.add(new Option(v, v, true, true), sel.options.length - 1);
+  sel.dataset.prev = v;
+}
+
+function newPropertyModal(prefill = '') {
+  openModal(`<h2>New Property</h2>
+    <label class="field"><span>Property Address</span><input name="address" required value="${esc(prefill)}" placeholder="123 Main St, Southlake TX" autocomplete="street-address"></label>
+    <div class="grid2">
+      <label class="field"><span>Claim #</span><input name="claimNumber"></label>
+      <label class="field"><span>Insured</span><input name="insuredName"></label>
+    </div>
+    <div class="btns"><button type="button" class="btn gray" data-close>Cancel</button><button type="submit" class="btn">Create</button></div>`,
+  async (data, bg) => { const p = await api('/properties', { method:'POST', body:data }); bg.remove(); go('#/p/' + p._id); });
+}
+
+function manualRoomModal(property) {
+  openModal(`<h2>Add Room by Measurement</h2>
+    <label class="field"><span>Room Name</span><input name="name" required placeholder="Bed 1, Kitchen, Hallway…"></label>
+    ${floorSelect(property.floors, property.floors[0])}
+    <div class="grid3">
+      <label class="field"><span>Length (ft)</span><input name="lengthFt" type="number" step="0.01" min="0.5" required inputmode="decimal"></label>
+      <label class="field"><span>Width (ft)</span><input name="widthFt" type="number" step="0.01" min="0.5" required inputmode="decimal"></label>
+      <label class="field"><span>Ceiling (ft)</span><input name="ceilingHeightFt" type="number" step="0.01" min="1" value="8" inputmode="decimal"></label>
+    </div>
+    <p class="note">Rectangular rooms only. For L-shaped rooms, closets and openings, scan with the iPhone app.</p>
+    <div class="btns"><button type="button" class="btn gray" data-close>Cancel</button><button type="submit" class="btn">Add Room</button></div>`,
+  async (data, bg) => { await api(`/properties/${property._id}/rooms`, { method:'POST', body:data }); bg.remove(); toast('Room added'); render(); });
+}
+
+function scanModal(property) {
+  const link = `rooftracescan://scan?property=${encodeURIComponent(property._id)}&address=${encodeURIComponent(property.address)}&server=${encodeURIComponent(location.origin)}`;
+  openModal(`<h2>&#128241; Scan with LiDAR</h2>
+    <p class="note" style="margin-bottom:14px">Opens <b>RoofTrace Scan</b> on your iPhone Pro / iPad Pro. Walk each room slowly with the camera pointed at the walls — walls, doors, windows, openings, ceiling height and cabinets are captured automatically and land here when you tap <b>Save</b>.</p>
+    <a class="btn green" style="display:block" href="${link}">Open RoofTrace Scan</a>
+    <p class="note" style="margin-top:12px">Needs an iPhone or iPad with LiDAR (Pro models, iPhone 12 Pro and later). If nothing happens, the app isn't installed on this device yet.</p>
+    <div class="btns"><button type="button" class="btn gray" data-close>Close</button></div>`, async () => {});
+}
+
+/* ───────────────── views ───────────────── */
+async function viewList() {
+  const list = await api('/properties');
+  const params = new URLSearchParams(location.search);
+  const addr = params.get('address');
+  if (addr) {
+    history.replaceState(null, '', '/interior' + location.hash);
+    const hit = list.find(p => p.address.trim().toLowerCase() === addr.trim().toLowerCase());
+    if (hit) return go('#/p/' + hit._id);
+    setTimeout(() => newPropertyModal(addr), 0);
+  }
+  $app.innerHTML = `
+    <h1>Interior Measurements</h1>
+    <p class="sub">LiDAR room scans and room-by-room square footage for each property.</p>
+    <div class="btns"><button class="btn" onclick="newPropertyModal()">+ New Property</button></div>
+    <div class="card">${list.length ? list.map(p => `
+      <div class="row" onclick="go('#/p/${p._id}')">
+        <div class="grow"><div class="t">${esc(p.address)}</div>
+          <div class="s">${p.claimNumber ? 'Claim ' + esc(p.claimNumber) + ' · ' : ''}${p.roomCount} room${p.roomCount === 1 ? '' : 's'} · updated ${new Date(p.updatedAt).toLocaleDateString()}</div></div>
+        <div class="v">${n1(p.floorSF)} ft²</div><div class="chev">&#8250;</div>
+      </div>`).join('') : `<div class="empty"><div class="big">&#127968;</div>No properties yet. Add one to start measuring rooms.</div>`}
+    </div>`;
+}
+
+let current = null; // property on screen, used by the modal buttons
+async function viewProperty(id, report = false) {
+  const p = await api('/properties/' + id);
+  const floors = [...p.floors]; p.rooms.forEach(r => { if (!floors.includes(r.floor)) floors.push(r.floor); });
+  current = { ...p, floors };
+  const t = sumMetrics(p.rooms);
+  const totals = `<div class="totals">
+      <div><div class="k">Floor</div><div class="n">${n1(t.floorSF)} ft²</div></div>
+      <div><div class="k">Walls</div><div class="n">${n1(t.wallSF)} ft²</div></div>
+      <div><div class="k">Ceiling</div><div class="n">${n1(t.ceilingSF)} ft²</div></div>
+      <div><div class="k">Baseboard</div><div class="n">${n1(t.baseboardLF)} LF</div></div>
+    </div>`;
+  const head = `
+    <div class="crumb"><button onclick="go('#/')">&#8249; Properties</button></div>
+    <h1>${esc(p.address)}</h1>
+    <p class="sub">${[p.claimNumber && 'Claim ' + esc(p.claimNumber), p.insuredName && esc(p.insuredName)].filter(Boolean).join(' · ') || '&nbsp;'}</p>`;
+
+  if (report) {
+    $app.innerHTML = head + `
+      <div class="btns no-print"><button class="btn gray" onclick="go('#/p/${p._id}')">&#8249; Back</button><button class="btn" onclick="window.print()">&#128424; Print / Save PDF</button></div>
+      <p class="print-only sub" style="margin-bottom:10px">Interior measurements · ${new Date().toLocaleDateString()} · RoofTrace Pro</p>
+      <div class="card">${totals}</div>
+      ${floors.map(f => {
+        const rs = p.rooms.filter(r => r.floor === f); if (!rs.length) return '';
+        return `<h2 style="margin:18px 0 10px;font-size:1.05em">${esc(f)} — ${n1(sumMetrics(rs).floorSF)} ft²</h2>` + rs.map(r => `
+          <div class="report-room card"><div class="floor-head"><span><b>${esc(r.name)}</b></span><span>${n1(r.metrics.floorSF)} ft²</span></div>
+            <div class="plan" style="margin:0;border-radius:0">${planSVG(r, { width:560, pad:56 })}</div>${quantityTable(r.metrics)}</div>`).join('');
+      }).join('')}`;
+    setTimeout(() => window.print(), 400);
+    return;
+  }
+
+  $app.innerHTML = head + `
+    <div class="btns">
+      <button class="btn green" onclick="scanModal(current)">&#128241; Scan Room (LiDAR)</button>
+      <button class="btn gray" onclick="manualRoomModal(current)">&#128207; Add by Measurement</button>
+    </div>
+    <div class="card">${totals}</div>
+    ${p.rooms.length ? floors.map(f => {
+      const rs = p.rooms.filter(r => r.floor === f); if (!rs.length) return '';
+      return `<div class="card"><div class="floor-head"><span>${esc(f)}</span><b>${n1(sumMetrics(rs).floorSF)} ft²</b></div>
+        ${rs.map(r => `<div class="row" onclick="go('#/p/${p._id}/r/${r._id}')">
+          <div class="dot" style="background:${roomColor(r.name)}"></div>
+          <div class="grow"><div class="t">${esc(r.name)}<span class="tag ${r.source}">${r.source === 'lidar' ? 'LIDAR' : 'MANUAL'}</span></div>
+            <div class="s">Walls ${n1(r.metrics.wallSF)} ft² · ${ftIn(r.metrics.ceilingHeightFt)} ceiling</div></div>
+          <div class="v">${n1(r.metrics.floorSF)} ft²</div><div class="chev">&#8250;</div></div>`).join('')}</div>`;
+    }).join('') : `<div class="card"><div class="empty"><div class="big">&#128208;</div>No rooms yet. Scan a room with your iPhone's LiDAR or add one by measurement.</div></div>`}
+    <div class="btns">
+      <button class="btn amber" ${p.rooms.length ? '' : 'disabled'} onclick="go('#/p/${p._id}/report')">&#128196; Room Report</button>
+      <button class="btn gray" onclick="editPropertyModal(current)">&#9998; Edit</button>
+      <button class="btn red small" onclick="deleteProperty('${p._id}')">Delete</button>
+    </div>`;
+}
+
+function editPropertyModal(p) {
+  openModal(`<h2>Edit Property</h2>
+    <label class="field"><span>Property Address</span><input name="address" required value="${esc(p.address)}"></label>
+    <div class="grid2">
+      <label class="field"><span>Claim #</span><input name="claimNumber" value="${esc(p.claimNumber)}"></label>
+      <label class="field"><span>Insured</span><input name="insuredName" value="${esc(p.insuredName)}"></label>
+    </div>
+    <div class="btns"><button type="button" class="btn gray" data-close>Cancel</button><button type="submit" class="btn">Save</button></div>`,
+  async (data, bg) => { await api('/properties/' + p._id, { method:'PATCH', body:data }); bg.remove(); render(); });
+}
+
+async function deleteProperty(id) {
+  if (!confirm('Delete this property and all of its rooms? This cannot be undone.')) return;
+  await api('/properties/' + id, { method:'DELETE' }); go('#/');
+}
+
+async function viewRoom(pid, rid) {
+  const p = await api('/properties/' + pid);
+  const r = p.rooms.find(x => x._id === rid);
+  if (!r) return go('#/p/' + pid);
+  const floors = [...p.floors]; if (!floors.includes(r.floor)) floors.push(r.floor);
+  const objs = (r.objects || []);
+  $app.innerHTML = `
+    <div class="crumb"><button onclick="go('#/p/${pid}')">&#8249; ${esc(p.address)}</button></div>
+    <h1>${esc(r.name)}<span class="tag ${r.source}">${r.source === 'lidar' ? 'LIDAR' : 'MANUAL'}</span></h1>
+    <p class="sub">${esc(r.floor)} · ${r.metrics.walls.length} walls · ${n1(r.metrics.floorSF)} ft²</p>
+    <div class="plan" style="margin-top:14px">${planSVG(r)}</div>
+    <div class="card">${quantityTable(r.metrics)}</div>
+    ${objs.length ? `<div class="card"><div class="floor-head"><span>Detected items</span><b>${objs.length}</b></div>
+      ${objs.map(o => `<div class="row" style="cursor:default"><div class="grow"><div class="t" style="text-transform:capitalize">${esc(o.category)}</div>
+        <div class="s">${ftIn(o.widthFt)} W × ${ftIn(o.depthFt)} D × ${ftIn(o.heightFt)} H</div></div></div>`).join('')}</div>` : ''}
+    <div class="card card-pad">
+      <form id="roomForm">
+        <label class="field"><span>Room Name</span><input name="name" value="${esc(r.name)}"></label>
+        ${floorSelect(floors, r.floor)}
+        ${r.source === 'manual' ? `<div class="grid3">
+          <label class="field"><span>Length (ft)</span><input name="lengthFt" type="number" step="0.01" value="${r.metrics.walls[0]}" inputmode="decimal"></label>
+          <label class="field"><span>Width (ft)</span><input name="widthFt" type="number" step="0.01" value="${r.metrics.walls[1]}" inputmode="decimal"></label>
+          <label class="field"><span>Ceiling (ft)</span><input name="ceilingHeightFt" type="number" step="0.01" value="${r.ceilingHeightFt}" inputmode="decimal"></label></div>`
+        : `<label class="field"><span>Ceiling Height (ft) — override if the scan missed a vaulted or dropped ceiling</span>
+            <input name="ceilingHeightFt" type="number" step="0.01" value="${r.ceilingHeightFt}" inputmode="decimal"></label>`}
+        <div class="btns" style="margin-bottom:0"><button type="submit" class="btn">Save Changes</button>
+          <button type="button" class="btn red small" onclick="deleteRoom('${pid}','${rid}')">Delete Room</button></div>
+      </form>
+    </div>`;
+  document.getElementById('roomForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    try { await api('/rooms/' + rid, { method:'PATCH', body:Object.fromEntries(new FormData(e.target)) }); toast('Saved'); render(); }
+    catch (err) { toast(err.message); }
+  });
+}
+
+async function deleteRoom(pid, rid) {
+  if (!confirm('Delete this room?')) return;
+  await api('/rooms/' + rid, { method:'DELETE' }); go('#/p/' + pid);
+}
+
+/* ───────────────── router ───────────────── */
+async function render() {
+  const h = location.hash.replace(/^#/, '') || '/';
+  const m = h.match(/^\/p\/([^/]+)(?:\/(report|r\/([^/]+)))?$/);
+  try {
+    if (!m) await viewList();
+    else if (m[2] === 'report') await viewProperty(m[1], true);
+    else if (m[3]) await viewRoom(m[1], m[3]);
+    else await viewProperty(m[1]);
+    window.scrollTo(0, 0);
+  } catch (err) {
+    $app.innerHTML = `<div class="err">${esc(err.message)}</div><button class="btn gray" onclick="go('#/')">Back to properties</button>`;
+  }
+}
+window.addEventListener('hashchange', render);
+render();
+</script>
+</body>
+</html>

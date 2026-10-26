@@ -68,6 +68,19 @@ app.post('/api/auth/register', async (req, res) => {
   } catch (err) { res.status(500).json({ error: 'Registration failed' }); }
 });
 
+// Token login for the RoofTrace Scan iPhone app (sent back as a Bearer token)
+app.post('/api/auth/token', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const user = await userOps.findByEmail(email);
+    if (!user || !userOps.verifyPassword(user, password)) return res.status(401).json({ error: 'Invalid email or password' });
+    if (user.tier === 'suspended') return res.status(403).json({ error: 'Account suspended. Contact support.' });
+    await userOps.updateLastLogin(user._id);
+    res.json({ token: generateToken(user), user: { name: user.name, email: user.email, company: user.company } });
+  } catch (err) { res.status(500).json({ error: 'Login failed' }); }
+});
+
 app.post('/api/auth/logout', (req, res) => { res.clearCookie('token'); res.json({ success: true }); });
 
 // Forgot/Reset password
@@ -111,6 +124,10 @@ app.get('/tool', requireAuth, (req, res) => {
   if (!userOps.canLookup(req.user)) return res.redirect('/upgrade?reason=limit');
   res.sendFile(path.join(__dirname, 'public', 'tool.html'));
 });
+
+// ── Interior (LiDAR room scans) ───────────────────────────────────────────────
+app.get('/interior', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'interior.html')));
+app.use('/api/interior', require('./routes/interior'));
 
 // ── Me API ────────────────────────────────────────────────────────────────────
 
