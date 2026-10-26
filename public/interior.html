@@ -83,7 +83,24 @@
   .empty .big { font-size:2.2em; margin-bottom:8px; }
   .note { color:var(--muted); font-size:.82em; line-height:1.45; }
   .tag { display:inline-block; font-size:.68em; font-weight:800; letter-spacing:.8px; padding:2px 6px; border-radius:4px; margin-left:6px; vertical-align:middle; }
-  .tag.lidar { background:#1e3a8a; color:#bfdbfe; } .tag.manual { background:#3f3f46; color:#e4e4e7; }
+  .tag.lidar { background:#1e3a8a; color:#bfdbfe; } .tag.manual { background:#3f3f46; color:#e4e4e7; } .tag.sketch { background:#3b0764; color:#e9d5ff; }
+
+  /* segmented buttons (sketch tool) */
+  .segs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+  .seg { flex:1; min-width:70px; background:var(--bg); color:var(--muted); border:1.5px solid var(--line); border-radius:9px; padding:10px 8px; font-weight:700; font-size:.85em; cursor:pointer; }
+  .seg.on { background:var(--blue); border-color:var(--blue); color:white; }
+  .wall-head { font-weight:800; font-size:1.05em; margin-bottom:10px; display:flex; flex-direction:column; gap:3px; }
+  .btn.blue-pulse { background:var(--blue); animation:pulse 1.2s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity:.6; } }
+
+  /* install guide */
+  .guide-top { display:flex; justify-content:space-between; color:var(--muted); font-size:.72em; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+  .guide-dots { display:flex; gap:5px; margin-bottom:16px; }
+  .guide-dots i { flex:1; height:4px; border-radius:2px; background:var(--line); }
+  .guide-dots i.on { background:var(--green); }
+  .guide-num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--blue); font-size:.85em; margin-right:10px; vertical-align:middle; }
+  .guide-body p { line-height:1.5; margin-bottom:10px; color:#cbd5e1; }
+  .guide-list { margin:0 0 10px 20px; line-height:1.6; color:#cbd5e1; }
   .err { background:#7f1d1d; color:#fecaca; padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:.88em; }
   .toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#0b1220; border:1px solid var(--line);
     padding:10px 16px; border-radius:10px; font-size:.9em; z-index:60; }
@@ -295,16 +312,10 @@ function manualRoomModal(property) {
     </div>
     <p class="note">Rectangular rooms only. For L-shaped rooms, closets and openings, scan with the iPhone app.</p>
     <div class="btns"><button type="button" class="btn gray" data-close>Cancel</button><button type="submit" class="btn">Add Room</button></div>`,
-  async (data, bg) => { await api(`/properties/${property._id}/rooms`, { method:'POST', body:data }); bg.remove(); toast('Room added'); render(); });
-}
-
-function scanModal(property) {
-  const link = `rooftracescan://scan?property=${encodeURIComponent(property._id)}&address=${encodeURIComponent(property.address)}&server=${encodeURIComponent(location.origin)}`;
-  openModal(`<h2>&#128241; Scan with LiDAR</h2>
-    <p class="note" style="margin-bottom:14px">Opens <b>RoofTrace Scan</b> on your iPhone Pro / iPad Pro. Walk each room slowly with the camera pointed at the walls — walls, doors, windows, openings, ceiling height and cabinets are captured automatically and land here when you tap <b>Save</b>.</p>
-    <a class="btn green" style="display:block" href="${link}">Open RoofTrace Scan</a>
-    <p class="note" style="margin-top:12px">Needs an iPhone or iPad with LiDAR (Pro models, iPhone 12 Pro and later). If nothing happens, the app isn't installed on this device yet.</p>
-    <div class="btns"><button type="button" class="btn gray" data-close>Close</button></div>`, async () => {});
+  async (data, bg) => {
+    await api(`/properties/${property._id}/rooms`, { method:'POST', body:data }); bg.remove(); toast('Room added');
+    if (/\/sketch$/.test(location.hash)) { sk.property = null; go('#/p/' + property._id); } else render();
+  });
 }
 
 /* ───────────────── views ───────────────── */
@@ -366,7 +377,7 @@ async function viewProperty(id, report = false) {
   $app.innerHTML = head + `
     <div class="btns">
       <button class="btn green" onclick="scanModal(current)">&#128241; Scan Room (LiDAR)</button>
-      <button class="btn gray" onclick="manualRoomModal(current)">&#128207; Add by Measurement</button>
+      <button class="btn gray" onclick="go('#/p/${p._id}/sketch')">&#9999;&#65039; Sketch Room</button>
     </div>
     <div class="card">${totals}</div>
     ${p.rooms.length ? floors.map(f => {
@@ -374,10 +385,10 @@ async function viewProperty(id, report = false) {
       return `<div class="card"><div class="floor-head"><span>${esc(f)}</span><b>${n1(sumMetrics(rs).floorSF)} ft²</b></div>
         ${rs.map(r => `<div class="row" onclick="go('#/p/${p._id}/r/${r._id}')">
           <div class="dot" style="background:${roomColor(r.name)}"></div>
-          <div class="grow"><div class="t">${esc(r.name)}<span class="tag ${r.source}">${r.source === 'lidar' ? 'LIDAR' : 'MANUAL'}</span></div>
+          <div class="grow"><div class="t">${esc(r.name)}<span class="tag ${r.source}">${String(r.source).toUpperCase()}</span></div>
             <div class="s">Walls ${n1(r.metrics.wallSF)} ft² · ${ftIn(r.metrics.ceilingHeightFt)} ceiling</div></div>
           <div class="v">${n1(r.metrics.floorSF)} ft²</div><div class="chev">&#8250;</div></div>`).join('')}</div>`;
-    }).join('') : `<div class="card"><div class="empty"><div class="big">&#128208;</div>No rooms yet. Scan a room with your iPhone's LiDAR or add one by measurement.</div></div>`}
+    }).join('') : `<div class="card"><div class="empty"><div class="big">&#128208;</div>No rooms yet. Scan a room with your iPhone's LiDAR or sketch it wall by wall.</div></div>`}
     <div class="btns">
       <button class="btn amber" ${p.rooms.length ? '' : 'disabled'} onclick="go('#/p/${p._id}/report')">&#128196; Room Report</button>
       <button class="btn gray" onclick="editPropertyModal(current)">&#9998; Edit</button>
@@ -409,7 +420,7 @@ async function viewRoom(pid, rid) {
   const objs = (r.objects || []);
   $app.innerHTML = `
     <div class="crumb"><button onclick="go('#/p/${pid}')">&#8249; ${esc(p.address)}</button></div>
-    <h1>${esc(r.name)}<span class="tag ${r.source}">${r.source === 'lidar' ? 'LIDAR' : 'MANUAL'}</span></h1>
+    <h1>${esc(r.name)}<span class="tag ${r.source}">${String(r.source).toUpperCase()}</span></h1>
     <p class="sub">${esc(r.floor)} · ${r.metrics.walls.length} walls · ${n1(r.metrics.floorSF)} ft²</p>
     <div class="plan" style="margin-top:14px">${planSVG(r)}</div>
     <div class="card">${quantityTable(r.metrics)}</div>
@@ -445,10 +456,11 @@ async function deleteRoom(pid, rid) {
 /* ───────────────── router ───────────────── */
 async function render() {
   const h = location.hash.replace(/^#/, '') || '/';
-  const m = h.match(/^\/p\/([^/]+)(?:\/(report|r\/([^/]+)))?$/);
+  const m = h.match(/^\/p\/([^/]+)(?:\/(report|sketch|r\/([^/]+)))?$/);
   try {
     if (!m) await viewList();
     else if (m[2] === 'report') await viewProperty(m[1], true);
+    else if (m[2] === 'sketch') await viewSketch(m[1]);
     else if (m[3]) await viewRoom(m[1], m[3]);
     else await viewProperty(m[1]);
     window.scrollTo(0, 0);
@@ -456,8 +468,9 @@ async function render() {
     $app.innerHTML = `<div class="err">${esc(err.message)}</div><button class="btn gray" onclick="go('#/')">Back to properties</button>`;
   }
 }
-window.addEventListener('hashchange', render);
-render();
+window.addEventListener('hashchange', () => { document.querySelectorAll('.modal-bg').forEach(m => m.remove()); render(); });
 </script>
+<script src="/interior-sketch.js?v=1"></script>
+<script>render();</script>
 </body>
 </html>
