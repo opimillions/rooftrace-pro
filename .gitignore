@@ -3,3 +3,6 @@ data/
 .env
 *.log
 logs/
+ios/RoofTraceScan/RoofTraceScan.xcodeproj/
+ios/RoofTraceScan/RoofTraceScan/Info.plist
+.DS_Store

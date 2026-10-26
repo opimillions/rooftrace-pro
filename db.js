@@ -15,6 +15,10 @@ if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR);
 const users = Datastore.create({ filename: path.join(DATA_DIR, 'users.db'), autoload: true });
 const lookups = Datastore.create({ filename: path.join(DATA_DIR, 'lookups.db'), autoload: true });
 const alerts = Datastore.create({ filename: path.join(DATA_DIR, 'alerts.db'), autoload: true });
+const properties = Datastore.create({ filename: path.join(DATA_DIR, 'properties.db'), autoload: true });
+const rooms = Datastore.create({ filename: path.join(DATA_DIR, 'rooms.db'), autoload: true });
+properties.ensureIndex({ fieldName: 'userId' });
+rooms.ensureIndex({ fieldName: 'propertyId' });
 
 // Indexes
 users.ensureIndex({ fieldName: 'email', unique: true });
@@ -181,6 +185,67 @@ const alertOps = {
   }
 };
 
+// ── Interior: Properties & Rooms ──────────────────────────────────────────────
+const now = () => new Date().toISOString();
+
+const propertyOps = {
+  async create(userId, data) {
+    return properties.insert({
+      userId,
+      address: String(data.address || '').trim(),
+      claimNumber: data.claimNumber || '',
+      insuredName: data.insuredName || '',
+      floors: Array.isArray(data.floors) && data.floors.length ? data.floors : ['Entrance Floor'],
+      createdAt: now(),
+      updatedAt: now(),
+    });
+  },
+  async listForUser(userId) {
+    const list = await properties.find({ userId }).sort({ updatedAt: -1 });
+    return Promise.all(list.map(async p => {
+      const rs = await rooms.find({ propertyId: p._id });
+      return { ...p, roomCount: rs.length, floorSF: rs.reduce((s, r) => s + (r.metrics?.floorSF || 0), 0) };
+    }));
+  },
+  async get(userId, id) {
+    return properties.findOne({ _id: id, userId });
+  },
+  async update(userId, id, data) {
+    const allowed = {};
+    for (const k of ['address', 'claimNumber', 'insuredName', 'floors']) if (data[k] !== undefined) allowed[k] = data[k];
+    allowed.updatedAt = now();
+    await properties.update({ _id: id, userId }, { $set: allowed });
+    return properties.findOne({ _id: id, userId });
+  },
+  async touch(id) {
+    return properties.update({ _id: id }, { $set: { updatedAt: now() } });
+  },
+  async remove(userId, id) {
+    const n = await properties.remove({ _id: id, userId });
+    if (n) await rooms.remove({ propertyId: id }, { multi: true });
+    return n;
+  },
+};
+
+const roomOps = {
+  async create(propertyId, userId, data) {
+    return rooms.insert({ ...data, propertyId, userId, createdAt: now(), updatedAt: now() });
+  },
+  async listForProperty(propertyId) {
+    return rooms.find({ propertyId }).sort({ createdAt: 1 });
+  },
+  async get(userId, id) {
+    return rooms.findOne({ _id: id, userId });
+  },
+  async replace(userId, id, data) {
+    await rooms.update({ _id: id, userId }, { $set: { ...data, updatedAt: now() } });
+    return rooms.findOne({ _id: id, userId });
+  },
+  async remove(userId, id) {
+    return rooms.remove({ _id: id, userId });
+  },
+};
+
 // ── Seed Admin ────────────────────────────────────────────────────────────────
 async function seedAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL || 'ryan@thepublicadjustertx.com';
@@ -227,4 +292,4 @@ async function seedClientUsers() {
 
 seedClientUsers().catch(console.error);
 
-module.exports = { userOps, lookupOps, alertOps };
+module.exports = { userOps, lookupOps, alertOps, propertyOps, roomOps };

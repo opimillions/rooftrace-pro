@@ -124,6 +124,10 @@
       .header .claim-fields { display: none; }
       .header .logo { display: none; } /* hide logo on mobile to save space */
       .header .btn-report { font-size: 0.75em; padding: 5px 8px; flex-shrink: 0; }
+      .header .btn-report .btn-txt { display: none; } /* icon-only so all buttons fit */
+      .header .btn-report { font-size: 1em; padding: 5px 6px; margin-right: 0 !important; }
+      #mobileHeaderSearch button { padding: 7px 10px !important; }
+      #mobileHeaderSearch { min-width: 0; }
       /* Show mobile address search in header */
       #mobileHeaderSearch {
         display: flex !important;
@@ -311,9 +315,10 @@
       <input type="text" id="companyName" placeholder="Company" style="max-width:150px">
       <input type="date" id="inspectionDate" style="max-width:140px">
     </div>
-    <button class="btn-report" onclick="showSummary()" style="background:#16a34a;margin-right:4px">&#128203; Summary</button>
-    <button class="btn-report" onclick="showEstimate()" style="background:#f59e0b;margin-right:4px">&#128176; Estimate</button>
-    <button class="btn-report" onclick="generatePDF()">&#128196; PDF Report</button>
+    <button class="btn-report" onclick="openInterior()" style="background:#7c3aed;color:white;margin-right:4px" title="Interior rooms (LiDAR)">&#128208;<span class="btn-txt"> Interior</span></button>
+    <button class="btn-report" onclick="showSummary()" style="background:#16a34a;margin-right:4px" title="Summary">&#128203;<span class="btn-txt"> Summary</span></button>
+    <button class="btn-report" onclick="showEstimate()" style="background:#f59e0b;margin-right:4px" title="Estimate">&#128176;<span class="btn-txt"> Estimate</span></button>
+    <button class="btn-report" onclick="generatePDF()" title="PDF Report">&#128196;<span class="btn-txt"> PDF Report</span></button>
   </header>
 
   <!-- Sidebar -->
@@ -2057,6 +2062,12 @@ window.undoLast = function() {
     const btn = document.getElementById('mtb-undo');
     if (btn) { btn.style.borderColor='#ef4444'; setTimeout(()=>btn.style.borderColor='#64748b',500); }
   }
+};
+
+// Interior rooms (LiDAR scans) for the property currently on screen
+window.openInterior = function() {
+  const addr = (document.getElementById('addressInput').value || document.getElementById('mobileHeaderAddr').value || '').trim();
+  location.href = '/interior' + (addr ? '?address=' + encodeURIComponent(addr) : '');
 };
 
 window.mobileGeocode = function() {

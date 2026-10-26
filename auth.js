@@ -16,9 +16,10 @@ function generateToken(user) {
 }
 
 function requireAuth(req, res, next) {
+  const isApi = (req.originalUrl || req.path).startsWith('/api/');
   const token = req.cookies?.token || req.headers.authorization?.replace('Bearer ', '');
   if (!token) {
-    if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Not authenticated' });
+    if (isApi) return res.status(401).json({ error: 'Not authenticated' });
     return res.redirect('/login');
   }
 
@@ -27,25 +28,25 @@ function requireAuth(req, res, next) {
     decoded = jwt.verify(token, JWT_SECRET);
   } catch (err) {
     res.clearCookie('token');
-    if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Session expired' });
+    if (isApi) return res.status(401).json({ error: 'Session expired' });
     return res.redirect('/login');
   }
 
   userOps.findById(decoded.id).then(user => {
     if (!user) {
       res.clearCookie('token');
-      if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'User not found' });
+      if (isApi) return res.status(401).json({ error: 'User not found' });
       return res.redirect('/login');
     }
     if (user.tier === 'suspended') {
       res.clearCookie('token');
-      if (req.path.startsWith('/api/')) return res.status(403).json({ error: 'Account suspended. Contact support.' });
+      if (isApi) return res.status(403).json({ error: 'Account suspended. Contact support.' });
       return res.redirect('/login?error=suspended');
     }
     req.user = user;
     next();
   }).catch(err => {
-    if (req.path.startsWith('/api/')) return res.status(500).json({ error: 'Auth error' });
+    if (isApi) return res.status(500).json({ error: 'Auth error' });
     return res.redirect('/login');
   });
 }
