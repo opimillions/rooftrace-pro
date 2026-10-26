@@ -32,6 +32,14 @@ function ensureFloor(property, floor) {
   return floor || property.floors[0] || 'Entrance Floor';
 }
 
+// Install links for the RoofTrace Scan iPhone app (set in Railway variables)
+router.get('/config', (req, res) => {
+  res.json({
+    testflightUrl: process.env.TESTFLIGHT_URL || null,
+    appStoreUrl: process.env.APP_STORE_URL || null,
+  });
+});
+
 // ── Properties ────────────────────────────────────────────────────────────────
 router.get('/properties', wrap(async (req, res) => {
   res.json(await propertyOps.listForUser(req.user._id));
@@ -72,11 +80,14 @@ router.delete('/properties/:id', wrap(async (req, res) => {
 
 // ── Rooms ─────────────────────────────────────────────────────────────────────
 // Body: { name, floor, scan: {...RoomPlan export...} }  → LiDAR room
+//   or  { name, floor, polygonFt: [[x,y],...], ceilingHeightFt } → wall-by-wall sketch
 //   or  { name, floor, lengthFt, widthFt, ceilingHeightFt } → manual rectangle
 router.post('/properties/:id/rooms', wrap(async (req, res) => {
   const p = await loadProperty(req, res); if (!p) return;
   const name = clean(req.body.name, 60) || 'Room';
-  const shape = req.body.scan ? geo.roomFromScan(req.body.scan) : geo.roomFromDimensions(req.body);
+  const shape = req.body.scan ? geo.roomFromScan(req.body.scan)
+    : req.body.polygonFt ? geo.roomFromPolygon(req.body)
+    : geo.roomFromDimensions(req.body);
   const floor = ensureFloor(p, clean(req.body.floor, 40));
   await propertyOps.update(req.user._id, p._id, { floors: p.floors });
   const room = withMetrics({ name, floor, ...shape });
