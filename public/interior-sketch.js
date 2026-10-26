@@ -192,7 +192,7 @@ async function viewSketch(pid) {
   if (!sk.property || sk.property._id !== pid) {
     const p = await api('/properties/' + pid);
     const floors = [...p.floors]; p.rooms.forEach(r => { if (!floors.includes(r.floor)) floors.push(r.floor); });
-    Object.assign(sk, { property: { ...p, floors }, name: '', floor: floors[0], ceiling: 8, mode: 'turns', walls: [], turn: 90, phase: 'walk', listening: false, drift: 0 });
+    Object.assign(sk, { property: { ...p, floors }, name: '', floor: floors[0], ceiling: 8, mode: 'touch', walls: [], turn: 90, phase: 'walk', listening: false, drift: 0 });
   }
   drawSketch();
 }
