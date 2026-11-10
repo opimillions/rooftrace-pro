@@ -292,6 +292,39 @@
         bottom: 106px !important;
       }
     }
+    /* Fence mode */
+    #fencePanel { display:none; position:fixed; left:300px; bottom:84px; z-index:650; background:#0f172a; border:2px solid #ec4899; border-radius:12px; padding:10px 12px; width:340px; color:white; box-shadow:0 6px 20px rgba(0,0,0,.45); font-family:Arial,sans-serif; }
+    #fencePanel.show { display:block; }
+    #fencePanel .fp-top { display:flex; align-items:center; gap:8px; font-size:.82em; }
+    #fencePanel .fp-title { color:#f472b6; font-weight:900; letter-spacing:.5px; }
+    #fencePanel #fpSum { flex:1; color:#e2e8f0; }
+    #fencePanel .fp-x { background:#1e293b; border:1px solid #334155; color:#cbd5e1; border-radius:6px; width:30px; height:28px; cursor:pointer; }
+    #fencePanel .fp-hint { color:#94a3b8; font-size:.74em; margin:6px 0 8px; line-height:1.35; }
+    #fencePanel .fp-btns { display:flex; gap:6px; }
+    #fencePanel .fp-btns button { flex:1; background:#1e293b; border:1.5px solid #334155; color:white; border-radius:8px; padding:8px 4px; font-weight:700; font-size:.76em; cursor:pointer; white-space:nowrap; }
+    #fencePanel .fp-btns button:disabled { opacity:.4; }
+    #fencePanel #fpFinish:not(:disabled) { background:#ec4899; border-color:#ec4899; }
+    #fencePanel #fpGate.on { background:#f59e0b; border-color:#f59e0b; color:#0f172a; }
+    .fence-len span { display:inline-block; transform:translate(-50%,-50%); background:#ec4899; color:white; font:700 11px Arial,sans-serif; padding:1px 5px; border-radius:4px; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+    .fence-gate .fg-tag { position:absolute; left:0; top:0; transform:translate(-50%,-160%); background:#facc15; color:#0f172a; font:800 11px Arial,sans-serif; padding:1px 5px; border-radius:4px; white-space:nowrap; }
+    .fence-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1100; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .fence-modal { background:#1e293b; color:white; border-radius:14px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto; padding:18px; font-family:Arial,sans-serif; }
+    .fence-modal h3 { margin:0 0 14px; }
+    .fence-modal label { display:block; color:#94a3b8; font-size:.75em; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px; }
+    .fence-modal select { display:block; width:100%; margin-top:6px; background:#0f172a; border:1px solid #334155; color:white; padding:10px; border-radius:8px; font-size:16px; text-transform:none; }
+    .fence-modal .fs-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .fence-modal .fs-btns { display:flex; gap:10px; margin-top:6px; }
+    .fence-modal .fs-btns button { flex:1; background:#334155; color:white; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer; }
+    .fence-modal .fs-btns button.primary { background:#ec4899; }
+    .fence-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+    .fence-table td { padding:9px 4px; border-bottom:1px solid #334155; color:white; font-size:.9em; }
+    .fence-table td:first-child { color:#94a3b8; }
+    .fence-table td:last-child { text-align:right; font-weight:600; }
+    .fence-note { color:#94a3b8; font-size:.8em; line-height:1.45; margin:0 0 12px; }
+    .fence-toast { position:fixed; left:50%; top:110px; transform:translateX(-50%); background:#0f172a; border:1px solid #ec4899; color:white; padding:9px 14px; border-radius:9px; z-index:1200; font:600 13px Arial,sans-serif; }
+    @media (max-width: 768px) {
+      #fencePanel { left:8px; right:72px; width:auto; bottom:104px; padding:8px 10px; }
+    }
     /* Hide mobile-only elements on desktop */
     #mobileDrawerBtn { display: none; }
     #mobileToolbar { display: none; }
@@ -344,6 +377,7 @@
         <button id="mode-drip"   class="mode-btn"        style="border-color:#0891b2;color:#0891b2"  onclick="setMode('drip')">&#8213; Drip Edge</button>
         <button id="mode-rake"   class="mode-btn"        style="border-color:#7c3aed;color:#7c3aed"  onclick="setMode('rake')">&#8213; Rake</button>
         <button id="mode-eaves"  class="mode-btn"        style="border-color:#d97706;color:#d97706"  onclick="setMode('eaves')">&#8213; Eaves</button>
+        <button id="mode-fence"  class="mode-btn"        style="border-color:#ec4899;color:#ec4899"  onclick="setMode('fence')">&#9638; Fence</button>
       </div>
       <div style="margin-top:8px;font-size:0.75em;color:#64748b" id="modeHint">Click to draw a roof facet polygon</div>
     </div>
@@ -407,6 +441,7 @@
     <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">Eaves</button>
     <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">Rake</button>
     <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">Drip</button>
+    <button class="mtb-btn" id="mtb-fence" style="border-color:#ec4899;color:#ec4899" onclick="setMode('fence')">Fence</button>
     <button class="mtb-btn" id="mtb-undo"  style="border-color:#94a3b8;color:#fff;background:#334155" onclick="undoLast()">&#8617;</button>
     <button class="mtb-btn" id="mtb-clear" style="border-color:#dc2626;color:#fff;background:#7f1d1d" onclick="if(confirm('Clear all?'))clearAllLayers()">&#10005;</button>
   </div>
@@ -448,6 +483,10 @@
     <div class="stat" style="border-left-color:#d97706">
       <div class="lbl" style="color:#fbbf24">&#8213; Eaves</div>
       <div class="val" id="statEaves" style="color:#fcd34d">— ft</div>
+    </div>
+    <div class="stat">
+      <div class="lbl" style="color:#f472b6">&#9638; Fence</div>
+      <div class="val" id="statFence" style="color:#f9a8d4">— ft</div>
     </div>
     <div class="stat" style="border-left-color:#10b981">
       <div class="lbl" style="color:#6ee7b7">&#9711; Perimeter</div>
@@ -817,7 +856,7 @@ function snapToNearest(latlng) {
 let snapIndicator = null;
 
 map.on('mousemove', function(e) {
-  if (currentMode === 'facet') { if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; } return; }
+  if (currentMode === 'facet' || currentMode === 'fence') { if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; } return; }
   const snapped = snapToNearest(e.latlng);
   const isSnapping = snapped !== e.latlng;
   if (isSnapping) {
@@ -837,7 +876,7 @@ let segmentPreview = null;
 let previewLine = null;
 
 map.on('mousemove', function(e) {
-  if (currentMode === 'facet' || !segmentStart) return;
+  if (currentMode === 'facet' || currentMode === 'fence' || !segmentStart) return;
   const endPt = snapToNearest(e.latlng);
   if (previewLine) map.removeLayer(previewLine);
   previewLine = L.polyline([segmentStart, endPt], {
@@ -847,7 +886,7 @@ map.on('mousemove', function(e) {
 });
 
 map.on('click', function(e) {
-  if (currentMode === 'facet') return;
+  if (currentMode === 'facet' || currentMode === 'fence') return;
   if (e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-draw')) return;
 
   const snappedPt = snapToNearest(e.latlng);
@@ -1164,8 +1203,10 @@ async function fetchMSBuildingFootprint(lat, lon) {
 function clearAllLayers() {
   if (!confirm('Clear all drawn shapes?')) return;
   [facetLayer,ridgeLayer,hipLayer,valleyLayer,dripLayer,rakeLayer,eavesLayer].forEach(l=>l.clearLayers());
+  if (window.resetFence) { fenceLayer.clearLayers(); fenceGateLayer.clearLayers(); resetFence(); }
   facets.length = 0; facetCounter = 0;
   renderFacets();
+  refreshStats();
 }
 
 // ── PDF Report ────────────────────────────────────────────────────────────────
@@ -1338,6 +1379,35 @@ function buildPDF(mapImageDataUrl, satelliteImgUrl) {
     doc.setTextColor(30,30,30); doc.setFont(undefined,'normal');
     doc.text(w+'%', M+8, y+8); doc.text(fmt(squares*(1+w/100),2)+' sq', M+80, y+8); y+=12;
   });
+
+  // Fence
+  const ft = window.fenceTotals ? fenceTotals() : null;
+  if (ft && ft.grossFt) {
+    y += 14;
+    if (y > 600) { doc.addPage(); y = 40; }
+    doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+    doc.text('Fence', M, y); y += 10;
+    const gateCounts = ft.gateList.reduce((m,w)=>(m[w]=(m[w]||0)+1,m),{});
+    const frows = [
+      ['Fence type', ft.type + ', ' + ft.height + "' tall"],
+      ['Fence (less gates)', fmt(ft.netFt,0) + ' LF'],
+      ['Total run incl. gates', fmt(ft.grossFt,0) + ' LF'],
+      ['Gates', ft.gates ? Object.entries(gateCounts).map(([w,c]) => c + ' x ' + w + "'").join(', ') : '0'],
+      ['Terminal posts (ends & corners)', String(ft.terminalPosts)],
+      ['Gate posts', String(ft.gatePosts)],
+      ['Line posts (' + ft.spacing + "' on center)", String(ft.linePosts)],
+      ['Total posts', String(ft.totalPosts)],
+      ['Fence area, one side', fmt(ft.sf,0) + ' SF'],
+      ['Fence area, both sides', fmt(ft.sf*2,0) + ' SF'],
+    ];
+    doc.setFillColor(23,34,53); doc.rect(M,y,260,13,'F');
+    doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text('Item', M+8, y+9); doc.text('Quantity', M+170, y+9); y += 13;
+    frows.forEach(([l,v],idx) => {
+      if (idx%2===0) { doc.setFillColor(253,242,248); doc.rect(M,y,260,12,'F'); }
+      doc.setTextColor(30,30,30); doc.setFont(undefined, l === 'Total posts' ? 'bold' : 'normal');
+      doc.text(l, M+8, y+8); doc.text(v, M+170, y+8); y += 12;
+    });
+  }
 
   // Footer
   doc.setFontSize(7); doc.setTextColor(160);
@@ -1690,6 +1760,7 @@ function showSummary() {
     + '<div style="background:#0f172a;padding:12px 16px;border-radius:0 0 14px 14px">'
     + '<div style="color:#64748b;font-weight:700;font-size:0.82em;margin-bottom:4px">Waste Factor</div>'
     + '<table style="width:100%;border-collapse:collapse">'+wasteRows+'</table></div>'
+    + (window.fenceTotals && fenceTotals().grossFt ? '<div style="padding:12px 16px 0"><div style="color:#f472b6;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Fence</div><table class="fence-table">'+fenceRowsHTML(fenceTotals())+'</table></div>' : '')
     + '<div style="padding:16px;display:flex;gap:10px">'
     + '<button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>'
     + '<button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>'
@@ -2094,5 +2165,6 @@ window.addEventListener('load', () => {
   }
 });
 </script>
+<script src="/fence.js?v=1"></script>
 </body>
 </html>
