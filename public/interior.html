@@ -100,6 +100,17 @@
   .guide-dots i.on { background:var(--green); }
   .guide-num { display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--blue); font-size:.85em; margin-right:10px; vertical-align:middle; }
   .guide-body p { line-height:1.5; margin-bottom:10px; color:#cbd5e1; }
+  .len-row { display:grid; grid-template-columns:1fr 1fr auto; gap:10px; align-items:end; }
+  .len-row:has(.len-label) { grid-template-columns:30px 1fr 1fr auto; }
+  .len-row.calc input { border-color:#7c3aed; }
+  .len-row.calc input::placeholder { color:#c4b5fd; opacity:1; }
+  .len-row[data-row]:not([data-row="0"]) .field span { display:none; }
+  .len-row[data-row]:not([data-row="0"]) .len-label { padding-bottom:24px; }
+  .len-label { font-weight:800; color:var(--muted); text-align:center; padding-bottom:24px; }
+  .mic { width:46px; height:46px; margin-bottom:12px; border-radius:50%; border:1.5px solid var(--line); background:var(--bg); font-size:1.15em; cursor:pointer; }
+  .mic.on { background:var(--red); border-color:var(--red); animation:pulse 1s ease-in-out infinite; }
+  ol.steps { margin:0 0 14px 20px; color:#cbd5e1; line-height:1.55; font-size:.92em; }
+  ol.steps li { margin-bottom:6px; }
   .guide-list { margin:0 0 10px 20px; line-height:1.6; color:#cbd5e1; }
   .err { background:#7f1d1d; color:#fecaca; padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:.88em; }
   .toast { position:fixed; left:50%; bottom:calc(20px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#0b1220; border:1px solid var(--line);
@@ -470,7 +481,7 @@ async function render() {
 }
 window.addEventListener('hashchange', () => { document.querySelectorAll('.modal-bg').forEach(m => m.remove()); render(); });
 </script>
-<script src="/interior-sketch.js?v=1"></script>
+<script src="/interior-sketch.js?v=2"></script>
 <script>render();</script>
 </body>
 </html>
