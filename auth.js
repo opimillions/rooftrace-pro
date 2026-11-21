@@ -53,7 +53,7 @@ function requireAuth(req, res, next) {
 
 function requireAdmin(req, res, next) {
   if (!req.user || req.user.role !== 'admin') {
-    if (req.path.startsWith('/api/')) return res.status(403).json({ error: 'Admin access required' });
+    if ((req.originalUrl || req.path).startsWith('/api/')) return res.status(403).json({ error: 'Admin access required' });
     return res.redirect('/dashboard');
   }
   next();

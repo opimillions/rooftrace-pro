@@ -246,6 +246,124 @@ const roomOps = {
   },
 };
 
+// ── Pricing: area price sheets, contractor pricing, change log, requests ─────
+const pricing = require('./lib/pricing');
+const priceSheets   = Datastore.create({ filename: path.join(DATA_DIR, 'price_sheets.db'), autoload: true });
+const userPricing   = Datastore.create({ filename: path.join(DATA_DIR, 'user_pricing.db'), autoload: true });
+const priceChanges  = Datastore.create({ filename: path.join(DATA_DIR, 'price_changes.db'), autoload: true });
+const priceRequests = Datastore.create({ filename: path.join(DATA_DIR, 'price_requests.db'), autoload: true });
+userPricing.ensureIndex({ fieldName: 'userId', unique: true });
+
+const pricingOps = {
+  // Area price sheets (admin-managed, visible to every user)
+  async listSheets() {
+    return priceSheets.find({}).sort({ isDefault: -1, area: 1 });
+  },
+  async getSheet(id) { return priceSheets.findOne({ _id: id }); },
+  async getDefaultSheet() {
+    return (await priceSheets.findOne({ isDefault: true })) || (await priceSheets.findOne({}));
+  },
+  async saveSheet(data, id) {
+    const doc = {
+      area: String(data.area || '').trim().slice(0, 80),
+      version: String(data.version || '').trim().slice(0, 40),
+      source: String(data.source || '').trim().slice(0, 60),
+      prices: { ...pricing.defaultPrices(), ...pricing.cleanPrices(data.prices) },
+      codes: pricing.cleanCodes(data.codes),
+      updatedAt: now(),
+    };
+    if (!doc.area) throw new Error('Area is required');
+    if (id) {
+      await priceSheets.update({ _id: id }, { $set: doc });
+      return priceSheets.findOne({ _id: id });
+    }
+    const hasDefault = await priceSheets.findOne({ isDefault: true });
+    return priceSheets.insert({ ...doc, isDefault: !hasDefault, createdAt: now() });
+  },
+  async setDefaultSheet(id) {
+    await priceSheets.update({}, { $set: { isDefault: false } }, { multi: true });
+    await priceSheets.update({ _id: id }, { $set: { isDefault: true } });
+  },
+  async removeSheet(id) {
+    const s = await priceSheets.findOne({ _id: id });
+    if (s?.isDefault) throw new Error('Set another sheet as the default before deleting this one');
+    return priceSheets.remove({ _id: id });
+  },
+
+  // A contractor's own saved pricing (one per user)
+  async getUserPricing(userId) { return userPricing.findOne({ userId }); },
+  async saveUserPricing(user, data) {
+    const prev = await userPricing.findOne({ userId: user._id });
+    const base = data.baseSheetId ? await priceSheets.findOne({ _id: data.baseSheetId }) : null;
+    const doc = {
+      userId: user._id,
+      area: String(data.area || '').trim().slice(0, 80),
+      baseSheetId: base?._id || prev?.baseSheetId || null,
+      baseSheetLabel: base ? `${base.area}${base.version ? ' — ' + base.version : ''}` : (prev?.baseSheetLabel || null),
+      prices: { ...pricing.defaultPrices(), ...(prev?.prices || {}), ...pricing.cleanPrices(data.prices) },
+      updatedAt: now(),
+    };
+    if (!doc.area) throw new Error('Enter the area you work in (city, state)');
+    // What changed: vs. their last save, or vs. the sheet they started from
+    const compareTo = prev?.prices || base?.prices || pricing.defaultPrices();
+    const changes = pricing.diffPrices(compareTo, doc.prices);
+    if (prev) await userPricing.update({ userId: user._id }, { $set: doc });
+    else await userPricing.insert({ ...doc, createdAt: now() });
+    if (changes.length || !prev || prev.area !== doc.area) {
+      await priceChanges.insert({
+        userId: user._id, name: user.name, email: user.email, company: user.company || null,
+        area: doc.area, baseSheetLabel: doc.baseSheetLabel, firstSave: !prev, changes, createdAt: now(),
+      });
+    }
+    return { pricing: doc, changes, firstSave: !prev };
+  },
+  async listAllUserPricing() {
+    const list = await userPricing.find({}).sort({ updatedAt: -1 });
+    return Promise.all(list.map(async p => {
+      const u = await users.findOne({ _id: p.userId });
+      const base = p.baseSheetId ? await priceSheets.findOne({ _id: p.baseSheetId }) : null;
+      return {
+        ...p, name: u?.name, email: u?.email, company: u?.company,
+        differences: pricing.diffPrices(base?.prices || pricing.defaultPrices(), p.prices),
+      };
+    }));
+  },
+  async recentChanges(limit = 100) {
+    return priceChanges.find({}).sort({ createdAt: -1 }).limit(limit);
+  },
+
+  // "Request local pricing"
+  async createRequest(user, data) {
+    return priceRequests.insert({
+      userId: user._id, name: user.name, email: user.email, company: user.company || null,
+      area: String(data.area || '').trim().slice(0, 80),
+      notes: String(data.notes || '').trim().slice(0, 500),
+      address: String(data.address || '').trim().slice(0, 200),
+      status: 'open', sheetId: null, createdAt: now(),
+    });
+  },
+  async listRequests() { return priceRequests.find({}).sort({ status: -1, createdAt: -1 }); },
+  async openRequestsForUser(userId) { return priceRequests.find({ userId, status: 'open' }); },
+  async fulfillRequests(ids, sheetId) {
+    const reqs = await priceRequests.find({ _id: { $in: ids } });
+    await priceRequests.update({ _id: { $in: ids } }, { $set: { status: 'fulfilled', sheetId, fulfilledAt: now() } }, { multi: true });
+    return reqs;
+  },
+  async closeRequest(id) {
+    return priceRequests.update({ _id: id }, { $set: { status: 'closed', fulfilledAt: now() } });
+  },
+};
+
+// First run: create the default DFW sheet from the current built-in prices
+(async () => {
+  if (!(await priceSheets.count({}))) {
+    await priceSheets.insert({
+      area: 'DFW', version: 'Starter prices', source: 'RoofTrace defaults — replace with Xactimate DFW',
+      prices: pricing.defaultPrices(), codes: {}, isDefault: true, createdAt: now(), updatedAt: now(),
+    });
+  }
+})().catch(console.error);
+
 // ── Seed Admin ────────────────────────────────────────────────────────────────
 async function seedAdmin() {
   const adminEmail = process.env.ADMIN_EMAIL || 'ryan@thepublicadjustertx.com';
@@ -292,4 +410,4 @@ async function seedClientUsers() {
 
 seedClientUsers().catch(console.error);
 
-module.exports = { userOps, lookupOps, alertOps, propertyOps, roomOps };
+module.exports = { userOps, lookupOps, alertOps, propertyOps, roomOps, pricingOps };

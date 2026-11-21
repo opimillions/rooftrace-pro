@@ -1916,7 +1916,132 @@ function showEstimate() {
   el.innerHTML = '<div id="estimateBody" style="background:#1e293b;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;color:white"></div>';
   document.body.appendChild(el);
   renderEstimate();
+  loadPricing();
 }
+
+// ── Price lists: area sheets (admin) + "My pricing" (per account) ─────────────
+const PRICE_KEYS = ['shingleSqPrice','tearOffSqPrice','deckingSqPrice','underlaymentSqPrice','starterLfPrice','ridgeCapLfPrice','dripEdgeLfPrice','valleyLfPrice','flashingLot','ventLot','permitLot','overheadPct','profitPct','taxPct'];
+const pricingState = { loaded:false, sheets:[], mine:null, openRequests:[], selected:null, label:'Built-in prices', dirty:false, panel:null, msg:'' };
+
+async function loadPricing(force) {
+  if (pricingState.loaded && !force) return;
+  try {
+    const r = await fetch('/api/pricing');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    pricingState.sheets = d.sheets || [];
+    pricingState.mine = d.mine || null;
+    pricingState.openRequests = d.openRequests || [];
+    pricingState.loaded = true;
+    if (!pricingState.selected) {
+      const def = pricingState.sheets.find(x => x.isDefault) || pricingState.sheets[0];
+      selectPriceList(pricingState.mine ? 'mine' : (def ? def._id : ''), true);
+    }
+  } catch (err) { console.warn('Pricing unavailable', err); }
+  renderEstimate();
+}
+
+function _sheetLabel(sh) { return sh.area + (sh.version ? ' — ' + sh.version : ''); }
+
+function selectPriceList(id, silent) {
+  if (!silent && pricingState.dirty && !confirm('Switch price lists? Your unsaved price edits will be replaced.')) { renderEstimate(); return; }
+  let prices = null;
+  if (id === 'mine' && pricingState.mine) { prices = pricingState.mine.prices; pricingState.label = 'My pricing (' + pricingState.mine.area + ')'; }
+  else {
+    const sh = pricingState.sheets.find(x => x._id === id);
+    if (sh) { prices = sh.prices; pricingState.label = _sheetLabel(sh); }
+  }
+  if (prices) PRICE_KEYS.forEach(k => { if (prices[k] !== undefined) estimateState[k] = +prices[k]; });
+  pricingState.selected = id;
+  pricingState.dirty = false;
+  pricingState.msg = '';
+  if (!silent) renderEstimate();
+}
+
+function _guessArea() {
+  const parts = (document.getElementById('addressInput')?.value || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[parts.length-2] + ', ' + parts[parts.length-1].replace(/\s*\d{5}(-\d{4})?$/, '');
+  return '';
+}
+
+function togglePricePanel(name) {
+  pricingState.panel = pricingState.panel === name ? null : name;
+  pricingState.msg = '';
+  renderEstimate();
+}
+
+async function saveMyPricing() {
+  const area = (document.getElementById('pmArea')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you work in.'; return renderEstimate(); }
+  const prices = {}; PRICE_KEYS.forEach(k => prices[k] = estimateState[k]);
+  const baseSheetId = pricingState.selected && pricingState.selected !== 'mine' ? pricingState.selected : null;
+  try {
+    const r = await fetch('/api/pricing/mine', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ area, prices, baseSheetId }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Save failed');
+    pricingState.mine = d.pricing;
+    pricingState.selected = 'mine';
+    pricingState.label = 'My pricing (' + d.pricing.area + ')';
+    pricingState.dirty = false;
+    pricingState.panel = null;
+    pricingState.msg = '✅ Saved as your pricing. It will load automatically next time.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+async function requestLocalPricing() {
+  const area = (document.getElementById('prArea')?.value || '').trim();
+  const notes = (document.getElementById('prNotes')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you need pricing for.'; return renderEstimate(); }
+  try {
+    const r = await fetch('/api/pricing/requests', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ area, notes, address: document.getElementById('addressInput')?.value || '' }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    pricingState.openRequests.push(d);
+    pricingState.panel = null;
+    pricingState.msg = '✅ Request sent for ' + d.area + '. You\'ll get an email when the price sheet is ready.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+function _pricingBar() {
+  const inp = 'background:#1e293b;border:1px solid #334155;color:white;padding:7px 9px;border-radius:6px;width:100%;box-sizing:border-box';
+  const btn = 'border:none;border-radius:7px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:0.82em;color:white';
+  const opts = (pricingState.mine ? '<option value="mine" '+(pricingState.selected==='mine'?'selected':'')+'>⭐ My pricing ('+ _esc(pricingState.mine.area) +')</option>' : '')
+    + pricingState.sheets.map(sh => '<option value="'+ sh._id +'" '+(pricingState.selected===sh._id?'selected':'')+'>'+ _esc(_sheetLabel(sh)) + (sh.isDefault?' (default)':'') +'</option>').join('');
+  let panel = '';
+  if (pricingState.panel === 'save') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you work in (city, state)<input id="pmArea" value="'+ _esc(pricingState.mine?.area || _guessArea()) +'" placeholder="e.g. Waco, TX" style="'+inp+';margin-top:4px"></label>'
+      + '<div style="font-size:0.75em;color:#94a3b8">Saves the prices currently in this estimate (including any edits under ⚙️ Edit unit prices) as your own price list.</div>'
+      + '<button onclick="saveMyPricing()" style="'+btn+';background:#16a34a">Save my pricing</button></div>';
+  } else if (pricingState.panel === 'request') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you need pricing for (city, state)<input id="prArea" value="'+ _esc(_guessArea()) +'" placeholder="e.g. Oklahoma City, OK" style="'+inp+';margin-top:4px"></label>'
+      + '<label style="font-size:0.78em;color:#94a3b8">Notes (optional)<textarea id="prNotes" rows="2" placeholder="Shingle type, anything special…" style="'+inp+';margin-top:4px"></textarea></label>'
+      + '<button onclick="requestLocalPricing()" style="'+btn+';background:#2563eb">Send request</button></div>';
+  }
+  const pending = pricingState.openRequests.length
+    ? '<div style="font-size:0.75em;color:#94a3b8;margin-top:8px">⏳ Pricing requested: '+ pricingState.openRequests.map(r => _esc(r.area)).join(', ') +'</div>' : '';
+  return '<div style="padding:12px 18px;background:#0f172a;border-bottom:1px solid #334155">'
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +   '<span style="font-size:0.78em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Price list</span>'
+    +   (pricingState.loaded
+          ? '<select onchange="selectPriceList(this.value)" style="flex:1;min-width:160px;background:#1e293b;border:1px solid #334155;color:white;padding:6px 8px;border-radius:6px;font-weight:700">'+ opts +'</select>'
+          : '<span style="flex:1;font-size:0.85em;color:#64748b">Loading…</span>')
+    +   (pricingState.dirty ? '<span style="font-size:0.72em;color:#f59e0b;font-weight:700">edited, not saved</span>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+    +   '<button onclick="togglePricePanel(\'save\')" style="'+btn+';background:#334155;flex:1">💾 Save as my pricing</button>'
+    +   '<button onclick="togglePricePanel(\'request\')" style="'+btn+';background:#334155;flex:1">📍 Request local pricing</button>'
+    + '</div>'
+    + panel + pending
+    + (pricingState.msg ? '<div style="font-size:0.8em;margin-top:8px;color:#e2e8f0">'+ _esc(pricingState.msg) +'</div>' : '')
+    + '</div>';
+}
+
+function _esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function renderEstimate() {
   const body = document.getElementById('estimateBody');
@@ -1946,6 +2071,7 @@ function renderEstimate() {
     + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Base Sloped Area</div><div style="font-weight:700">'+ fmt(e.baseSq,2) +' SQ</div></div>'
     + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">With Waste</div><div style="font-weight:700;color:#f59e0b">'+ fmt(e.sqWithWaste,2) +' SQ</div></div>'
     + '</div>'
+    + _pricingBar()
     + '<div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#1e293b;border-bottom:1px solid #334155">'
     + '<label style="display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:0.95"><input type="checkbox" checked disabled style="accent-color:#16a34a"><span>Tear-off (always included)</span></label>'
     + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="estDecking" '+ (estimateState.decking?'checked':'') +' onchange="updateEstimate({decking:this.checked})" style="accent-color:#2563eb"><span>Decking needed</span></label>'
@@ -1996,6 +2122,7 @@ function _priceInput(label, key) {
 }
 
 function updateEstimate(patch) {
+  if (Object.keys(patch).some(k => PRICE_KEYS.includes(k) && +patch[k] !== +estimateState[k])) pricingState.dirty = true;
   Object.assign(estimateState, patch);
   renderEstimate();
 }
@@ -2019,7 +2146,7 @@ function generateEstimatePDF() {
   doc.text('RoofTrace Pro — Estimate', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
   doc.text((company || 'Roofing Estimate') + '  |  rooftracepro.thepublicadjustertx.com', M, 44);
-  doc.text('Estimate Date: ' + date, M, 57);
+  doc.text('Estimate Date: ' + date + '   |   Pricing: ' + pricingState.label + (pricingState.dirty ? ' (adjusted)' : ''), M, 57);
 
   // Property block
   doc.setTextColor(30,30,30); doc.setFontSize(9);
@@ -2111,6 +2238,10 @@ function generateEstimatePDF() {
 window.showEstimate = showEstimate;
 window.closeEstimate = closeEstimate;
 window.updateEstimate = updateEstimate;
+window.selectPriceList = selectPriceList;
+window.togglePricePanel = togglePricePanel;
+window.saveMyPricing = saveMyPricing;
+window.requestLocalPricing = requestLocalPricing;
 window.generateEstimatePDF = generateEstimatePDF;
 window.undoLast = function() {
   // First: cancel any in-progress segment
