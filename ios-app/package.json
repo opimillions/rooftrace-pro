@@ -1,0 +1,18 @@
+{
+  "name": "rooftrace-pro-ios",
+  "private": true,
+  "version": "1.0.0",
+  "description": "RoofTrace Pro iPhone app: the live site plus a native LiDAR room scanner (RoomPlan)",
+  "scripts": {
+    "sync": "cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.6.2",
+    "@capacitor/ios": "^8.6.2",
+    "@capacitor/splash-screen": "^8.0.2",
+    "@capacitor/status-bar": "^8.0.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.2"
+  }
+}

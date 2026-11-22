@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Account — RoofTrace Pro</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/native-app.js"></script>
+  <style>
+    body { background: var(--navy); min-height: 100vh; padding: 24px 16px; }
+    .wrap { max-width: 480px; margin: 0 auto; }
+    .brand { font-size: 1.4em; font-weight: 900; color: white; margin-bottom: 18px; }
+    .brand span { color: var(--gold); }
+    .card { background: white; border-radius: 12px; padding: 22px; margin-bottom: 16px; }
+    .card h2 { font-size: 1.1em; color: var(--navy); margin-bottom: 10px; }
+    .row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.95em; border-bottom: 1px solid var(--border); }
+    .row:last-child { border-bottom: 0; }
+    .muted { color: var(--muted); font-size: 0.88em; line-height: 1.45; }
+    .btn-wide { display: block; width: 100%; padding: 12px; border-radius: 8px; border: 0; font-weight: 800; font-size: 0.95em; margin-top: 12px; cursor: pointer; }
+    .btn-dark { background: var(--navy); color: white; }
+    .btn-danger { background: #b91c1c; color: white; }
+    .btn-plain { background: #f1f5f9; color: var(--navy); }
+    input[type=password] { width: 100%; padding: 11px; border: 1.5px solid var(--border); border-radius: 8px; font-size: 16px; margin-top: 10px; }
+    .err { color: #b91c1c; font-size: 0.88em; margin-top: 8px; }
+    a.link { color: var(--gold); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand">Roof<span>Trace</span> Pro</div>
+
+  <div class="card">
+    <h2>Your account</h2>
+    <div class="row"><span>Email</span><b id="email">…</b></div>
+    <div class="row"><span>Plan</span><b id="plan">…</b></div>
+    <button class="btn-wide btn-plain" onclick="location.href='/tool'">Back to RoofTrace Pro</button>
+    <button class="btn-wide btn-dark" onclick="signOut()">Sign out</button>
+  </div>
+
+  <div class="card" style="border:1.5px solid #fecaca">
+    <h2 style="color:#b91c1c">Delete account</h2>
+    <p class="muted">Permanently deletes your RoofTrace Pro account, your properties, interior rooms and saved reports, and cancels any paid plan. This cannot be undone.</p>
+    <div id="delForm" style="display:none">
+      <input type="password" id="pw" placeholder="Enter your password to confirm" autocomplete="current-password">
+      <button class="btn-wide btn-danger" onclick="deleteAccount()">Permanently delete my account</button>
+      <div class="err" id="err"></div>
+    </div>
+    <button class="btn-wide btn-plain" id="delStart" style="color:#b91c1c" onclick="document.getElementById('delForm').style.display='block';this.style.display='none'">Delete my account…</button>
+  </div>
+
+  <p class="muted" style="color:rgba(255,255,255,.6);text-align:center"><a class="link" href="/privacy">Privacy Policy</a></p>
+</div>
+<script>
+(async () => {
+  const r = await fetch('/api/me', { credentials: 'same-origin' });
+  if (r.status === 401) return location.href = '/login';
+  const { user } = await r.json();
+  document.getElementById('email').textContent = user.email;
+  const tiers = { pro: 'Pro', trial: 'Free trial', admin: 'Admin' };
+  document.getElementById('plan').textContent = tiers[user.tier] || user.tier || '—';
+})();
+async function signOut() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+  location.href = '/login';
+}
+async function deleteAccount() {
+  const pw = document.getElementById('pw').value, err = document.getElementById('err');
+  err.textContent = '';
+  if (!pw) return err.textContent = 'Enter your password to confirm.';
+  if (!confirm('Delete your RoofTrace Pro account permanently?')) return;
+  const r = await fetch('/api/account/delete', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) return err.textContent = d.error || 'Could not delete the account.';
+  alert('Your account has been deleted.');
+  location.href = '/login';
+}
+</script>
+</body>
+</html>

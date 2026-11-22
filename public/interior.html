@@ -132,12 +132,14 @@
     .plan { border:1px solid #cbd5e1; }
   }
 </style>
+<script src="/native-app.js"></script>
 </head>
 <body>
 <header class="header">
   <div class="logo"><img src="/logo-icon.svg" style="height:26px" alt=""><div>Roof<span>Trace</span> Pro <small>Interior</small></div></div>
   <div class="spacer"></div>
   <a class="hbtn" href="/tool">&#127968; Roof Tool</a>
+  <a class="hbtn" href="/account">&#128100; Account</a>
 </header>
 <main id="app"></main>
 
@@ -481,7 +483,7 @@ async function render() {
 }
 window.addEventListener('hashchange', () => { document.querySelectorAll('.modal-bg').forEach(m => m.remove()); render(); });
 </script>
-<script src="/interior-sketch.js?v=2"></script>
+<script src="/interior-sketch.js?v=3"></script>
 <script>render();</script>
 </body>
 </html>

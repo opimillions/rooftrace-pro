@@ -1,0 +1,18 @@
+{
+  "appId": "com.thepublicadjustertx.rooftracepro",
+  "appName": "RoofTrace Pro",
+  "webDir": "www",
+  "server": {
+    "url": "https://rooftracepro.thepublicadjustertx.com/tool",
+    "errorPath": "index.html",
+    "allowNavigation": ["rooftracepro.thepublicadjustertx.com"]
+  },
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#0f172a",
+    "appendUserAgent": "RoofTraceProApp/1.0"
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#0f172a", "showSpinner": false }
+  }
+}
