@@ -28,6 +28,25 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// ── iPhone app (App Store build) ─────────────────────────────────────────────
+// Plans are sold on the website only (Apple rule 3.1.3): inside the app the
+// marketing page goes to sign-in, /upgrade shows a plain plan note with no
+// prices or purchase links, and Stripe checkout is refused.
+const inIosApp = req => /RoofTraceProApp\//.test(req.get('user-agent') || '');
+app.use((req, res, next) => {
+  if (!inIosApp(req)) return next();
+  if (req.method === 'GET' && (req.path === '/' || req.path === '/index.html')) return res.redirect(req.cookies?.token ? '/tool' : '/login');
+  if (req.method === 'GET' && (req.path === '/upgrade' || req.path === '/upgrade.html')) {
+    return res.send(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Your plan | RoofTrace Pro</title><link rel="stylesheet" href="/style.css"></head>
+<body style="background:#0f172a"><div style="max-width:480px;margin:0 auto;padding:48px 20px;font-family:-apple-system,system-ui,sans-serif;color:white">
+<h1 style="font-size:1.4em">Your RoofTrace Pro plan</h1>
+<p style="color:#cbd5e1;line-height:1.5">Plans and billing are managed in your RoofTrace Pro account. Features unlock in this app automatically as soon as your account's plan changes.</p>
+<p><a href="/tool" style="display:inline-block;background:#f59e0b;color:#0f172a;font-weight:800;padding:12px 18px;border-radius:8px;text-decoration:none">Back to RoofTrace Pro</a></p></div></body></html>`);
+  }
+  if (req.path === '/api/stripe/checkout') return res.status(403).json({ error: 'Plans are managed in your RoofTrace Pro account, not in the app.' });
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Auth Routes ───────────────────────────────────────────────────────────────
@@ -35,6 +54,8 @@ app.get('/login', (req, res) => res.sendFile(path.join(__dirname, 'public', 'log
 app.get('/register', (req, res) => res.sendFile(path.join(__dirname, 'public', 'register.html')));
 app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'public', 'forgot-password.html')));
 app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reset-password.html')));
+app.get('/privacy', (req, res) => res.sendFile(path.join(__dirname, 'public', 'privacy.html')));
+app.get('/account', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'account.html')));
 app.get('/upgrade', (req, res) => res.sendFile(path.join(__dirname, 'public', 'upgrade.html')));
 app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 app.get('/admin/pricing', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-pricing.html')));
@@ -159,6 +180,28 @@ app.get('/api/admin/stats', requireAuth, requireAdmin, async (req, res) => {
 app.get('/api/me', requireAuth, async (req, res) => {
   const { passwordHash, ...user } = req.user;
   res.json({ user });
+});
+
+// Delete my account (required by Apple for any app with sign-up). Asks for the
+// password, cancels any Stripe subscription, then removes the user and their data.
+app.post('/api/account/delete', requireAuth, async (req, res) => {
+  const password = String((req.body && req.body.password) || '');
+  if (req.user.role === 'admin') return res.status(400).json({ error: 'Admin accounts cannot be deleted here.' });
+  if (!password || !userOps.verifyPassword(req.user, password)) return res.status(400).json({ error: 'That password is not right.' });
+  if (req.user.stripeSubscriptionId && process.env.STRIPE_SECRET_KEY) {
+    try {
+      const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+      await stripe.subscriptions.cancel(req.user.stripeSubscriptionId);
+    } catch (e) {
+      if (!(e && (e.code === 'resource_missing' || /canceled/i.test(e.message || '')))) {
+        console.error('[account delete] stripe cancel', e && e.message);
+        return res.status(502).json({ error: 'Could not cancel your subscription. Please try again or email support.' });
+      }
+    }
+  }
+  await userOps.deleteWithData(req.user._id);
+  res.clearCookie('token');
+  res.json({ success: true });
 });
 
 // ── Track report generation (count against limit) ─────────────────────────────

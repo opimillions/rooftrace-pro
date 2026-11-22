@@ -62,9 +62,12 @@ function requireAdmin(req, res, next) {
 function requireActiveSubscription(req, res, next) {
   const user = req.user;
   if (!userOps.canLookup(user)) {
-    const msg = user.tier === 'trial'
-      ? 'Your 1 free report has been used. Upgrade to Pro for unlimited lookups ($99/mo).'
-      : 'Subscription required.';
+    const inApp = /RoofTraceProApp\//.test(req.get ? (req.get('user-agent') || '') : '');
+    const msg = inApp
+      ? (user.tier === 'trial' ? 'Your free report has been used. Your plan is managed in your RoofTrace Pro account.' : 'Your plan is managed in your RoofTrace Pro account.')
+      : user.tier === 'trial'
+        ? 'Your 1 free report has been used. Upgrade to Pro for unlimited lookups ($99/mo).'
+        : 'Subscription required.';
     if (req.path.startsWith('/api/')) return res.status(402).json({ error: msg, upgrade: true });
     return res.redirect('/upgrade');
   }

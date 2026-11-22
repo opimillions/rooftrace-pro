@@ -119,6 +119,14 @@ const userOps = {
     return users.remove({ _id: id });
   },
 
+  /** Delete a user and everything they own (account deletion). */
+  async deleteWithData(id) {
+    await rooms.remove({ userId: id }, { multi: true });
+    await properties.remove({ userId: id }, { multi: true });
+    await lookups.remove({ userId: id }, { multi: true });
+    return users.remove({ _id: id });
+  },
+
   async findByStripeCustomer(customerId) {
     return users.findOne({ stripeCustomerId: customerId });
   }

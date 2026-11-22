@@ -14,9 +14,34 @@ function scanLink(property) {
 }
 
 async function scanModal(property) {
+  // Inside the RoofTrace Pro iPhone app: scan right here with the built-in LiDAR scanner.
+  if (window.rtNative && window.rtNative.plugin()) return nativeScan(property);
   if (!installConfig) installConfig = await api('/config').catch(() => ({}));
   if (appInstalled()) return openAppModal(property);
   installGuide(property, 0);
+}
+
+async function nativeScan(property) {
+  if (!(await window.rtNative.isSupported())) {
+    return openModal(`<h2>&#128241; LiDAR not available</h2>
+      <p class="note" style="margin-bottom:14px">Room scanning needs an iPhone with a LiDAR scanner (iPhone 12 Pro or newer Pro models) running iOS 17 or later.</p>
+      <p class="note">You can still measure every room with <b>Sketch Room</b> or <b>Add Room by Measurement</b>.</p>
+      <div class="btns"><button type="button" class="btn gray" data-close>Close</button></div>`, async () => {});
+  }
+  let result;
+  try { result = await window.rtNative.scan(); }
+  catch (e) { return toast(e.message || 'Scan failed'); }
+  if (!result || !result.scan) return; // cancelled
+  const c = result.counts || {};
+  openModal(`<h2>Save Scanned Room</h2>
+    <p class="note" style="margin-bottom:10px">Captured ${c.walls || 0} walls, ${c.doors || 0} doors, ${c.windows || 0} windows${c.objects ? `, ${c.objects} items` : ''}.</p>
+    <label class="field"><span>Room Name</span><input name="name" required placeholder="Kitchen, Bed 1, Hallway…"></label>
+    ${floorSelect(property.floors, property.floors[0])}
+    <div class="btns"><button type="button" class="btn gray" data-close>Discard</button><button type="submit" class="btn green">Save Room</button></div>`,
+  async (data, bg) => {
+    await api(`/properties/${property._id}/rooms`, { method: 'POST', body: { name: data.name, floor: data.floor, scan: result.scan } });
+    bg.remove(); toast('Room saved'); render();
+  });
 }
 
 function openAppModal(property) {
