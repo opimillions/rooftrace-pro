@@ -37,7 +37,7 @@ app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'pub
 app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reset-password.html')));
 app.get('/upgrade', (req, res) => res.sendFile(path.join(__dirname, 'public', 'upgrade.html')));
 app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
-app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/admin/pricing', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-pricing.html')));
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
@@ -128,6 +128,9 @@ app.get('/tool', requireAuth, (req, res) => {
 // ── Interior (LiDAR room scans) ───────────────────────────────────────────────
 app.get('/interior', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'interior.html')));
 app.use('/api/interior', require('./routes/interior'));
+
+// ── Pricing (area price sheets, contractor pricing, local pricing requests) ───
+app.use('/api/pricing', require('./routes/pricing'));
 
 // ── Me API ────────────────────────────────────────────────────────────────────
 

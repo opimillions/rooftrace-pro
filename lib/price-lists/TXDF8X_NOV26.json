@@ -1,0 +1,1368 @@
+{
+ "area": "DFW",
+ "version": "Nov 2026",
+ "source": "Xactimate TXDF8X_NOV26",
+ "prices": {
+  "tearOffSqPrice": 70.0,
+  "shingleSqPrice": 297.12,
+  "underlaymentSqPrice": 43.07,
+  "deckingSqPrice": 361.0,
+  "starterLfPrice": 2.19,
+  "ridgeCapLfPrice": 10.68,
+  "dripEdgeLfPrice": 3.74,
+  "valleyLfPrice": 8.05,
+  "permitLot": 495.0,
+  "flashingLot": 350,
+  "ventLot": 225,
+  "overheadPct": 10,
+  "profitPct": 10,
+  "taxPct": 0
+ },
+ "labels": {
+  "tearOffSqPrice": "Tear off, haul and dispose of comp. shingles - Laminated",
+  "shingleSqPrice": "Laminated - comp. shingle rfg. - w/out felt",
+  "underlaymentSqPrice": "Roofing felt - 15 lb.",
+  "deckingSqPrice": "R&R Sheathing - plywood - 1/2\" CDX",
+  "starterLfPrice": "Asphalt starter - universal starter course",
+  "ridgeCapLfPrice": "R&R Hip / Ridge cap - Standard profile - composition shingles",
+  "dripEdgeLfPrice": "R&R Drip edge",
+  "valleyLfPrice": "R&R Valley metal",
+  "permitLot": "Permits & Fees"
+ },
+ "quickAdds": [
+  {
+   "label": "Steep 7/12\u20139/12",
+   "items": [
+    "Remove Additional charge for steep roof - 7/12 to 9/12 slope",
+    "Additional charge for steep roof - 7/12 to 9/12 slope"
+   ]
+  },
+  {
+   "label": "Steep 10/12\u201312/12",
+   "items": [
+    "Remove Additional charge for steep roof - 10/12 - 12/12 slope",
+    "Additional charge for steep roof - 10/12 - 12/12 slope"
+   ]
+  },
+  {
+   "label": "High roof (2+ stories)",
+   "items": [
+    "Remove Additional charge for high roof (2 stories or greater)",
+    "Additional charge for high roof (2 stories or greater)"
+   ]
+  },
+  {
+   "label": "2nd layer removal",
+   "items": [
+    "Add. layer of comp. shingles, remove & disp. - Laminated"
+   ]
+  },
+  {
+   "label": "Pipe jack",
+   "items": [
+    "R&R Flashing - pipe jack"
+   ]
+  },
+  {
+   "label": "Lead pipe jack",
+   "items": [
+    "R&R Flashing - pipe jack - lead"
+   ]
+  },
+  {
+   "label": "Turtle vent",
+   "items": [
+    "R&R Roof vent - turtle type - Metal"
+   ]
+  },
+  {
+   "label": "Turbine vent",
+   "items": [
+    "R&R Roof vent - turbine type"
+   ]
+  },
+  {
+   "label": "Exhaust cap",
+   "items": [
+    "R&R Exhaust cap - through roof - 6\" to 8\""
+   ]
+  },
+  {
+   "label": "Step flashing",
+   "items": [
+    "Step flashing"
+   ]
+  },
+  {
+   "label": "Chimney flashing",
+   "items": [
+    "R&R Chimney flashing - average (32\" x 36\")"
+   ]
+  },
+  {
+   "label": "Satellite D&R",
+   "items": [
+    "Digital satellite system - Detach & reset"
+   ]
+  },
+  {
+   "label": "Dumpster 30 yd",
+   "items": [
+    "Dumpster load - Approx. 30 yards, 5-7 tons of debris"
+   ]
+  },
+  {
+   "label": "Roofer hour",
+   "items": [
+    "Roofer - per hour"
+   ]
+  }
+ ],
+ "catalog": [
+  {
+   "desc": "3 tab - 25 yr. - comp. shingle roofing - w/out felt",
+   "unit": "SQ",
+   "price": 282.12
+  },
+  {
+   "desc": "Add for HEPA filter (for negative air exhaust fan)",
+   "unit": "EA",
+   "price": 214.2
+  },
+  {
+   "desc": "Add. layer of comp. shingles, remove & disp. - 3 tab",
+   "unit": "SQ",
+   "price": 42.32
+  },
+  {
+   "desc": "Add. layer of comp. shingles, remove & disp. - Laminated",
+   "unit": "SQ",
+   "price": 44.24
+  },
+  {
+   "desc": "Add. layer of felt/underlayment, remove & disp.",
+   "unit": "SQ",
+   "price": 9.04
+  },
+  {
+   "desc": "Additional charge for high roof (2 stories or greater)",
+   "unit": "SQ",
+   "price": 26.43
+  },
+  {
+   "desc": "Additional charge for steep roof - 10/12 - 12/12 slope",
+   "unit": "SQ",
+   "price": 83.11
+  },
+  {
+   "desc": "Additional charge for steep roof - 7/12 to 9/12 slope",
+   "unit": "SQ",
+   "price": 51.74
+  },
+  {
+   "desc": "Air mover (per 24 hour period) - No monitoring",
+   "unit": "EA",
+   "price": 32.75
+  },
+  {
+   "desc": "Air mover axial fan-up to 1/2 (per 24 hr period)-No monit.",
+   "unit": "EA",
+   "price": 40.0
+  },
+  {
+   "desc": "Apply anti-microbial agent",
+   "unit": "SF",
+   "price": 0.4
+  },
+  {
+   "desc": "Asphalt starter - peel and stick",
+   "unit": "LF",
+   "price": 2.27
+  },
+  {
+   "desc": "Asphalt starter - universal starter course",
+   "unit": "LF",
+   "price": 2.19
+  },
+  {
+   "desc": "Axial fan air mover - 1 HP (per 24 hr period)-No monit.",
+   "unit": "EA",
+   "price": 44.4
+  },
+  {
+   "desc": "Baseboard - Detach",
+   "unit": "LF",
+   "price": 1.7
+  },
+  {
+   "desc": "Black or Galvanized pipe - Detach & reset",
+   "unit": "LF",
+   "price": 18.94
+  },
+  {
+   "desc": "Bubble Wrap - Add-on cost for fragile items",
+   "unit": "LF",
+   "price": 0.22
+  },
+  {
+   "desc": "Carpet labor minimum",
+   "unit": "EA",
+   "price": 275.79
+  },
+  {
+   "desc": "Ceiling fan - Detach & reset",
+   "unit": "EA",
+   "price": 233.32
+  },
+  {
+   "desc": "Central air cond. system - recharge - 5lb refrigerant",
+   "unit": "EA",
+   "price": 215.02
+  },
+  {
+   "desc": "Clean with pressure/chemical spray - Heavy",
+   "unit": "SF",
+   "price": 0.8
+  },
+  {
+   "desc": "Cleaning Technician - per hour",
+   "unit": "HR",
+   "price": 67.11
+  },
+  {
+   "desc": "Comb and straighten a/c condenser fins - with trip charge",
+   "unit": "EA",
+   "price": 178.13
+  },
+  {
+   "desc": "Containment Barrier - air filter",
+   "unit": "EA",
+   "price": 15.94
+  },
+  {
+   "desc": "Containment Barrier - tension post (per day)",
+   "unit": "DA",
+   "price": 3.35
+  },
+  {
+   "desc": "Containment Barrier/Airlock/Decon. Chamber",
+   "unit": "SF",
+   "price": 1.19
+  },
+  {
+   "desc": "Content Manipulation charge - per hour",
+   "unit": "HR",
+   "price": 60.9
+  },
+  {
+   "desc": "Contents - move out then reset - Large room",
+   "unit": "EA",
+   "price": 134.0
+  },
+  {
+   "desc": "Contents Evaluation and/or Supervisor/Admin - per hour",
+   "unit": "HR",
+   "price": 80.16
+  },
+  {
+   "desc": "Crane and operator - 14 ton capacity - 65' extension boom",
+   "unit": "HR",
+   "price": 146.0
+  },
+  {
+   "desc": "Dehumidifier (per 24 hr period) - 160+ ppd - No monitor.",
+   "unit": "EA",
+   "price": 154.61
+  },
+  {
+   "desc": "Dehumidifier (per 24 hr period) - 70-109 ppd - No monitor.",
+   "unit": "EA",
+   "price": 92.7
+  },
+  {
+   "desc": "Dehumidifier (per 24 hr period)- 110-159 ppd - No monitor.",
+   "unit": "EA",
+   "price": 122.22
+  },
+  {
+   "desc": "Digital satellite system - alignment and calibration only",
+   "unit": "EA",
+   "price": 169.46
+  },
+  {
+   "desc": "Digital satellite system - Detach & reset",
+   "unit": "EA",
+   "price": 56.48
+  },
+  {
+   "desc": "Drill holes for wall cavity drying",
+   "unit": "EA",
+   "price": 0.76
+  },
+  {
+   "desc": "Drill holes for wall cavity drying - after hrs",
+   "unit": "EA",
+   "price": 1.14
+  },
+  {
+   "desc": "Dumpster load - Approx. 20 yards, 4 tons of debris",
+   "unit": "EA",
+   "price": 585.87
+  },
+  {
+   "desc": "Dumpster load - Approx. 30 yards, 5-7 tons of debris",
+   "unit": "EA",
+   "price": 696.44
+  },
+  {
+   "desc": "Dumpster load - Approx. 40 yards, 7-8 tons of debris",
+   "unit": "EA",
+   "price": 907.5
+  },
+  {
+   "desc": "Emergency service call - after business hours",
+   "unit": "EA",
+   "price": 320.64
+  },
+  {
+   "desc": "Emergency service call - during business hours",
+   "unit": "EA",
+   "price": 213.76
+  },
+  {
+   "desc": "Equipment setup, take down, and monitoring (hourly charge)",
+   "unit": "HR",
+   "price": 76.52
+  },
+  {
+   "desc": "Evaluate pack & inventory misc items - per Lg box",
+   "unit": "EA",
+   "price": 25.13
+  },
+  {
+   "desc": "Evaluate pack & inventory misc items - per Med box",
+   "unit": "EA",
+   "price": 19.86
+  },
+  {
+   "desc": "Evaluate pack & inventory misc items - per Sml box",
+   "unit": "EA",
+   "price": 16.16
+  },
+  {
+   "desc": "Fall protection harness and lanyard - per day",
+   "unit": "DA",
+   "price": 8.0
+  },
+  {
+   "desc": "Final cleaning - construction - Residential",
+   "unit": "SF",
+   "price": 0.49
+  },
+  {
+   "desc": "Finish carpentry labor minimum",
+   "unit": "EA",
+   "price": 124.73
+  },
+  {
+   "desc": "Floor protection - cardboard and tape",
+   "unit": "SF",
+   "price": 0.64
+  },
+  {
+   "desc": "Floor protection - heavy paper and tape",
+   "unit": "SF",
+   "price": 0.43
+  },
+  {
+   "desc": "Fuel surcharge",
+   "unit": "EA",
+   "price": 195.0
+  },
+  {
+   "desc": "Generator - 6,000 watt - portable (per day)",
+   "unit": "DA",
+   "price": 100.43
+  },
+  {
+   "desc": "Generator temporary power cable (per day)",
+   "unit": "DA",
+   "price": 30.0
+  },
+  {
+   "desc": "Haul debris - per pickup truck load - including dump fees",
+   "unit": "EA",
+   "price": 175.61
+  },
+  {
+   "desc": "Hazardous waste/mold rem. labor min",
+   "unit": "EA",
+   "price": 85.94
+  },
+  {
+   "desc": "Heat/AC register - Mechanically attached - Detach & reset",
+   "unit": "EA",
+   "price": 15.21
+  },
+  {
+   "desc": "HEPA Vacuuming - hourly charge",
+   "unit": "HR",
+   "price": 84.7
+  },
+  {
+   "desc": "HVAC - General Laborer - per hour",
+   "unit": "HR",
+   "price": 60.9
+  },
+  {
+   "desc": "HVAC Technician - per hour",
+   "unit": "HR",
+   "price": 101.71
+  },
+  {
+   "desc": "Insulation - ISO board, 4\"",
+   "unit": "SQ",
+   "price": 526.28
+  },
+  {
+   "desc": "Insulation - perlite board, 1\"",
+   "unit": "SQ",
+   "price": 230.93
+  },
+  {
+   "desc": "Interior window shutters (set) - Detach & reset",
+   "unit": "EA",
+   "price": 44.88
+  },
+  {
+   "desc": "Inventory, Packing, Boxing, and Moving charge - per hour",
+   "unit": "HR",
+   "price": 67.11
+  },
+  {
+   "desc": "Laminated - comp. shingle rfg. - w/out felt",
+   "unit": "SQ",
+   "price": 297.12
+  },
+  {
+   "desc": "Lifeline Anchor Point",
+   "unit": "EA",
+   "price": 28.78
+  },
+  {
+   "desc": "Light fixture - Detach & reset",
+   "unit": "EA",
+   "price": 72.79
+  },
+  {
+   "desc": "Magnetize/Rake yard for debris of insured property",
+   "unit": "EA",
+   "price": 0.12
+  },
+  {
+   "desc": "Mask and prep for paint - plastic, paper, tape (per LF)",
+   "unit": "LF",
+   "price": 1.95
+  },
+  {
+   "desc": "Mask or cover per square foot",
+   "unit": "SF",
+   "price": 0.52
+  },
+  {
+   "desc": "Metal building labor minimum",
+   "unit": "EA",
+   "price": 215.71
+  },
+  {
+   "desc": "Meter mast for overhead power - Detach & reset",
+   "unit": "EA",
+   "price": 640.01
+  },
+  {
+   "desc": "Mini air mover (per 24 hour period) - No monitoring",
+   "unit": "EA",
+   "price": 11.49
+  },
+  {
+   "desc": "Moving van (24' - 27') and equipment - per day",
+   "unit": "EA",
+   "price": 189.94
+  },
+  {
+   "desc": "Neg. air fan/Air scrub.-Large (per 24 hr period)-No monit.",
+   "unit": "DA",
+   "price": 118.06
+  },
+  {
+   "desc": "Neg. air fan/Air scrub.-XLrg (per 24 hr period)-No monit.",
+   "unit": "DA",
+   "price": 151.58
+  },
+  {
+   "desc": "Off-site storage & insur. - climate control. (per month)",
+   "unit": "SF",
+   "price": 1.68
+  },
+  {
+   "desc": "Off-site storage & insurance - per month",
+   "unit": "SF",
+   "price": 1.23
+  },
+  {
+   "desc": "On-Site Evaluation and/or Supervisor/Admin - per hour",
+   "unit": "HR",
+   "price": 80.16
+  },
+  {
+   "desc": "Ornamental iron - security grill - Detach & reset",
+   "unit": "SF",
+   "price": 12.33
+  },
+  {
+   "desc": "Paint - one coat",
+   "unit": "SF",
+   "price": 0.96
+  },
+  {
+   "desc": "Paint baseboard - one coat",
+   "unit": "LF",
+   "price": 1.4
+  },
+  {
+   "desc": "Paint baseboard - two coats",
+   "unit": "LF",
+   "price": 2.11
+  },
+  {
+   "desc": "Paint door slab only - 2 coats (per side)",
+   "unit": "EA",
+   "price": 54.6
+  },
+  {
+   "desc": "Paint door/window trim & jamb - 2 coats (per side)",
+   "unit": "EA",
+   "price": 46.0
+  },
+  {
+   "desc": "Paint exterior fascia - 1 coat - metal, 6\"- 8\" wide",
+   "unit": "LF",
+   "price": 2.52
+  },
+  {
+   "desc": "Peel & seal zipper",
+   "unit": "EA",
+   "price": 15.1
+  },
+  {
+   "desc": "Permits & Fees",
+   "unit": "EA",
+   "price": 495.0
+  },
+  {
+   "desc": "Plumbing - Labor Minimum",
+   "unit": "EA",
+   "price": 312.5
+  },
+  {
+   "desc": "Power distribution box - 100+ amp (per day)",
+   "unit": "DA",
+   "price": 125.0
+  },
+  {
+   "desc": "Power distribution box - below 100 amp (per day)",
+   "unit": "DA",
+   "price": 60.62
+  },
+  {
+   "desc": "Prime & paint exterior fascia - wood, 6\"- 8\" wide",
+   "unit": "LF",
+   "price": 3.95
+  },
+  {
+   "desc": "Prime & paint exterior soffit - wood",
+   "unit": "SF",
+   "price": 3.23
+  },
+  {
+   "desc": "Prime & paint gutter / downspout",
+   "unit": "LF",
+   "price": 2.3
+  },
+  {
+   "desc": "Prime & paint roof jack",
+   "unit": "EA",
+   "price": 48.8
+  },
+  {
+   "desc": "Prime & paint roof vent",
+   "unit": "EA",
+   "price": 48.8
+  },
+  {
+   "desc": "Protect contents - Cover with plastic",
+   "unit": "SF",
+   "price": 0.3
+  },
+  {
+   "desc": "Provide box, packing paper & tape - medium size",
+   "unit": "EA",
+   "price": 4.06
+  },
+  {
+   "desc": "Provide furniture lightweight blanket/pad",
+   "unit": "EA",
+   "price": 9.38
+  },
+  {
+   "desc": "Provide mirror/picture box, packing paper & tape",
+   "unit": "EA",
+   "price": 10.5
+  },
+  {
+   "desc": "Provide wardrobe box & tape - large size",
+   "unit": "EA",
+   "price": 28.88
+  },
+  {
+   "desc": "R&R 1/2\" - drywall per LF - up to 2' tall",
+   "unit": "LF",
+   "price": 16.77
+  },
+  {
+   "desc": "R&R 1/2\" drywall - hung, taped, ready for texture",
+   "unit": "SF",
+   "price": 3.49
+  },
+  {
+   "desc": "R&R 5/8\" drywall - hung, taped, ready for texture",
+   "unit": "SF",
+   "price": 3.64
+  },
+  {
+   "desc": "R&R Acoustic ceiling (popcorn) texture - heavy",
+   "unit": "SF",
+   "price": 2.46
+  },
+  {
+   "desc": "R&R Air conditioning unit, 10 ton - Commercial grade",
+   "unit": "EA",
+   "price": 10432.63
+  },
+  {
+   "desc": "R&R Air conditioning unit, 5 ton - Commercial grade",
+   "unit": "EA",
+   "price": 6969.65
+  },
+  {
+   "desc": "R&R Aluminum termination bar / flashing for membrane roofs",
+   "unit": "LF",
+   "price": 3.7
+  },
+  {
+   "desc": "R&R Baseboard - 2 1/4\"",
+   "unit": "LF",
+   "price": 4.18
+  },
+  {
+   "desc": "R&R Batt insulation - 4\" - R13 - paper / foil faced",
+   "unit": "SF",
+   "price": 1.62
+  },
+  {
+   "desc": "R&R Blown-in insulation - 12\" depth - R30",
+   "unit": "SF",
+   "price": 2.99
+  },
+  {
+   "desc": "R&R Cabinetry - lower (base) units",
+   "unit": "LF",
+   "price": 275.14
+  },
+  {
+   "desc": "R&R Cabinetry - lower (base) units - High grade",
+   "unit": "LF",
+   "price": 352.61
+  },
+  {
+   "desc": "R&R Cabinetry - lower (base) units - mobile home",
+   "unit": "LF",
+   "price": 148.61
+  },
+  {
+   "desc": "R&R Cabinetry - lower (base) units - Standard grade",
+   "unit": "LF",
+   "price": 200.63
+  },
+  {
+   "desc": "R&R Cap flashing",
+   "unit": "LF",
+   "price": 24.5
+  },
+  {
+   "desc": "R&R Carpet",
+   "unit": "SF",
+   "price": 4.37
+  },
+  {
+   "desc": "R&R Carpet pad",
+   "unit": "SF",
+   "price": 0.9
+  },
+  {
+   "desc": "R&R Ceiling fan & light",
+   "unit": "EA",
+   "price": 428.16
+  },
+  {
+   "desc": "R&R Central air - condenser unit - 3 ton - 16-21 SEER",
+   "unit": "EA",
+   "price": 3780.1
+  },
+  {
+   "desc": "R&R Chimney flashing - average (32\" x 36\")",
+   "unit": "EA",
+   "price": 557.45
+  },
+  {
+   "desc": "R&R Chimney flashing - small (24\" x 24\")",
+   "unit": "EA",
+   "price": 436.0
+  },
+  {
+   "desc": "R&R Closure strips for metal panels",
+   "unit": "LF",
+   "price": 2.61
+  },
+  {
+   "desc": "R&R Clothes dryer vent - installed",
+   "unit": "EA",
+   "price": 83.27
+  },
+  {
+   "desc": "R&R Clothes dryer vent cover",
+   "unit": "EA",
+   "price": 41.53
+  },
+  {
+   "desc": "R&R Cooling system - chilled water (Air cooled) - Commercial",
+   "unit": "SF",
+   "price": 5.34
+  },
+  {
+   "desc": "R&R Corrugated fiberglass roofing (greenhouse type)",
+   "unit": "SF",
+   "price": 5.24
+  },
+  {
+   "desc": "R&R Curb flashing - PVC/TPO",
+   "unit": "LF",
+   "price": 22.54
+  },
+  {
+   "desc": "R&R Door knob - interior",
+   "unit": "EA",
+   "price": 62.2
+  },
+  {
+   "desc": "R&R Downspout - aluminum - up to 5\"",
+   "unit": "LF",
+   "price": 10.05
+  },
+  {
+   "desc": "R&R Drip edge",
+   "unit": "LF",
+   "price": 3.74
+  },
+  {
+   "desc": "R&R Drip edge - PVC/TPO clad metal",
+   "unit": "LF",
+   "price": 7.9
+  },
+  {
+   "desc": "R&R Drip edge/gutter apron",
+   "unit": "LF",
+   "price": 4.02
+  },
+  {
+   "desc": "R&R Exhaust cap - through flat roof",
+   "unit": "EA",
+   "price": 136.48
+  },
+  {
+   "desc": "R&R Exhaust cap - through roof - 6\" to 8\"",
+   "unit": "EA",
+   "price": 133.23
+  },
+  {
+   "desc": "R&R Exhaust fan - Commercial",
+   "unit": "EA",
+   "price": 784.68
+  },
+  {
+   "desc": "R&R Exterior light fixture",
+   "unit": "EA",
+   "price": 128.23
+  },
+  {
+   "desc": "R&R Fascia - metal - 6\"",
+   "unit": "LF",
+   "price": 7.81
+  },
+  {
+   "desc": "R&R Fireplace - chimney chase cover - sheet metal",
+   "unit": "EA",
+   "price": 437.93
+  },
+  {
+   "desc": "R&R Flash parapet wall only - PVC/TPO",
+   "unit": "LF",
+   "price": 18.78
+  },
+  {
+   "desc": "R&R Flashing - L flashing - color finish item above stone siding",
+   "unit": "LF",
+   "price": 7.3
+  },
+  {
+   "desc": "R&R Flashing - L flashing - galvanized",
+   "unit": "LF",
+   "price": 6.77
+  },
+  {
+   "desc": "R&R Flashing - pipe jack",
+   "unit": "EA",
+   "price": 71.23
+  },
+  {
+   "desc": "R&R Flashing - pipe jack - lead",
+   "unit": "EA",
+   "price": 104.9
+  },
+  {
+   "desc": "R&R Flue cap",
+   "unit": "EA",
+   "price": 162.82
+  },
+  {
+   "desc": "R&R Furnace vent - rain cap and storm collar, 5\"",
+   "unit": "EA",
+   "price": 97.57
+  },
+  {
+   "desc": "R&R Gable cornice return - 3 tab",
+   "unit": "EA",
+   "price": 118.93
+  },
+  {
+   "desc": "R&R Gable cornice return - laminated",
+   "unit": "EA",
+   "price": 119.57
+  },
+  {
+   "desc": "R&R Gutter - aluminum - up to 5\"",
+   "unit": "LF",
+   "price": 10.05
+  },
+  {
+   "desc": "R&R Gutter / downspout - aluminum - up to 5\"",
+   "unit": "LF",
+   "price": 10.05
+  },
+  {
+   "desc": "R&R Heat/AC register - Mechanically attached",
+   "unit": "EA",
+   "price": 29.95
+  },
+  {
+   "desc": "R&R Hip / Ridge cap - cut from 3 tab - composition shingles",
+   "unit": "LF",
+   "price": 9.26
+  },
+  {
+   "desc": "R&R Hip / Ridge cap - High profile - composition shingles",
+   "unit": "LF",
+   "price": 12.03
+  },
+  {
+   "desc": "R&R Hip / Ridge cap - Standard profile - composition shingles",
+   "unit": "LF",
+   "price": 10.68
+  },
+  {
+   "desc": "R&R House wrap (air/moisture barrier)",
+   "unit": "SF",
+   "price": 0.6
+  },
+  {
+   "desc": "R&R Insulation - ISO board, 2\"",
+   "unit": "SQ",
+   "price": 367.77
+  },
+  {
+   "desc": "R&R Interior door unit",
+   "unit": "EA",
+   "price": 358.63
+  },
+  {
+   "desc": "R&R Light fixture",
+   "unit": "EA",
+   "price": 95.29
+  },
+  {
+   "desc": "R&R Membrane roofing - cant strips - perlite",
+   "unit": "LF",
+   "price": 3.55
+  },
+  {
+   "desc": "R&R Mercury vapor security light",
+   "unit": "EA",
+   "price": 195.74
+  },
+  {
+   "desc": "R&R Metal decking, 1 1/2\" 16 gauge galvanized - 'B'",
+   "unit": "SF",
+   "price": 10.89
+  },
+  {
+   "desc": "R&R Metal outside corner post",
+   "unit": "LF",
+   "price": 10.29
+  },
+  {
+   "desc": "R&R Metal roofing",
+   "unit": "SF",
+   "price": 8.98
+  },
+  {
+   "desc": "R&R Metal roofing - corrugated - 26 gauge",
+   "unit": "SF",
+   "price": 8.9
+  },
+  {
+   "desc": "R&R Modified bitumen roof - hot mopped",
+   "unit": "SQ",
+   "price": 580.23
+  },
+  {
+   "desc": "R&R Patio Cover - Insulated - Roof panels only",
+   "unit": "SF",
+   "price": 17.2
+  },
+  {
+   "desc": "R&R Patio Post - Steel Tube",
+   "unit": "LF",
+   "price": 17.4
+  },
+  {
+   "desc": "R&R Pitch pan / pocket - up to 6\" x 6\" x 4\" - galvanized",
+   "unit": "EA",
+   "price": 148.26
+  },
+  {
+   "desc": "R&R Rafters - 2x6 - stick frame roof (using rafter length)",
+   "unit": "LF",
+   "price": 5.54
+  },
+  {
+   "desc": "R&R Reducer strip - for wood flooring",
+   "unit": "LF",
+   "price": 8.07
+  },
+  {
+   "desc": "R&R Roof drain - cast iron - 2\" to 6\" outlet",
+   "unit": "EA",
+   "price": 715.65
+  },
+  {
+   "desc": "R&R Roof vent - turbine type",
+   "unit": "EA",
+   "price": 189.46
+  },
+  {
+   "desc": "R&R Roof vent - turtle type - Metal",
+   "unit": "EA",
+   "price": 93.27
+  },
+  {
+   "desc": "R&R Saddle or cricket - up to 25 SF",
+   "unit": "EA",
+   "price": 203.95
+  },
+  {
+   "desc": "R&R Security system - contact w/wire (per opening)- High grade",
+   "unit": "EA",
+   "price": 125.25
+  },
+  {
+   "desc": "R&R Sheathing - plywood - 1/2\" CDX",
+   "unit": "SF",
+   "price": 3.61
+  },
+  {
+   "desc": "R&R Sheathing - plywood - 3/4\" CDX",
+   "unit": "SF",
+   "price": 3.74
+  },
+  {
+   "desc": "R&R Sheathing - plywood - 5/8\" CDX",
+   "unit": "SF",
+   "price": 3.77
+  },
+  {
+   "desc": "R&R Siding - aluminum (.024 thickness)",
+   "unit": "SF",
+   "price": 9.92
+  },
+  {
+   "desc": "R&R Siding - vinyl",
+   "unit": "SF",
+   "price": 6.06
+  },
+  {
+   "desc": "R&R Single ply membrane - Fully adhered system - 60 mil",
+   "unit": "SQ",
+   "price": 633.28
+  },
+  {
+   "desc": "R&R Snaplock Laminate - simulated wood flooring",
+   "unit": "SF",
+   "price": 7.72
+  },
+  {
+   "desc": "R&R Special Doors - Roof Hatch",
+   "unit": "EA",
+   "price": 846.74
+  },
+  {
+   "desc": "R&R Spot light fixture - double - w/motion sensor",
+   "unit": "EA",
+   "price": 204.05
+  },
+  {
+   "desc": "R&R Standing seam metal roofing",
+   "unit": "SF",
+   "price": 9.79
+  },
+  {
+   "desc": "R&R Storage shed - Metal - Gable type - 10' x 8'",
+   "unit": "EA",
+   "price": 1739.48
+  },
+  {
+   "desc": "R&R Stud wall - 2\" x 4\" x 8' - 12\" oc",
+   "unit": "LF",
+   "price": 31.13
+  },
+  {
+   "desc": "R&R Valley metal",
+   "unit": "LF",
+   "price": 8.05
+  },
+  {
+   "desc": "R&R Window screen, 1 - 9 SF",
+   "unit": "EA",
+   "price": 46.96
+  },
+  {
+   "desc": "R&R Wood fence 5'- 6' high - treated",
+   "unit": "LF",
+   "price": 36.3
+  },
+  {
+   "desc": "Remove 1/2\" drywall - hung, taped, ready for texture",
+   "unit": "SF",
+   "price": 0.53
+  },
+  {
+   "desc": "Remove 3 tab - 25 yr. - composition shingle roofing - incl. felt",
+   "unit": "SQ",
+   "price": 68.08
+  },
+  {
+   "desc": "Remove Additional charge for high roof (2 stories or greater)",
+   "unit": "SQ",
+   "price": 6.7
+  },
+  {
+   "desc": "Remove Additional charge for steep roof - 10/12 - 12/12 slope",
+   "unit": "SQ",
+   "price": 25.31
+  },
+  {
+   "desc": "Remove Additional charge for steep roof - 7/12 to 9/12 slope",
+   "unit": "SQ",
+   "price": 16.13
+  },
+  {
+   "desc": "Remove Casing - 3 1/4\"",
+   "unit": "LF",
+   "price": 0.64
+  },
+  {
+   "desc": "Remove Fluorescent - two tube - 8' - strip light",
+   "unit": "EA",
+   "price": 17.65
+  },
+  {
+   "desc": "Remove Insulation - ISO board, 3\"",
+   "unit": "SQ",
+   "price": 66.73
+  },
+  {
+   "desc": "Remove Laminated - comp. shingle rfg. - w/ felt",
+   "unit": "SQ",
+   "price": 70.0
+  },
+  {
+   "desc": "Remove Outlet or switch cover",
+   "unit": "EA",
+   "price": 0.8
+  },
+  {
+   "desc": "Remove Tear out wood flooring and subfloor",
+   "unit": "SF",
+   "price": 4.42
+  },
+  {
+   "desc": "Remove Tile roofing - Concrete - \"S\" or flat tile",
+   "unit": "SQ",
+   "price": 228.4
+  },
+  {
+   "desc": "Remove Toe kick - pre-finished wood - 1/2\"",
+   "unit": "LF",
+   "price": 2.38
+  },
+  {
+   "desc": "Residential Supervision / Project Management - per hour",
+   "unit": "HR",
+   "price": 77.33
+  },
+  {
+   "desc": "Respirator - Half face - multi- purpose resp. (per day)",
+   "unit": "DA",
+   "price": 1.67
+  },
+  {
+   "desc": "Respirator cartridge - HEPA only (per pair)",
+   "unit": "EA",
+   "price": 18.4
+  },
+  {
+   "desc": "Roofer - per hour",
+   "unit": "HR",
+   "price": 168.47
+  },
+  {
+   "desc": "Roofer - per hour to load materials on roof.",
+   "unit": "HR",
+   "price": 168.47
+  },
+  {
+   "desc": "Roofers Material Hoist",
+   "unit": "EA",
+   "price": 495.0
+  },
+  {
+   "desc": "Roofing - Toe Boards 1926.502(j)",
+   "unit": "EA",
+   "price": 3.26
+  },
+  {
+   "desc": "Roofing felt - 15 lb.",
+   "unit": "SQ",
+   "price": 43.07
+  },
+  {
+   "desc": "Roofing felt - 30 lb.",
+   "unit": "SQ",
+   "price": 50.71
+  },
+  {
+   "desc": "Safety Supervisor 1926.502(h)(1)(i)",
+   "unit": "EA",
+   "price": 40.51
+  },
+  {
+   "desc": "Scrape & prep for paint",
+   "unit": "SF",
+   "price": 0.94
+  },
+  {
+   "desc": "Scrape the ceiling & prep for paint",
+   "unit": "SF",
+   "price": 0.94
+  },
+  {
+   "desc": "Scrape the walls and ceiling & prep for paint",
+   "unit": "SF",
+   "price": 0.94
+  },
+  {
+   "desc": "Screen and coat wood floor",
+   "unit": "SF",
+   "price": 1.57
+  },
+  {
+   "desc": "Seal & paint trim - two coats",
+   "unit": "LF",
+   "price": 2.08
+  },
+  {
+   "desc": "Seal & paint window sill",
+   "unit": "LF",
+   "price": 3.75
+  },
+  {
+   "desc": "Seal (1 coat) & paint (1 coat) trim",
+   "unit": "LF",
+   "price": 2.08
+  },
+  {
+   "desc": "Seal the walls w/latex based stain blocker - one coat",
+   "unit": "SF",
+   "price": 0.87
+  },
+  {
+   "desc": "Seal/prime then paint (2 coats)",
+   "unit": "SF",
+   "price": 1.37
+  },
+  {
+   "desc": "Seal/prime then paint the ceiling (2 coats)",
+   "unit": "SF",
+   "price": 1.37
+  },
+  {
+   "desc": "Seal/prime then paint the walls (2 coats)",
+   "unit": "SF",
+   "price": 1.37
+  },
+  {
+   "desc": "Seal/prime then paint the walls and ceiling (2 coats)",
+   "unit": "SF",
+   "price": 1.37
+  },
+  {
+   "desc": "Sheathing - additional cost for H- clips",
+   "unit": "SF",
+   "price": 0.11
+  },
+  {
+   "desc": "Solar electric panel - Detach & reset",
+   "unit": "EA",
+   "price": 261.38
+  },
+  {
+   "desc": "Solar panel- mounting hardware- Detach & reset (per panel)",
+   "unit": "EA",
+   "price": 42.37
+  },
+  {
+   "desc": "Stain - wood fence/gate",
+   "unit": "SF",
+   "price": 1.24
+  },
+  {
+   "desc": "Step flashing",
+   "unit": "LF",
+   "price": 13.09
+  },
+  {
+   "desc": "Tarp - all-purpose poly - per sq ft (lab/mat) - after hrs",
+   "unit": "SF",
+   "price": 1.78
+  },
+  {
+   "desc": "Tear off, haul and dispose of comp. shingles - Laminated",
+   "unit": "SQ",
+   "price": 70.0
+  },
+  {
+   "desc": "Tear off, haul and dispose of wood shakes/shingles",
+   "unit": "SQ",
+   "price": 78.13
+  },
+  {
+   "desc": "Tear out and bag wet insulation",
+   "unit": "SF",
+   "price": 0.97
+  },
+  {
+   "desc": "Tear out baseboard",
+   "unit": "LF",
+   "price": 0.71
+  },
+  {
+   "desc": "Tear out wet drywall, cleanup, bag for disposal",
+   "unit": "SF",
+   "price": 1.29
+  },
+  {
+   "desc": "Television antenna - Detach & reset",
+   "unit": "EA",
+   "price": 122.44
+  },
+  {
+   "desc": "Temporary toilet - Minimum rental charge",
+   "unit": "EA",
+   "price": 239.58
+  },
+  {
+   "desc": "Texture drywall - light hand texture",
+   "unit": "SF",
+   "price": 1.37
+  },
+  {
+   "desc": "Thermal imaging",
+   "unit": "EA",
+   "price": 285.0
+  },
+  {
+   "desc": "Tile roofing - Concrete - \"S\" or flat tile",
+   "unit": "SQ",
+   "price": 793.74
+  },
+  {
+   "desc": "Tile roofing - Detach & reset",
+   "unit": "SQ",
+   "price": 1163.29
+  },
+  {
+   "desc": "Tree - removal - per hour (Labor only)",
+   "unit": "HR",
+   "price": 57.42
+  },
+  {
+   "desc": "Trip charge to monitor and move equipment",
+   "unit": "EA",
+   "price": 495.0
+  },
+  {
+   "desc": "Wall cavity drying-Inj. type (per 24 hr period) No monit.",
+   "unit": "DA",
+   "price": 147.0
+  },
+  {
+   "desc": "Water extraction from carpeted floor",
+   "unit": "SF",
+   "price": 0.6
+  },
+  {
+   "desc": "Water extraction from floor - Weight-assisted",
+   "unit": "SF",
+   "price": 1.14
+  },
+  {
+   "desc": "Water extraction from hard surface floor",
+   "unit": "SF",
+   "price": 0.27
+  },
+  {
+   "desc": "Wood floor drying extraction mat (per 24 hr prd) No monit.",
+   "unit": "DA",
+   "price": 208.0
+  }
+ ]
+}

@@ -25,6 +25,7 @@
 <nav class="nav">
   <div class="brand">Roof<span>Trace</span> Pro <span style="font-size:0.65em;opacity:0.6;font-weight:400">Admin</span></div>
   <div class="nav-links">
+    <a href="/admin/pricing" class="btn btn-nav">💲 Pricing</a>
     <a href="/tool" class="btn btn-nav" style="background:#f59e0b;color:#000;font-weight:800">🛰️ Open Roof Tool</a>
     <a href="#" onclick="logout()" class="btn-nav btn">Sign Out</a>
   </div>
@@ -119,7 +120,6 @@ let allUsers = [];
 
 
 async function sendPromoEmail(id, email, userId) {
-        ${!isAdmin&&tier==='trial'?`<div>${u.promoSentAt ? `<div style="font-size:0.72em;color:#16a34a;font-weight:600;margin-bottom:3px">STORM50 sent ${new Date(u.promoSentAt).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit'})}</div>` : ''}<button class="btn btn-sm" style="background:#0891b2;color:white;margin-bottom:4px;width:100%" onclick="sendPromoEmail('${id}','${u.email}','${id}')">Send STORM50</button></div>`:''}
   const res = await fetch('/api/admin/send-promo', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ userId: userId || id, email })

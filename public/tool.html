@@ -1794,8 +1794,15 @@ const estimateState = {
   permitLot: 175,
   taxPct: 0,
   overheadPct: 10,
-  profitPct: 10
+  profitPct: 10,
+  extraLines: []   // added from the price list catalog: {desc, unit, price, qty}
 };
+
+// Description for a core line: the price list's own wording (e.g. Xactimate) when it has one
+function _lbl(key, fallback) {
+  const l = (typeof pricingState !== 'undefined' && pricingState.labels) ? pricingState.labels[key] : null;
+  return l || fallback;
+}
 
 function computeEstimate() {
   const slopedTotal = facets.reduce((s,f) => s + (f.slopedSqFt||0), 0);
@@ -1815,17 +1822,17 @@ function computeEstimate() {
   const lines = [];
   // Tear-off — always
   lines.push({
-    desc: 'Tear off existing roof — haul & dispose',
-    qty: sqWithWaste, unit: 'SQ',
+    desc: _lbl('tearOffSqPrice', 'Tear off existing roof — haul & dispose'),
+    qty: baseSq, unit: 'SQ',
     price: estimateState.tearOffSqPrice,
-    total: sqWithWaste * estimateState.tearOffSqPrice,
+    total: baseSq * estimateState.tearOffSqPrice,
     required: true
   });
   // Decking — optional
   if (estimateState.decking) {
-    const deckSq = sqWithWaste * (estimateState.deckingPct/100);
+    const deckSq = baseSq * (estimateState.deckingPct/100);
     lines.push({
-      desc: `Replace roof decking (${estimateState.deckingPct}% of area)`,
+      desc: _lbl('deckingSqPrice', 'Replace roof decking') + ` (${estimateState.deckingPct}% of area)`,
       qty: deckSq, unit: 'SQ',
       price: estimateState.deckingSqPrice,
       total: deckSq * estimateState.deckingSqPrice
@@ -1833,42 +1840,42 @@ function computeEstimate() {
   }
   // Underlayment
   lines.push({
-    desc: 'Synthetic underlayment',
-    qty: sqWithWaste, unit: 'SQ',
+    desc: _lbl('underlaymentSqPrice', 'Synthetic underlayment'),
+    qty: baseSq, unit: 'SQ',
     price: estimateState.underlaymentSqPrice,
-    total: sqWithWaste * estimateState.underlaymentSqPrice
+    total: baseSq * estimateState.underlaymentSqPrice
   });
   // Shingles (main material + labor)
   lines.push({
-    desc: 'Composition shingles — supply & install',
+    desc: _lbl('shingleSqPrice', 'Composition shingles — supply & install') + ` (${estimateState.waste}% waste)`,
     qty: sqWithWaste, unit: 'SQ',
     price: estimateState.shingleSqPrice,
     total: sqWithWaste * estimateState.shingleSqPrice
   });
   // Starter strip
   if (starterLf > 0) lines.push({
-    desc: 'Starter strip at eaves',
+    desc: _lbl('starterLfPrice', 'Starter strip at eaves'),
     qty: starterLf, unit: 'LF',
     price: estimateState.starterLfPrice,
     total: starterLf * estimateState.starterLfPrice
   });
   // Ridge cap (ridges + hips)
   if (ridgeCapLf > 0) lines.push({
-    desc: 'Ridge cap shingles (ridges + hips)',
+    desc: _lbl('ridgeCapLfPrice', 'Ridge cap shingles') + ' (ridges + hips)',
     qty: ridgeCapLf, unit: 'LF',
     price: estimateState.ridgeCapLfPrice,
     total: ridgeCapLf * estimateState.ridgeCapLfPrice
   });
   // Drip edge
   if (dripEdgeLf > 0) lines.push({
-    desc: 'Drip edge metal',
+    desc: _lbl('dripEdgeLfPrice', 'Drip edge metal'),
     qty: dripEdgeLf, unit: 'LF',
     price: estimateState.dripEdgeLfPrice,
     total: dripEdgeLf * estimateState.dripEdgeLfPrice
   });
   // Valley
   if (valleyFt > 0) lines.push({
-    desc: 'Valley metal / ice & water',
+    desc: _lbl('valleyLfPrice', 'Valley metal / ice & water'),
     qty: valleyFt, unit: 'LF',
     price: estimateState.valleyLfPrice,
     total: valleyFt * estimateState.valleyLfPrice
@@ -1889,11 +1896,18 @@ function computeEstimate() {
   });
   // Permit
   lines.push({
-    desc: 'Permit & inspection',
+    desc: _lbl('permitLot', 'Permit & inspection'),
     qty: 1, unit: 'LOT',
     price: estimateState.permitLot,
     total: estimateState.permitLot
   });
+  // Lots with a $0 price are left off (e.g. when itemizing from the price list instead)
+  for (let i = lines.length - 1; i >= 0; i--) if (lines[i].unit === 'LOT' && !lines[i].price) lines.splice(i, 1);
+  // Line items added from the price list
+  estimateState.extraLines.forEach((x, i) => lines.push({
+    desc: x.desc, qty: +x.qty || 0, unit: x.unit, price: +x.price || 0,
+    total: (+x.qty || 0) * (+x.price || 0), extraIdx: i
+  }));
 
   const subtotal = lines.reduce((s,l) => s+l.total, 0);
   const overhead = subtotal * (estimateState.overheadPct/100);
@@ -1907,6 +1921,54 @@ function computeEstimate() {
 
 function _fmt$(n) { return '$' + (n||0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
 
+// ── Add line items from the selected price list's catalog ───────────────────
+const addLineState = { q: '' };
+function _addLinePanel(e) {
+  const cat = pricingState.catalog || [];
+  if (!cat.length) return '';
+  const chip = 'background:#1e293b;border:1px solid #334155;color:#e2e8f0;border-radius:14px;padding:5px 10px;font-size:0.75em;cursor:pointer;margin:0 6px 6px 0';
+  const quick = (pricingState.quickAdds || []).map((q, qi) => {
+    if (!(q.items || []).some(d => cat.find(x => x.desc === d))) return '';
+    return '<button style="'+chip+'" onclick="addQuickLines('+ qi +')">+ '+ _esc(q.label) +'</button>';
+  }).join('');
+  const q = addLineState.q.trim().toLowerCase();
+  const words = q.split(/\s+/).filter(Boolean);
+  const hits = words.length ? cat.map((c,i) => ({c,i})).filter(({c}) => words.every(w => c.desc.toLowerCase().includes(w))).slice(0, 12) : [];
+  const results = hits.map(({c,i}) =>
+    '<div onclick="addCatalogLine('+ i +')" style="display:flex;justify-content:space-between;gap:10px;padding:8px 10px;border-bottom:1px solid #1e293b;cursor:pointer;font-size:0.82em">'
+    + '<span>'+ _esc(c.desc) +'</span><span style="color:#f59e0b;white-space:nowrap">'+ _fmt$(c.price) +'/'+ c.unit +'</span></div>').join('')
+    || (words.length ? '<div style="padding:8px 10px;color:#64748b;font-size:0.82em">No matches</div>' : '');
+  return '<div style="padding:14px 18px;background:#1e293b;border-top:1px solid #334155">'
+    + '<div style="font-size:0.78em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Add line items · '+ cat.length +' in this price list</div>'
+    + '<div>'+ quick +'</div>'
+    + '<input id="addLineSearch" value="'+ _esc(addLineState.q) +'" oninput="searchCatalog(this.value)" placeholder="Search: chimney, gutter, satellite…" style="width:100%;box-sizing:border-box;background:#0f172a;border:1px solid #334155;color:white;padding:8px 10px;border-radius:6px;margin-top:4px">'
+    + (results ? '<div style="background:#0f172a;border-radius:6px;margin-top:6px;max-height:260px;overflow-y:auto">'+ results +'</div>' : '')
+    + '</div>';
+}
+function searchCatalog(v) {
+  addLineState.q = v;
+  renderEstimate();
+  const el = document.getElementById('addLineSearch');
+  if (el) { el.focus(); el.setSelectionRange(v.length, v.length); }
+}
+function addCatalogLine(i, noRender) {
+  const c = (pricingState.catalog || [])[i]; if (!c) return;
+  // Per-square roof charges default to the roof's squares; everything else to 1
+  const e = computeEstimate();
+  const qty = c.unit === 'SQ' ? +e.baseSq.toFixed(2) : 1;
+  estimateState.extraLines.push({ desc: c.desc, unit: c.unit, price: c.price, qty });
+  addLineState.q = '';
+  if (!noRender) renderEstimate();
+}
+function addQuickLines(qi) {
+  const q = (pricingState.quickAdds || [])[qi]; if (!q) return;
+  const cat = pricingState.catalog || [];
+  q.items.forEach(d => { const i = cat.findIndex(x => x.desc === d); if (i >= 0) addCatalogLine(i, true); });
+  renderEstimate();
+}
+function updateExtraLine(i, patch) { Object.assign(estimateState.extraLines[i], patch); renderEstimate(); }
+function removeExtraLine(i) { estimateState.extraLines.splice(i, 1); renderEstimate(); }
+
 function showEstimate() {
   const old = document.getElementById('estimateModal'); if (old) old.remove();
   const el = document.createElement('div');
@@ -1916,7 +1978,138 @@ function showEstimate() {
   el.innerHTML = '<div id="estimateBody" style="background:#1e293b;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;color:white"></div>';
   document.body.appendChild(el);
   renderEstimate();
+  loadPricing();
 }
+
+// ── Price lists: area sheets (admin) + "My pricing" (per account) ─────────────
+const PRICE_KEYS = ['shingleSqPrice','tearOffSqPrice','deckingSqPrice','underlaymentSqPrice','starterLfPrice','ridgeCapLfPrice','dripEdgeLfPrice','valleyLfPrice','flashingLot','ventLot','permitLot','overheadPct','profitPct','taxPct'];
+const pricingState = { loaded:false, sheets:[], mine:null, openRequests:[], selected:null, label:'Built-in prices', dirty:false, panel:null, msg:'' };
+
+async function loadPricing(force) {
+  if (pricingState.loaded && !force) return;
+  try {
+    const r = await fetch('/api/pricing');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    pricingState.sheets = d.sheets || [];
+    pricingState.mine = d.mine || null;
+    pricingState.openRequests = d.openRequests || [];
+    pricingState.loaded = true;
+    if (!pricingState.selected) {
+      const def = pricingState.sheets.find(x => x.isDefault) || pricingState.sheets[0];
+      selectPriceList(pricingState.mine ? 'mine' : (def ? def._id : ''), true);
+    }
+  } catch (err) { console.warn('Pricing unavailable', err); }
+  renderEstimate();
+}
+
+function _sheetLabel(sh) { return sh.area + (sh.version ? ' — ' + sh.version : ''); }
+
+function selectPriceList(id, silent) {
+  if (!silent && pricingState.dirty && !confirm('Switch price lists? Your unsaved price edits will be replaced.')) { renderEstimate(); return; }
+  let prices = null, src = null;
+  const def = pricingState.sheets.find(x => x.isDefault) || pricingState.sheets[0];
+  if (id === 'mine' && pricingState.mine) {
+    prices = pricingState.mine.prices; pricingState.label = 'My pricing (' + pricingState.mine.area + ')';
+    src = pricingState.sheets.find(x => x._id === pricingState.mine.baseSheetId) || def;
+  } else {
+    const sh = pricingState.sheets.find(x => x._id === id);
+    if (sh) { prices = sh.prices; pricingState.label = _sheetLabel(sh); src = sh; }
+  }
+  pricingState.labels = src?.labels || {};
+  pricingState.catalog = src?.catalog || [];
+  pricingState.quickAdds = src?.quickAdds || [];
+  if (prices) PRICE_KEYS.forEach(k => { if (prices[k] !== undefined) estimateState[k] = +prices[k]; });
+  pricingState.selected = id;
+  pricingState.dirty = false;
+  pricingState.msg = '';
+  if (!silent) renderEstimate();
+}
+
+function _guessArea() {
+  const parts = (document.getElementById('addressInput')?.value || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[parts.length-2] + ', ' + parts[parts.length-1].replace(/\s*\d{5}(-\d{4})?$/, '');
+  return '';
+}
+
+function togglePricePanel(name) {
+  pricingState.panel = pricingState.panel === name ? null : name;
+  pricingState.msg = '';
+  renderEstimate();
+}
+
+async function saveMyPricing() {
+  const area = (document.getElementById('pmArea')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you work in.'; return renderEstimate(); }
+  const prices = {}; PRICE_KEYS.forEach(k => prices[k] = estimateState[k]);
+  const baseSheetId = pricingState.selected && pricingState.selected !== 'mine' ? pricingState.selected : null;
+  try {
+    const r = await fetch('/api/pricing/mine', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ area, prices, baseSheetId }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Save failed');
+    pricingState.mine = d.pricing;
+    pricingState.selected = 'mine';
+    pricingState.label = 'My pricing (' + d.pricing.area + ')';
+    pricingState.dirty = false;
+    pricingState.panel = null;
+    pricingState.msg = '✅ Saved as your pricing. It will load automatically next time.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+async function requestLocalPricing() {
+  const area = (document.getElementById('prArea')?.value || '').trim();
+  const notes = (document.getElementById('prNotes')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you need pricing for.'; return renderEstimate(); }
+  try {
+    const r = await fetch('/api/pricing/requests', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ area, notes, address: document.getElementById('addressInput')?.value || '' }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    pricingState.openRequests.push(d);
+    pricingState.panel = null;
+    pricingState.msg = '✅ Request sent for ' + d.area + '. You\'ll get an email when the price sheet is ready.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+function _pricingBar() {
+  const inp = 'background:#1e293b;border:1px solid #334155;color:white;padding:7px 9px;border-radius:6px;width:100%;box-sizing:border-box';
+  const btn = 'border:none;border-radius:7px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:0.82em;color:white';
+  const opts = (pricingState.mine ? '<option value="mine" '+(pricingState.selected==='mine'?'selected':'')+'>⭐ My pricing ('+ _esc(pricingState.mine.area) +')</option>' : '')
+    + pricingState.sheets.map(sh => '<option value="'+ sh._id +'" '+(pricingState.selected===sh._id?'selected':'')+'>'+ _esc(_sheetLabel(sh)) + (sh.isDefault?' (default)':'') +'</option>').join('');
+  let panel = '';
+  if (pricingState.panel === 'save') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you work in (city, state)<input id="pmArea" value="'+ _esc(pricingState.mine?.area || _guessArea()) +'" placeholder="e.g. Waco, TX" style="'+inp+';margin-top:4px"></label>'
+      + '<div style="font-size:0.75em;color:#94a3b8">Saves the prices currently in this estimate (including any edits under ⚙️ Edit unit prices) as your own price list.</div>'
+      + '<button onclick="saveMyPricing()" style="'+btn+';background:#16a34a">Save my pricing</button></div>';
+  } else if (pricingState.panel === 'request') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you need pricing for (city, state)<input id="prArea" value="'+ _esc(_guessArea()) +'" placeholder="e.g. Oklahoma City, OK" style="'+inp+';margin-top:4px"></label>'
+      + '<label style="font-size:0.78em;color:#94a3b8">Notes (optional)<textarea id="prNotes" rows="2" placeholder="Shingle type, anything special…" style="'+inp+';margin-top:4px"></textarea></label>'
+      + '<button onclick="requestLocalPricing()" style="'+btn+';background:#2563eb">Send request</button></div>';
+  }
+  const pending = pricingState.openRequests.length
+    ? '<div style="font-size:0.75em;color:#94a3b8;margin-top:8px">⏳ Pricing requested: '+ pricingState.openRequests.map(r => _esc(r.area)).join(', ') +'</div>' : '';
+  return '<div style="padding:12px 18px;background:#0f172a;border-bottom:1px solid #334155">'
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +   '<span style="font-size:0.78em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Price list</span>'
+    +   (pricingState.loaded
+          ? '<select onchange="selectPriceList(this.value)" style="flex:1;min-width:160px;background:#1e293b;border:1px solid #334155;color:white;padding:6px 8px;border-radius:6px;font-weight:700">'+ opts +'</select>'
+          : '<span style="flex:1;font-size:0.85em;color:#64748b">Loading…</span>')
+    +   (pricingState.dirty ? '<span style="font-size:0.72em;color:#f59e0b;font-weight:700">edited, not saved</span>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+    +   '<button onclick="togglePricePanel(\'save\')" style="'+btn+';background:#334155;flex:1">💾 Save as my pricing</button>'
+    +   '<button onclick="togglePricePanel(\'request\')" style="'+btn+';background:#334155;flex:1">📍 Request local pricing</button>'
+    + '</div>'
+    + panel + pending
+    + (pricingState.msg ? '<div style="font-size:0.8em;margin-top:8px;color:#e2e8f0">'+ _esc(pricingState.msg) +'</div>' : '')
+    + '</div>';
+}
+
+function _esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
 function renderEstimate() {
   const body = document.getElementById('estimateBody');
@@ -1929,9 +2122,13 @@ function renderEstimate() {
     + '</select>';
 
   const lineRows = e.lines.map((l,i) => {
+    const isX = l.extraIdx !== undefined;
+    const qtyCell = isX
+      ? '<input type="number" min="0" step="0.01" value="'+ l.qty +'" onchange="updateExtraLine('+ l.extraIdx +',{qty:+this.value})" style="width:62px;background:#0f172a;border:1px solid #334155;color:white;padding:3px 4px;border-radius:4px;text-align:right"> '+ l.unit
+      : fmt(l.qty,2) +' '+ l.unit;
     return '<tr style="border-bottom:1px solid #334155">'
-      + '<td style="padding:8px 10px;font-size:0.85em">'+ l.desc + (l.required?' <span style="color:#f59e0b;font-size:0.75em">(always)</span>':'') +'</td>'
-      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ fmt(l.qty,2) +' '+ l.unit +'</td>'
+      + '<td style="padding:8px 10px;font-size:0.85em">'+ (isX ? '<button onclick="removeExtraLine('+ l.extraIdx +')" title="Remove" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:1.1em;padding:0 6px 0 0">×</button>' : '') + _esc(l.desc) + (l.required?' <span style="color:#f59e0b;font-size:0.75em">(always)</span>':'') +'</td>'
+      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1;white-space:nowrap">'+ qtyCell +'</td>'
       + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ _fmt$(l.price) +'</td>'
       + '<td style="padding:8px 10px;text-align:right;font-weight:700">'+ _fmt$(l.total) +'</td>'
       + '</tr>';
@@ -1946,6 +2143,7 @@ function renderEstimate() {
     + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Base Sloped Area</div><div style="font-weight:700">'+ fmt(e.baseSq,2) +' SQ</div></div>'
     + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">With Waste</div><div style="font-weight:700;color:#f59e0b">'+ fmt(e.sqWithWaste,2) +' SQ</div></div>'
     + '</div>'
+    + _pricingBar()
     + '<div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#1e293b;border-bottom:1px solid #334155">'
     + '<label style="display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:0.95"><input type="checkbox" checked disabled style="accent-color:#16a34a"><span>Tear-off (always included)</span></label>'
     + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="estDecking" '+ (estimateState.decking?'checked':'') +' onchange="updateEstimate({decking:this.checked})" style="accent-color:#2563eb"><span>Decking needed</span></label>'
@@ -1961,6 +2159,7 @@ function renderEstimate() {
     +   '</tr></thead>'
     +   '<tbody>'+ lineRows +'</tbody>'
     + '</table>'
+    + _addLinePanel(e)
     + '<div style="padding:14px 18px;background:#0f172a">'
     +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1"><span>Subtotal</span><span>'+ _fmt$(e.subtotal) +'</span></div>'
     +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Overhead <input type="number" min="0" max="50" value="'+ estimateState.overheadPct +'" onchange="updateEstimate({overheadPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.overhead) +'</span></div>'
@@ -1996,6 +2195,7 @@ function _priceInput(label, key) {
 }
 
 function updateEstimate(patch) {
+  if (Object.keys(patch).some(k => PRICE_KEYS.includes(k) && +patch[k] !== +estimateState[k])) pricingState.dirty = true;
   Object.assign(estimateState, patch);
   renderEstimate();
 }
@@ -2019,7 +2219,7 @@ function generateEstimatePDF() {
   doc.text('RoofTrace Pro — Estimate', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
   doc.text((company || 'Roofing Estimate') + '  |  rooftracepro.thepublicadjustertx.com', M, 44);
-  doc.text('Estimate Date: ' + date, M, 57);
+  doc.text('Estimate Date: ' + date + '   |   Pricing: ' + pricingState.label + (pricingState.dirty ? ' (adjusted)' : ''), M, 57);
 
   // Property block
   doc.setTextColor(30,30,30); doc.setFontSize(9);
@@ -2061,16 +2261,19 @@ function generateEstimatePDF() {
   doc.text('Total', W-M-8, y+10, {align:'right'});
   y += 15;
   e.lines.forEach((l,idx) => {
-    if (y > 690) { doc.addPage(); y=40; }
-    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,W-M*2,16,'F'); }
-    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont(undefined,'normal');
-    doc.text(l.desc + (l.required ? '  (always included)' : ''), M+8, y+10);
+    doc.setFontSize(8); doc.setFont(undefined,'normal');
+    const dl = doc.splitTextToSize(l.desc + (l.required ? '  (always included)' : ''), 270);
+    const rh = 6 + dl.length * 10;
+    if (y + rh > 700) { doc.addPage(); y=40; }
+    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,W-M*2,rh,'F'); }
+    doc.setTextColor(30,30,30);
+    doc.text(dl, M+8, y+10);
     doc.text(fmt(l.qty,2), M+330, y+10, {align:'right'});
     doc.text(l.unit, M+360, y+10, {align:'right'});
     doc.text(_fmt$(l.price), M+440, y+10, {align:'right'});
     doc.setFont(undefined,'bold');
     doc.text(_fmt$(l.total), W-M-8, y+10, {align:'right'});
-    y += 16;
+    y += rh;
   });
 
   // Totals box
@@ -2111,6 +2314,15 @@ function generateEstimatePDF() {
 window.showEstimate = showEstimate;
 window.closeEstimate = closeEstimate;
 window.updateEstimate = updateEstimate;
+window.selectPriceList = selectPriceList;
+window.togglePricePanel = togglePricePanel;
+window.saveMyPricing = saveMyPricing;
+window.requestLocalPricing = requestLocalPricing;
+window.searchCatalog = searchCatalog;
+window.addCatalogLine = addCatalogLine;
+window.addQuickLines = addQuickLines;
+window.updateExtraLine = updateExtraLine;
+window.removeExtraLine = removeExtraLine;
 window.generateEstimatePDF = generateEstimatePDF;
 window.undoLast = function() {
   // First: cancel any in-progress segment
