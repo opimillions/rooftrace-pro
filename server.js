@@ -12,11 +12,22 @@ const { userOps, lookupOps, alertOps } = require('./db');
 const { generateToken, requireAuth, requireAdmin, requireActiveSubscription } = require('./auth');
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Force HTTPS in production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+      return res.redirect(301, 'https://' + req.headers.host + req.url);
+    }
+    next();
+  });
+}
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Auth Routes ───────────────────────────────────────────────────────────────
@@ -26,6 +37,7 @@ app.get('/forgot-password', (req, res) => res.sendFile(path.join(__dirname, 'pub
 app.get('/reset-password', (req, res) => res.sendFile(path.join(__dirname, 'public', 'reset-password.html')));
 app.get('/upgrade', (req, res) => res.sendFile(path.join(__dirname, 'public', 'upgrade.html')));
 app.get('/admin', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
+app.get('/admin/pricing', requireAuth, requireAdmin, (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin-pricing.html')));
 
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
@@ -54,6 +66,19 @@ app.post('/api/auth/register', async (req, res) => {
     res.cookie('token', token, { httpOnly: true, secure: process.env.NODE_ENV === 'production', maxAge: 7*24*60*60*1000 });
     res.json({ success: true, redirect: '/tool' });
   } catch (err) { res.status(500).json({ error: 'Registration failed' }); }
+});
+
+// Token login for the RoofTrace Scan iPhone app (sent back as a Bearer token)
+app.post('/api/auth/token', async (req, res) => {
+  const { email, password } = req.body || {};
+  if (!email || !password) return res.status(400).json({ error: 'Email and password required' });
+  try {
+    const user = await userOps.findByEmail(email);
+    if (!user || !userOps.verifyPassword(user, password)) return res.status(401).json({ error: 'Invalid email or password' });
+    if (user.tier === 'suspended') return res.status(403).json({ error: 'Account suspended. Contact support.' });
+    await userOps.updateLastLogin(user._id);
+    res.json({ token: generateToken(user), user: { name: user.name, email: user.email, company: user.company } });
+  } catch (err) { res.status(500).json({ error: 'Login failed' }); }
 });
 
 app.post('/api/auth/logout', (req, res) => { res.clearCookie('token'); res.json({ success: true }); });
@@ -93,12 +118,44 @@ app.post('/api/auth/reset-password', async (req, res) => {
 
 // ── Tool Route (protected) ────────────────────────────────────────────────────
 app.get('/tool', requireAuth, (req, res) => {
-  // Check subscription
+  // Admins always have access
+  if (req.user.role === 'admin') return res.sendFile(path.join(__dirname, 'public', 'tool.html'));
+  // Check subscription for regular users
   if (!userOps.canLookup(req.user)) return res.redirect('/upgrade?reason=limit');
   res.sendFile(path.join(__dirname, 'public', 'tool.html'));
 });
 
+// ── Interior (LiDAR room scans) ───────────────────────────────────────────────
+app.get('/interior', requireAuth, (req, res) => res.sendFile(path.join(__dirname, 'public', 'interior.html')));
+app.use('/api/interior', require('./routes/interior'));
+
+// ── Pricing (area price sheets, contractor pricing, local pricing requests) ───
+app.use('/api/pricing', require('./routes/pricing'));
+
 // ── Me API ────────────────────────────────────────────────────────────────────
+
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => res.json(await userOps.getAll()));
+app.post('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
+  const { email, password, name, company, tier, notes } = req.body;
+  if (!email || !password || !name) return res.status(400).json({ error: 'Name, email, password required' });
+  const existing = await userOps.findByEmail(email);
+  if (existing) return res.status(409).json({ error: 'Email already exists' });
+  await userOps.create({ email, password, name, company, tier: tier||'trial', notes, role:'subscriber', lookupLimit: (tier==='pro'||tier==='client')?-1:1 });
+  res.json({ success: true });
+});
+app.patch('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  const { tier, notes } = req.body;
+  if (tier) await userOps.updateTier(req.params.id, tier);
+  if (notes !== undefined) await userOps.update(req.params.id, { notes });
+  res.json({ success: true });
+});
+app.delete('/api/admin/users/:id', requireAuth, requireAdmin, async (req, res) => {
+  await userOps.delete(req.params.id); res.json({ success: true });
+});
+app.get('/api/admin/stats', requireAuth, requireAdmin, async (req, res) => {
+  const allUsers = await userOps.getAll();
+  res.json({ users: { total: allUsers.length, pro: allUsers.filter(u=>u.tier==='pro').length, trial: allUsers.filter(u=>u.tier==='trial').length, client: allUsers.filter(u=>u.tier==='client').length }, lookups: { total: 0, today: 0 }, recentAlerts: [], recentLookups: [] });
+});
 app.get('/api/me', requireAuth, async (req, res) => {
   const { passwordHash, ...user } = req.user;
   res.json({ user });
@@ -183,8 +240,8 @@ app.get('*', (req, res) => {
 // Monthly lookup reset
 cron.schedule('0 0 1 * *', () => userOps.resetMonthlyLookups(), { timezone: 'America/Chicago' });
 
-app.listen(PORT, () => {
-  console.log(`\nRoofTrace Pro running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`\nRoofTrace Pro running on http://0.0.0.0:${PORT}`);
   console.log(`Admin: ${process.env.ADMIN_EMAIL}\n`);
 });
 

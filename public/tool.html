@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RoofTrace Pro</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <link rel="stylesheet" href="/lib/leaflet.min.css" />
+  <link rel="stylesheet" href="/lib/leaflet.draw.css" />
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
     html, body { height:100%; overflow:hidden; font-family:Arial,sans-serif; background:#0f172a; }
@@ -103,6 +103,232 @@
 
     /* PDF hidden */
     @media print { .sidebar,.header,.bottom-bar { display:none; } #map { height:100vh; } }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 700px) {
+      .app {
+        display: block;
+        height: 100vh;
+        position: relative;
+        overflow: hidden;
+      }
+      /* Header: slim strip at top */
+      .header {
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        z-index: 500;
+        padding: 6px 10px;
+        gap: 6px;
+        flex-wrap: nowrap;
+      }
+      .header .claim-fields { display: none; }
+      .header .logo { display: none; } /* hide logo on mobile to save space */
+      .header .btn-report { font-size: 0.75em; padding: 5px 8px; flex-shrink: 0; }
+      .header .btn-report .btn-txt { display: none; } /* icon-only so all buttons fit */
+      .header .btn-report { font-size: 1em; padding: 5px 6px; margin-right: 0 !important; }
+      #mobileHeaderSearch button { padding: 7px 10px !important; }
+      #mobileHeaderSearch { min-width: 0; }
+      /* Show mobile address search in header */
+      #mobileHeaderSearch {
+        display: flex !important;
+        flex: 1;
+        gap: 6px;
+        align-items: center;
+      }
+      #mobileHeaderSearch input {
+        flex: 1;
+        background: #0f172a;
+        border: 1.5px solid #2563eb;
+        color: white;
+        padding: 7px 10px;
+        border-radius: 8px;
+        font-size: 16px;
+        outline: none;
+        min-width: 0;
+      }
+      #mobileHeaderSearch input::placeholder { color: #64748b; }
+      #mobileHeaderSearch button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 7px 14px;
+        font-weight: 800;
+        font-size: 0.85em;
+        flex-shrink: 0;
+      }
+      /* Map: full screen, below header + toolbar */
+      #map {
+        position: fixed;
+        top: 50px; left: 0; right: 0; bottom: 96px;
+        height: auto !important;
+        width: 100% !important;
+        z-index: 1;
+      }
+      /* Bottom bar: slim fixed strip */
+      .bottom-bar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        z-index: 500;
+        padding: 4px 8px;
+        overflow-x: auto;
+        gap: 0;
+      }
+      .stat { min-width: 80px; padding: 2px 10px; }
+      .stat .lbl { font-size: 0.6em; }
+      .stat .val { font-size: 0.95em; }
+      .waste-pills { display: none; }
+      /* Sidebar: hidden by default, slides up as bottom drawer */
+      .sidebar {
+        position: fixed;
+        bottom: 56px; left: 0; right: 0;
+        z-index: 600;
+        max-height: 70vh;
+        overflow-y: auto;
+        border-right: none;
+        border-top: 2px solid #2563eb;
+        transform: translateY(100%);
+        transition: transform 0.3s ease;
+        border-radius: 16px 16px 0 0;
+      }
+      .sidebar.mobile-open {
+        transform: translateY(0);
+      }
+      /* Mobile toggle button */
+      #mobileDrawerBtn {
+        display: flex;
+        position: fixed;
+        bottom: 62px;
+        right: 14px;
+        z-index: 700;
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 52px;
+        height: 52px;
+        font-size: 1.4em;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        cursor: pointer;
+      }
+      .mode-grid { grid-template-columns: repeat(4, auto); overflow-x: auto; }
+      .facet-list { max-height: 160px; }
+      /* Hide duplicate draw section in sidebar on mobile — toolbar handles it */
+      .sidebar .sidebar-section:nth-child(2) { display: none; }
+      /* Mobile mode toolbar — always visible strip above bottom bar */
+      #mobileToolbar {
+        display: flex;
+        position: fixed;
+        bottom: 48px; left: 0; right: 0;
+        z-index: 600;
+        background: #0f172a;
+        border-top: 1px solid #2563eb;
+        overflow-x: auto;
+        gap: 4px;
+        padding: 6px 8px;
+        -webkit-overflow-scrolling: touch;
+      }
+      #mobileToolbar .mtb-btn {
+        flex: 1 1 0;
+        min-width: 0;
+        padding: 8px 4px;
+        border-radius: 8px;
+        border: 2px solid;
+        font-size: 0.7em;
+        font-weight: 700;
+        cursor: pointer;
+        background: transparent;
+        white-space: nowrap;
+        color: white;
+        text-align: center;
+      }
+      #mobileToolbar .mtb-btn.active {
+        color: #0f172a !important;
+      }
+      /* shift map to make room for header + address bar + toolbar */
+      #map {
+        top: 90px !important;
+        bottom: 96px !important;
+      }
+      /* Mobile address bar pinned below header */
+      #mobileAddrBar {
+        display: flex;
+        position: fixed;
+        top: 44px; left: 0; right: 0;
+        z-index: 490;
+        background: #172235;
+        border-bottom: 2px solid #2563eb;
+        padding: 6px 10px;
+        gap: 8px;
+        align-items: center;
+        height: 46px;
+      }
+      #mobileAddrBar input {
+        flex: 1;
+        background: #0f172a;
+        border: 1.5px solid #2563eb;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 16px;
+        outline: none;
+      }
+      #mobileAddrBar input::placeholder { color: #64748b; }
+      #mobileAddrBar button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 18px;
+        font-weight: 800;
+        font-size: 0.9em;
+        white-space: nowrap;
+        font-size: 0.85em;
+      }
+      /* drawer btn still available for facets/pitch */
+      #mobileDrawerBtn {
+        bottom: 106px !important;
+      }
+    }
+    /* Fence mode */
+    #fencePanel { display:none; position:fixed; left:300px; bottom:84px; z-index:650; background:#0f172a; border:2px solid #ec4899; border-radius:12px; padding:10px 12px; width:340px; color:white; box-shadow:0 6px 20px rgba(0,0,0,.45); font-family:Arial,sans-serif; }
+    #fencePanel.show { display:block; }
+    #fencePanel .fp-top { display:flex; align-items:center; gap:8px; font-size:.82em; }
+    #fencePanel .fp-title { color:#f472b6; font-weight:900; letter-spacing:.5px; }
+    #fencePanel #fpSum { flex:1; color:#e2e8f0; }
+    #fencePanel .fp-x { background:#1e293b; border:1px solid #334155; color:#cbd5e1; border-radius:6px; width:30px; height:28px; cursor:pointer; }
+    #fencePanel .fp-hint { color:#94a3b8; font-size:.74em; margin:6px 0 8px; line-height:1.35; }
+    #fencePanel .fp-btns { display:flex; gap:6px; }
+    #fencePanel .fp-btns button { flex:1; background:#1e293b; border:1.5px solid #334155; color:white; border-radius:8px; padding:8px 4px; font-weight:700; font-size:.76em; cursor:pointer; white-space:nowrap; }
+    #fencePanel .fp-btns button:disabled { opacity:.4; }
+    #fencePanel #fpFinish:not(:disabled) { background:#ec4899; border-color:#ec4899; }
+    #fencePanel #fpGate.on { background:#f59e0b; border-color:#f59e0b; color:#0f172a; }
+    .fence-len span { display:inline-block; transform:translate(-50%,-50%); background:#ec4899; color:white; font:700 11px Arial,sans-serif; padding:1px 5px; border-radius:4px; white-space:nowrap; box-shadow:0 1px 3px rgba(0,0,0,.5); }
+    .fence-gate .fg-tag { position:absolute; left:0; top:0; transform:translate(-50%,-160%); background:#facc15; color:#0f172a; font:800 11px Arial,sans-serif; padding:1px 5px; border-radius:4px; white-space:nowrap; }
+    .fence-modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:1100; display:flex; align-items:center; justify-content:center; padding:16px; }
+    .fence-modal { background:#1e293b; color:white; border-radius:14px; width:100%; max-width:420px; max-height:90vh; overflow-y:auto; padding:18px; font-family:Arial,sans-serif; }
+    .fence-modal h3 { margin:0 0 14px; }
+    .fence-modal label { display:block; color:#94a3b8; font-size:.75em; font-weight:700; letter-spacing:.5px; text-transform:uppercase; margin-bottom:12px; }
+    .fence-modal select { display:block; width:100%; margin-top:6px; background:#0f172a; border:1px solid #334155; color:white; padding:10px; border-radius:8px; font-size:16px; text-transform:none; }
+    .fence-modal .fs-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .fence-modal .fs-btns { display:flex; gap:10px; margin-top:6px; }
+    .fence-modal .fs-btns button { flex:1; background:#334155; color:white; border:none; border-radius:8px; padding:12px; font-weight:700; cursor:pointer; }
+    .fence-modal .fs-btns button.primary { background:#ec4899; }
+    .fence-table { width:100%; border-collapse:collapse; margin-bottom:10px; }
+    .fence-table td { padding:9px 4px; border-bottom:1px solid #334155; color:white; font-size:.9em; }
+    .fence-table td:first-child { color:#94a3b8; }
+    .fence-table td:last-child { text-align:right; font-weight:600; }
+    .fence-note { color:#94a3b8; font-size:.8em; line-height:1.45; margin:0 0 12px; }
+    .fence-toast { position:fixed; left:50%; top:110px; transform:translateX(-50%); background:#0f172a; border:1px solid #ec4899; color:white; padding:9px 14px; border-radius:9px; z-index:1200; font:600 13px Arial,sans-serif; }
+    @media (max-width: 768px) {
+      #fencePanel { left:8px; right:72px; width:auto; bottom:104px; padding:8px 10px; }
+    }
+    /* Hide mobile-only elements on desktop */
+    #mobileDrawerBtn { display: none; }
+    #mobileToolbar { display: none; }
+    #mobileAddrBar { display: none; }
   </style>
 </head>
 <body>
@@ -110,14 +336,22 @@
 
   <!-- Header -->
   <header class="header">
-    <div class="logo"><img src="/logo-icon.svg" style="height:28px;vertical-align:middle;margin-right:8px">Roof<span>Trace</span> Pro</div>
+    <div class="logo"><img src="logo-icon.svg" style="height:28px;vertical-align:middle;margin-right:8px">Roof<span>Trace</span> Pro</div>
+    <!-- Mobile address search (shown in header on small screens) -->
+    <div id="mobileHeaderSearch" style="display:none;flex:1;gap:6px;align-items:center">
+      <input type="text" id="mobileHeaderAddr" placeholder="&#128205; Search address..." style="flex:1;background:#0f172a;border:1.5px solid #2563eb;color:white;padding:7px 10px;border-radius:8px;font-size:16px;outline:none;min-width:0" onkeydown="if(event.key==='Enter')mobileGeocode()">
+      <button onclick="mobileGeocode()" style="background:#2563eb;color:white;border:none;border-radius:8px;padding:7px 14px;font-weight:800;font-size:0.85em;flex-shrink:0">Go</button>
+    </div>
     <div class="claim-fields">
       <input type="text" id="claimNumber" placeholder="Claim #" style="max-width:130px">
       <input type="text" id="inspectorName" placeholder="Inspector Name" style="max-width:150px">
       <input type="text" id="companyName" placeholder="Company" style="max-width:150px">
       <input type="date" id="inspectionDate" style="max-width:140px">
     </div>
-    <button class="btn-report" onclick="generatePDF()">&#128196; PDF Report</button>
+    <button class="btn-report" onclick="openInterior()" style="background:#7c3aed;color:white;margin-right:4px" title="Interior rooms (LiDAR)">&#128208;<span class="btn-txt"> Interior</span></button>
+    <button class="btn-report" onclick="showSummary()" style="background:#16a34a;margin-right:4px" title="Summary">&#128203;<span class="btn-txt"> Summary</span></button>
+    <button class="btn-report" onclick="showEstimate()" style="background:#f59e0b;margin-right:4px" title="Estimate">&#128176;<span class="btn-txt"> Estimate</span></button>
+    <button class="btn-report" onclick="generatePDF()" title="PDF Report">&#128196;<span class="btn-txt"> PDF Report</span></button>
   </header>
 
   <!-- Sidebar -->
@@ -143,6 +377,7 @@
         <button id="mode-drip"   class="mode-btn"        style="border-color:#0891b2;color:#0891b2"  onclick="setMode('drip')">&#8213; Drip Edge</button>
         <button id="mode-rake"   class="mode-btn"        style="border-color:#7c3aed;color:#7c3aed"  onclick="setMode('rake')">&#8213; Rake</button>
         <button id="mode-eaves"  class="mode-btn"        style="border-color:#d97706;color:#d97706"  onclick="setMode('eaves')">&#8213; Eaves</button>
+        <button id="mode-fence"  class="mode-btn"        style="border-color:#ec4899;color:#ec4899"  onclick="setMode('fence')">&#9638; Fence</button>
       </div>
       <div style="margin-top:8px;font-size:0.75em;color:#64748b" id="modeHint">Click to draw a roof facet polygon</div>
     </div>
@@ -190,6 +425,26 @@
 
   <!-- Map -->
   <div id="map"></div>
+  <button id="mobileDrawerBtn" onclick="toggleMobileDrawer()" title="Tools">🛠️</button>
+
+  <!-- Mobile Address Bar -->
+  <div id="mobileAddrBar">
+    <input type="text" id="mobileAddressInput" placeholder="&#128205; Search address..." onkeydown="if(event.key==='Enter'){document.getElementById('addressInput').value=this.value;geocodeAddress();}">
+    <button onclick="document.getElementById('addressInput').value=document.getElementById('mobileAddressInput').value;geocodeAddress()">Go</button>
+  </div>
+
+  <!-- Mobile Drawing Toolbar (always visible on mobile) -->
+  <div id="mobileToolbar">
+    <button class="mtb-btn" id="mtb-hip"   style="border-color:#ea580c;color:#ea580c" onclick="setMode('hip');updateMtb('hip')">Hip</button>
+    <button class="mtb-btn" id="mtb-ridge" style="border-color:#dc2626;color:#dc2626" onclick="setMode('ridge');updateMtb('ridge')">Ridge</button>
+    <button class="mtb-btn" id="mtb-valley" style="border-color:#16a34a;color:#16a34a" onclick="setMode('valley');updateMtb('valley')">Valley</button>
+    <button class="mtb-btn" id="mtb-eaves" style="border-color:#d97706;color:#d97706" onclick="setMode('eaves');updateMtb('eaves')">Eaves</button>
+    <button class="mtb-btn" id="mtb-rake"  style="border-color:#7c3aed;color:#7c3aed" onclick="setMode('rake');updateMtb('rake')">Rake</button>
+    <button class="mtb-btn" id="mtb-drip"  style="border-color:#0891b2;color:#0891b2" onclick="setMode('drip');updateMtb('drip')">Drip</button>
+    <button class="mtb-btn" id="mtb-fence" style="border-color:#ec4899;color:#ec4899" onclick="setMode('fence')">Fence</button>
+    <button class="mtb-btn" id="mtb-undo"  style="border-color:#94a3b8;color:#fff;background:#334155" onclick="undoLast()">&#8617;</button>
+    <button class="mtb-btn" id="mtb-clear" style="border-color:#dc2626;color:#fff;background:#7f1d1d" onclick="if(confirm('Clear all?'))clearAllLayers()">&#10005;</button>
+  </div>
 
   <!-- Bottom Bar -->
   <div class="bottom-bar">
@@ -229,6 +484,10 @@
       <div class="lbl" style="color:#fbbf24">&#8213; Eaves</div>
       <div class="val" id="statEaves" style="color:#fcd34d">— ft</div>
     </div>
+    <div class="stat">
+      <div class="lbl" style="color:#f472b6">&#9638; Fence</div>
+      <div class="val" id="statFence" style="color:#f9a8d4">— ft</div>
+    </div>
     <div class="stat" style="border-left-color:#10b981">
       <div class="lbl" style="color:#6ee7b7">&#9711; Perimeter</div>
       <div class="val" id="statPerimeter" style="color:#a7f3d0">— ft</div>
@@ -243,9 +502,9 @@
 
 </div>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
-<script src="https://unpkg.com/leaflet-geometryutil@0.10.3/src/leaflet.geometryutil.js"></script>
+<script src="/lib/leaflet.min.js"></script>
+<script src="/lib/leaflet.draw.min.js"></script>
+<script src="/lib/leaflet.geometryutil.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -261,17 +520,70 @@ const wasteFactors = [10, 12, 15, 17, 20];
 // ── Map Init ─────────────────────────────────────────────────────────────────
 const map = L.map('map', { zoomControl:true }).setView([32.9412, -97.1342], 21);
 
+// Imagery providers — different providers fly aerials on different cycles; freshest tile for a given
+// address varies by provider. Esri is the default because it tends to have fresher residential
+// imagery in DFW than Google's public mt.google.com/vt endpoint.
+// Esri World_Imagery's native max is z19 in most of the US (z20 in a few metros).
+// Setting maxNativeZoom:19 makes Leaflet upscale z19 tiles for z20-22 instead of
+// requesting non-existent tiles and showing "Map data not yet available".
+const esriSat = L.tileLayer(
+  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:19 }
+).addTo(map);
+
 const googleSat = L.tileLayer(
   'https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}',
   { attribution:'&copy; Google', maxZoom:22, maxNativeZoom:21, subdomains:'0123' }
-).addTo(map);
-
-const esriSat = L.tileLayer(
-  'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  { attribution:'&copy; Esri', maxZoom:22, maxNativeZoom:21 }
 );
 
-L.control.layers({'&#127758; Google':googleSat,'&#128506; Esri':esriSat}, null, {position:'topright',collapsed:false}).addTo(map);
+const usgsNaip = L.tileLayer(
+  'https://basemap.nationalmap.gov/arcgis/rest/services/USGSImageryOnly/MapServer/tile/{z}/{y}/{x}',
+  { attribution:'Imagery &copy; USGS NAIP', maxZoom:22, maxNativeZoom:19 }
+); // USGS NAIP — US aerial imagery, public domain, often sharper for rural/residential
+
+const imageryLayers = {
+  esri:   { layer: esriSat,  label: 'Esri'      },
+  google: { layer: googleSat, label: 'Google'    },
+  usgs:   { layer: usgsNaip,  label: 'USGS NAIP' }
+};
+let activeImagery = 'esri';
+function switchImagery(key) {
+  if (!imageryLayers[key] || key === activeImagery) return;
+  map.removeLayer(imageryLayers[activeImagery].layer);
+  imageryLayers[key].layer.addTo(map);
+  // Keep imagery beneath drawn vectors
+  if (imageryLayers[key].layer.bringToBack) imageryLayers[key].layer.bringToBack();
+  activeImagery = key;
+  // Update button states
+  document.querySelectorAll('#imagerySwitcher button').forEach(b => {
+    b.classList.toggle('active', b.dataset.imagery === key);
+  });
+}
+window.switchImagery = switchImagery;
+
+// On-map imagery switcher — visible, one-click compare between providers
+const imagerySwitcher = L.control({ position: 'topright' });
+imagerySwitcher.onAdd = function() {
+  const div = L.DomUtil.create('div', 'leaflet-bar');
+  div.id = 'imagerySwitcher';
+  div.style.cssText = 'background:white;padding:4px;border-radius:6px;box-shadow:0 1px 4px rgba(0,0,0,0.2);font-size:11px;display:flex;gap:2px;';
+  div.innerHTML = `
+    <div style="font-weight:700;color:#475569;padding:4px 6px;align-self:center;">Imagery:</div>
+    <button data-imagery="esri" class="active" onclick="switchImagery('esri')" style="padding:4px 8px;border:1px solid #cbd5e1;background:#2563eb;color:white;border-radius:4px;cursor:pointer;font-weight:600;">Esri</button>
+    <button data-imagery="google" onclick="switchImagery('google')" style="padding:4px 8px;border:1px solid #cbd5e1;background:white;color:#334155;border-radius:4px;cursor:pointer;font-weight:600;">Google</button>
+    <button data-imagery="usgs" onclick="switchImagery('usgs')" style="padding:4px 8px;border:1px solid #cbd5e1;background:white;color:#334155;border-radius:4px;cursor:pointer;font-weight:600;">USGS</button>
+  `;
+  // Prevent map drag/zoom when clicking the control
+  L.DomEvent.disableClickPropagation(div);
+  L.DomEvent.disableScrollPropagation(div);
+  return div;
+};
+imagerySwitcher.addTo(map);
+
+// Add CSS so the active-imagery state is obvious
+const _imgStyle = document.createElement('style');
+_imgStyle.textContent = `#imagerySwitcher button.active { background:#2563eb !important; color:white !important; border-color:#1d4ed8 !important; }`;
+document.head.appendChild(_imgStyle);
 
 // ── Layer Groups ─────────────────────────────────────────────────────────────
 const facetLayer  = new L.FeatureGroup().addTo(map);
@@ -321,8 +633,28 @@ function buildDrawControl(mode) {
   });
 }
 
+function updateMtb(activeMode) {
+  const modes = ['ridge','hip','valley','eaves','rake','drip'];
+  modes.forEach(m => {
+    const btn = document.getElementById('mtb-' + m);
+    if (!btn) return;
+    const colors = {ridge:'#dc2626',hip:'#ea580c',valley:'#16a34a',eaves:'#d97706',rake:'#7c3aed',drip:'#0891b2'};
+    const c = colors[m] || '#fff';
+    if (m === activeMode) {
+      btn.style.background = c;
+      btn.style.color = '#ffffff';
+      btn.style.borderColor = c;
+    } else {
+      btn.style.background = 'transparent';
+      btn.style.color = c;
+      btn.style.borderColor = c;
+    }
+  });
+}
+
 function setMode(mode) {
   currentMode = mode;
+  updateMtb(mode);
   // Reset any pending segment
   segmentStart = null;
   if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
@@ -465,8 +797,11 @@ function refreshStats() {
   const ridgeFt     = totalLayerFt(ridgeLayer);
   const hipFt       = totalLayerFt(hipLayer);
   const valleyFt    = totalLayerFt(valleyLayer);
-  const dripFt      = totalLayerFt(dripLayer);
+  const dripDrawnFt = totalLayerFt(dripLayer);
   const rakeFt      = totalLayerFt(rakeLayer);
+  const eavesFt     = totalLayerFt(eavesLayer);
+  // Drip edge = drawn drip lines OR (eaves + rake) if no drip lines drawn
+  const dripFt      = dripDrawnFt > 0 ? dripDrawnFt : (eavesFt + rakeFt);
 
   document.getElementById('statFlatArea').textContent   = flatTotal   ? fmt(flatTotal,0)   + ' sq ft' : '— sq ft';
   document.getElementById('statSlopedArea').textContent = slopedTotal ? fmt(slopedTotal,0) + ' sq ft' : '— sq ft';
@@ -476,8 +811,7 @@ function refreshStats() {
   document.getElementById('statValley').textContent     = valleyFt    ? fmt(valleyFt,0)    + ' ft'    : '— ft';
   document.getElementById('statDrip').textContent       = dripFt      ? fmt(dripFt,0)      + ' ft'    : '— ft';
   document.getElementById('statRake').textContent       = rakeFt      ? fmt(rakeFt,0)      + ' ft'    : '— ft';
-  const eavesFt = totalLayerFt(eavesLayer);
-  document.getElementById('statEaves').textContent    = eavesFt     ? fmt(eavesFt,0)     + ' ft'    : '— ft';
+  document.getElementById('statEaves').textContent      = eavesFt     ? fmt(eavesFt,0)     + ' ft'    : '— ft';
 
   // Waste pills
   document.getElementById('wastePills').innerHTML = squares
@@ -522,7 +856,7 @@ function snapToNearest(latlng) {
 let snapIndicator = null;
 
 map.on('mousemove', function(e) {
-  if (currentMode === 'facet') { if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; } return; }
+  if (currentMode === 'facet' || currentMode === 'fence') { if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; } return; }
   const snapped = snapToNearest(e.latlng);
   const isSnapping = snapped !== e.latlng;
   if (isSnapping) {
@@ -542,7 +876,7 @@ let segmentPreview = null;
 let previewLine = null;
 
 map.on('mousemove', function(e) {
-  if (currentMode === 'facet' || !segmentStart) return;
+  if (currentMode === 'facet' || currentMode === 'fence' || !segmentStart) return;
   const endPt = snapToNearest(e.latlng);
   if (previewLine) map.removeLayer(previewLine);
   previewLine = L.polyline([segmentStart, endPt], {
@@ -552,7 +886,7 @@ map.on('mousemove', function(e) {
 });
 
 map.on('click', function(e) {
-  if (currentMode === 'facet') return;
+  if (currentMode === 'facet' || currentMode === 'fence') return;
   if (e.originalEvent.target.closest && e.originalEvent.target.closest('.leaflet-draw')) return;
 
   const snappedPt = snapToNearest(e.latlng);
@@ -574,6 +908,7 @@ map.on('click', function(e) {
     tl.addLayer(line);
     attachLineEvents(line, tl);
     undoStack.push({ layer: line, group: tl });
+    const lineStartPt = segmentStart; // save before clearing
     if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
     if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
     if (snapIndicator) { map.removeLayer(snapIndicator); snapIndicator = null; }
@@ -584,6 +919,8 @@ map.on('click', function(e) {
       const flash = L.circleMarker(snappedPt, { radius:8, color:'#22c55e', fillColor:'#22c55e', fillOpacity:0.9, weight:2 }).addTo(map);
       setTimeout(() => map.removeLayer(flash), 600);
     }
+    // Auto-detect on each completed line
+    setTimeout(() => autoCompleteFacets(true), 200);
   }
 });
 
@@ -664,25 +1001,61 @@ map.on(L.Draw.Event.DELETED, () => {
 });
 
 // ── Address Geocode ───────────────────────────────────────────────────────────
+// Try US Census first (rooftop-accurate, free, no key), then Nominatim as fallback.
+async function geocodeViaCensus(addr) {
+  try {
+    const url = `https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=${encodeURIComponent(addr)}&benchmark=Public_AR_Current&format=json`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    const m = d?.result?.addressMatches;
+    if (!m || !m.length) return null;
+    const c = m[0].coordinates;
+    // Census returns x=lon, y=lat
+    return { lat: c.y, lon: c.x, source: 'census', matched: m[0].matchedAddress };
+  } catch (e) { console.warn('Census geocode failed', e); return null; }
+}
+
+async function geocodeViaNominatim(addr) {
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=us&addressdetails=1&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'en-US'} });
+    const d = await r.json();
+    if (!d || !d.length) return null;
+    return { lat: parseFloat(d[0].lat), lon: parseFloat(d[0].lon), source: 'nominatim', matched: d[0].display_name };
+  } catch (e) { console.warn('Nominatim geocode failed', e); return null; }
+}
+
+let pendingPinMarker = null;
+function showPendingPin(lat, lon, sourceLabel) {
+  if (pendingPinMarker) { map.removeLayer(pendingPinMarker); pendingPinMarker = null; }
+  pendingPinMarker = L.marker([lat, lon], { draggable: true, title: 'Drag to correct location, then click to load footprint' }).addTo(map);
+  pendingPinMarker.bindTooltip(`Geocoded via ${sourceLabel} — drag if wrong, then click to load roof`, { permanent: false, direction: 'top' }).openTooltip();
+  pendingPinMarker.on('click', async () => {
+    const ll = pendingPinMarker.getLatLng();
+    map.removeLayer(pendingPinMarker); pendingPinMarker = null;
+    await fetchBuildingFootprint(ll.lat, ll.lng);
+  });
+}
+
 async function geocodeAddress() {
   const addr = document.getElementById('addressInput').value.trim();
   if (!addr) return;
   const btn = document.querySelector('.addr-row button');
   if (btn) { btn.textContent = '...'; btn.disabled = true; }
   try {
-    // Step 1: Geocode the address
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(addr)}`, { headers:{'Accept-Language':'en-US'} });
-    const d = await r.json();
-    if (!d.length) { alert('Address not found.'); return; }
-    const lat = parseFloat(d[0].lat);
-    const lon = parseFloat(d[0].lon);
-    map.setView([lat, lon], 21);
+    // Step 1: Geocode the address — Census first, Nominatim fallback
+    let hit = await geocodeViaCensus(addr);
+    if (!hit) hit = await geocodeViaNominatim(addr);
+    if (!hit) { alert('Address not found. Try including city, state, and ZIP.'); return; }
 
-    // Step 2: Try to fetch building footprint from Overpass API (OpenStreetMap)
-    await fetchBuildingFootprint(lat, lon);
+    map.setView([hit.lat, hit.lon], 21);
 
-    // Step 3: If no OSM footprint found, try Microsoft Building Footprints
-    // (OSM usually has good coverage in DFW/TX suburbs)
+    // Step 2: Drop a draggable confirmation pin. User MUST click it to load the footprint —
+    // this prevents the wrong neighbor's roof from auto-tracing when the geocoded point sits
+    // near a property line.
+    showPendingPin(hit.lat, hit.lon, hit.source === 'census' ? 'US Census' : 'OSM');
+    document.getElementById('modeHint').textContent =
+      '📍 Pin dropped on geocoded address. Drag it onto the correct roof, then CLICK the pin to trace.';
   } catch(e) {
     console.error('Geocode error:', e);
     alert('Geocoding error. Please try again.');
@@ -713,17 +1086,38 @@ async function fetchBuildingFootprint(lat, lon) {
       return;
     }
 
-    // Find the closest building to the geocoded point
+    // Prefer the building that CONTAINS the pin (point-in-polygon).
+    // Only if no polygon contains the pin do we fall back to nearest-centroid.
+    function pointInPolygon(pt, vs) {
+      // ray-cast algorithm; pt = {lat,lon}, vs = [{lat,lon}, ...]
+      let inside = false;
+      for (let i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+        const xi = vs[i].lon, yi = vs[i].lat;
+        const xj = vs[j].lon, yj = vs[j].lat;
+        const intersect = ((yi > pt.lat) !== (yj > pt.lat)) &&
+          (pt.lon < (xj - xi) * (pt.lat - yi) / (yj - yi + 1e-12) + xi);
+        if (intersect) inside = !inside;
+      }
+      return inside;
+    }
+
     let bestBuilding = null;
     let bestDist = Infinity;
-    data.elements.forEach(el => {
-      if (!el.geometry || el.geometry.length < 3) return;
-      // Calculate centroid
-      const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
-      const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
-      const dist = Math.sqrt(Math.pow(centLat-lat,2) + Math.pow(centLon-lon,2));
-      if (dist < bestDist) { bestDist = dist; bestBuilding = el; }
-    });
+    // Pass 1: point-in-polygon
+    for (const el of data.elements) {
+      if (!el.geometry || el.geometry.length < 3) continue;
+      if (pointInPolygon({ lat, lon }, el.geometry)) { bestBuilding = el; break; }
+    }
+    // Pass 2: nearest centroid (only if no containing polygon found)
+    if (!bestBuilding) {
+      data.elements.forEach(el => {
+        if (!el.geometry || el.geometry.length < 3) return;
+        const centLat = el.geometry.reduce((s,p) => s+p.lat, 0) / el.geometry.length;
+        const centLon = el.geometry.reduce((s,p) => s+p.lon, 0) / el.geometry.length;
+        const dist = Math.sqrt(Math.pow(centLat-lat,2) + Math.pow(centLon-lon,2));
+        if (dist < bestDist) { bestDist = dist; bestBuilding = el; }
+      });
+    }
 
     if (!bestBuilding) {
       await fetchMSBuildingFootprint(lat, lon);
@@ -809,35 +1203,66 @@ async function fetchMSBuildingFootprint(lat, lon) {
 function clearAllLayers() {
   if (!confirm('Clear all drawn shapes?')) return;
   [facetLayer,ridgeLayer,hipLayer,valleyLayer,dripLayer,rakeLayer,eavesLayer].forEach(l=>l.clearLayers());
+  if (window.resetFence) { fenceLayer.clearLayers(); fenceGateLayer.clearLayers(); resetFence(); }
   facets.length = 0; facetCounter = 0;
   renderFacets();
+  refreshStats();
 }
 
 // ── PDF Report ────────────────────────────────────────────────────────────────
 function generatePDF() {
   const btn = document.querySelector('.btn-report');
-  if (btn) { btn.innerHTML = '⏳ Capturing...'; btn.disabled = true; }
+  if (btn) { btn.innerHTML = '⏳ Loading tiles...'; btn.disabled = true; }
 
-  // Try to capture map with leaflet-image, fall back to html2canvas
-  function doCapture(cb) {
-    if (window.leafletImage) {
-      leafletImage(map, function(err, canvas) {
-        cb(err ? null : canvas.toDataURL('image/jpeg', 0.85));
-      });
-    } else {
-      html2canvas(document.getElementById('map'), { useCORS:true, allowTaint:true })
-        .then(c => cb(c.toDataURL('image/jpeg', 0.85)))
-        .catch(() => cb(null));
-    }
+  // Fit map to ALL drawn features (facets + all line layers)
+  const allDrawnLayers = [
+    ...facetLayer.getLayers(),
+    ...ridgeLayer.getLayers(),
+    ...hipLayer.getLayers(),
+    ...valleyLayer.getLayers(),
+    ...dripLayer.getLayers(),
+    ...eavesLayer.getLayers(),
+    ...rakeLayer.getLayers()
+  ];
+  if (allDrawnLayers.length > 0) {
+    const bounds = L.featureGroup(allDrawnLayers).getBounds().pad(0.25);
+    map.fitBounds(bounds, { animate: false });
+  }
+  map.invalidateSize(true);
+
+  const layersToHide = [facetLayer, ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+
+  // Use leaflet-image for pixel-perfect tile capture (no CORS/offset issues)
+  function captureLeaflet(withTracings, cb) {
+    if (!withTracings) layersToHide.forEach(l => map.removeLayer(l));
+    leafletImage(map, function(err, canvas) {
+      if (!withTracings) layersToHide.forEach(l => map.addLayer(l));
+      if (err || !canvas) { cb(null); return; }
+      cb(canvas.toDataURL('image/jpeg', 0.88));
+    });
   }
 
-  doCapture(function(mapImg) {
-    buildPDF(mapImg);
-    if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+  // Wait for map to settle after fitBounds
+  function waitForSettle(cb) {
+    map.once('moveend', () => setTimeout(cb, 1800));
+    setTimeout(cb, 2800);
+  }
+
+  waitForSettle(() => {
+    if (btn) btn.innerHTML = '⏳ Capturing...';
+    // Capture satellite (no tracings)
+    captureLeaflet(false, satImg => {
+      if (btn) btn.innerHTML = '⏳ Capturing tracings...';
+      // Capture with tracings
+      captureLeaflet(true, tracingImg => {
+        buildPDF(tracingImg, satImg);
+        if (btn) { btn.innerHTML = '&#128196; PDF Report'; btn.disabled = false; }
+      });
+    });
   });
 }
 
-function buildPDF(mapImageDataUrl) {
+function buildPDF(mapImageDataUrl, satelliteImgUrl) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
   const W = 612, M = 40;
@@ -852,10 +1277,10 @@ function buildPDF(mapImageDataUrl) {
   // Header
   doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
   doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
-  doc.text('First Call Public Adjusters', M, 28);
+  doc.text('RoofTrace Pro', M, 28);
   doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
-  doc.text('Aerial Roof Measurement Report  |  TX #1921679 | OK #3000772279 | CO #906301 | (817) 618-9884', M, 44);
-  doc.text('thepublicadjustertx.com', M, 57);
+  doc.text('Aerial Roof Measurement Report  |  Powered by Licensed Public Adjusters', M, 44);
+  doc.text('rooftracepro.thepublicadjustertx.com', M, 57);
 
   // Property info
   doc.setTextColor(30,30,30); doc.setFontSize(9);
@@ -875,7 +1300,7 @@ function buildPDF(mapImageDataUrl) {
     ['Ridge', fmt(totalLayerFt(ridgeLayer),0)+' ft'],
     ['Hip', fmt(totalLayerFt(hipLayer),0)+' ft'],
     ['Valley', fmt(totalLayerFt(valleyLayer),0)+' ft'],
-    ['Drip Edge', fmt(totalLayerFt(dripLayer),0)+' ft'],
+    ['Drip Edge', fmt(totalLayerFt(dripLayer)>0 ? totalLayerFt(dripLayer) : totalLayerFt(eavesLayer)+totalLayerFt(rakeLayer),0)+' ft'],
     ['Rake', fmt(totalLayerFt(rakeLayer),0)+' ft'],
     ['Eaves', fmt(totalLayerFt(eavesLayer),0)+' ft'],
   ];
@@ -890,18 +1315,32 @@ function buildPDF(mapImageDataUrl) {
 
   let y = sumY + 62;
 
-  // Map image
-  if (mapImageDataUrl) {
+  // TWO map images: satellite aerial + traced diagram
+  const imgH = 190;
+  const halfW = (W - M*2 - 10) / 2;
+
+  if (satelliteImgUrl || mapImageDataUrl) {
     doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
-    doc.text('Aerial View with Roof Tracings', M, y); y += 8;
-    const imgH = 220;
-    try {
-      doc.addImage(mapImageDataUrl, 'JPEG', M, y, W-M*2, imgH);
-      y += imgH + 12;
-    } catch(e) {
-      doc.setFontSize(8); doc.setTextColor(150);
-      doc.text('(Map image blocked by browser CORS policy — measurements above are accurate.)', M, y+12);
-      y += 24;
+
+    // Check if we have both images for side-by-side layout
+    if (satelliteImgUrl && mapImageDataUrl) {
+      doc.text('Aerial Photos', M, y); y += 8;
+      try {
+        // Left: satellite only
+        doc.addImage(satelliteImgUrl, 'JPEG', M, y, halfW, imgH);
+        doc.setFontSize(7); doc.setTextColor(100); doc.text('Satellite View', M + halfW/2, y + imgH + 8, {align:'center'});
+      } catch(e) {}
+      try {
+        // Right: with tracings
+        doc.addImage(mapImageDataUrl, 'JPEG', M + halfW + 10, y, halfW, imgH);
+        doc.setFontSize(7); doc.setTextColor(100); doc.text('Roof Tracings', M + halfW + 10 + halfW/2, y + imgH + 8, {align:'center'});
+      } catch(e) {}
+      y += imgH + 20;
+    } else {
+      // Only one image available
+      const img = mapImageDataUrl || satelliteImgUrl;
+      doc.text('Aerial View', M, y); y += 8;
+      try { doc.addImage(img, 'JPEG', M, y, W-M*2, imgH); y += imgH + 12; } catch(e) { y += 24; }
     }
   }
 
@@ -941,13 +1380,169 @@ function buildPDF(mapImageDataUrl) {
     doc.text(w+'%', M+8, y+8); doc.text(fmt(squares*(1+w/100),2)+' sq', M+80, y+8); y+=12;
   });
 
+  // Fence
+  const ft = window.fenceTotals ? fenceTotals() : null;
+  if (ft && ft.grossFt) {
+    y += 14;
+    if (y > 600) { doc.addPage(); y = 40; }
+    doc.setFontSize(9); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+    doc.text('Fence', M, y); y += 10;
+    const gateCounts = ft.gateList.reduce((m,w)=>(m[w]=(m[w]||0)+1,m),{});
+    const frows = [
+      ['Fence type', ft.type + ', ' + ft.height + "' tall"],
+      ['Fence (less gates)', fmt(ft.netFt,0) + ' LF'],
+      ['Total run incl. gates', fmt(ft.grossFt,0) + ' LF'],
+      ['Gates', ft.gates ? Object.entries(gateCounts).map(([w,c]) => c + ' x ' + w + "'").join(', ') : '0'],
+      ['Terminal posts (ends & corners)', String(ft.terminalPosts)],
+      ['Gate posts', String(ft.gatePosts)],
+      ['Line posts (' + ft.spacing + "' on center)", String(ft.linePosts)],
+      ['Total posts', String(ft.totalPosts)],
+      ['Fence area, one side', fmt(ft.sf,0) + ' SF'],
+      ['Fence area, both sides', fmt(ft.sf*2,0) + ' SF'],
+    ];
+    doc.setFillColor(23,34,53); doc.rect(M,y,260,13,'F');
+    doc.setFontSize(8); doc.setTextColor(255,255,255); doc.text('Item', M+8, y+9); doc.text('Quantity', M+170, y+9); y += 13;
+    frows.forEach(([l,v],idx) => {
+      if (idx%2===0) { doc.setFillColor(253,242,248); doc.rect(M,y,260,12,'F'); }
+      doc.setTextColor(30,30,30); doc.setFont(undefined, l === 'Total posts' ? 'bold' : 'normal');
+      doc.text(l, M+8, y+8); doc.text(v, M+170, y+8); y += 12;
+    });
+  }
+
   // Footer
   doc.setFontSize(7); doc.setTextColor(160);
   doc.text('Measurements traced from aerial satellite imagery. Field verification recommended.', M, 755);
-  doc.text('First Call Public Adjusters | (817) 618-9884 | thepublicadjustertx.com | TX #1921679 | OK #3000772279 | CO #906301', M, 765);
+  doc.text('RoofTrace Pro | rooftracepro.thepublicadjustertx.com | Measurements are estimates only — field verification recommended.', M, 765);
 
   const fn = `roof-report-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
   doc.save(fn);
+}
+
+// ── Smart Facet Auto-Detection ─────────────────────────────────────────────────────
+const MERGE_M = 1.5; // meters to consider points the same vertex - must be SMALL or all pts merge to one
+
+function buildGraph() {
+  const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
+  const verts = [];
+
+  function vidOf(ll) {
+    // Ensure we have a proper LatLng object
+    const pt = (ll instanceof L.LatLng) ? ll : L.latLng(ll.lat, ll.lng);
+    for (let i = 0; i < verts.length; i++) {
+      const v = (verts[i] instanceof L.LatLng) ? verts[i] : L.latLng(verts[i].lat, verts[i].lng);
+      const d = v.distanceTo(pt); // use Leaflet's own distanceTo, not map.distance
+      if (d < MERGE_M) return i;
+    }
+    verts.push(pt);
+    return verts.length - 1;
+  }
+
+  const adj = {};
+  lineSources.forEach(lg => {
+    lg.getLayers().forEach(l => {
+      let raw = l.getLatLngs();
+      // Flatten nested arrays (Leaflet sometimes returns [[pt,pt,...]] instead of [pt,pt,...])
+      if (raw.length > 0 && Array.isArray(raw[0])) raw = raw[0];
+      if (raw.length < 2) return;
+      const a = vidOf(raw[0]);
+      const b = vidOf(raw[raw.length - 1]);
+      const distM = L.latLng(raw[0]).distanceTo(L.latLng(raw[raw.length-1]));
+      console.log('[buildGraph] seg:', raw[0].lat.toFixed(5), raw[0].lng.toFixed(5), '->', raw[raw.length-1].lat.toFixed(5), raw[raw.length-1].lng.toFixed(5), 'dist:', distM.toFixed(1)+'m', '=> verts', a, b);
+      if (a !== b) {
+        if (!adj[a]) adj[a] = [];
+        if (!adj[b]) adj[b] = [];
+        if (!adj[a].includes(b)) adj[a].push(b);
+        if (!adj[b].includes(a)) adj[b].push(a);
+      }
+    });
+  });
+
+  console.log('[buildGraph] total verts:', verts.length, 'adj:', JSON.stringify(adj));
+  return { verts, adj };
+}
+
+function findAllSimpleCycles(verts, adj) {
+  // Find all simple cycles of length 3-7 using DFS
+  const cycles = [];
+  const n = verts.length;
+
+  function dfs(start, current, path) {
+    if (path.length > 7) return;
+    const neighbors = adj[current] || [];
+    for (const next of neighbors) {
+      if (next === start && path.length >= 3) {
+        // Found a cycle � store it with canonical key to avoid duplicates
+        const sorted = [...path].sort((a,b)=>a-b).join(',');
+        if (!cycles.some(c => c.key === sorted)) {
+          cycles.push({ key: sorted, vids: [...path] });
+        }
+        continue;
+      }
+      if (!path.includes(next) && next > start) {
+        // Only explore vertices > start to avoid duplicates
+        dfs(start, next, [...path, next]);
+      }
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    if ((adj[i] || []).length >= 2) dfs(i, i, [i]);
+  }
+  return cycles;
+}
+
+function detectAndFillFacet(snappedPt) {
+
+  const { verts, adj } = buildGraph();
+  if (verts.length < 3) return;
+
+  // Find all simple cycles, sorted by area DESCENDING (largest first)
+  // This prevents tiny triangles from intersection points being filled first
+  const cycles = findAllSimpleCycles(verts, adj);
+  if (!cycles.length) return;
+
+  // Calculate area for each cycle and sort largest first
+  const cyclesWithArea = cycles.map(c => {
+    try {
+      const pts = c.vids.map(i => verts[i]);
+      const ring = [...pts.map(p => [p.lng, p.lat]), [pts[0].lng, pts[0].lat]];
+      const area = turf.area(turf.polygon([ring])) * 10.7639;
+      return { ...c, area };
+    } catch(e) { return { ...c, area: 0 }; }
+  }).filter(c => c.area > 100).sort((a,b) => b.area - a.area);
+
+  let added = 0;
+  for (const { vids, area } of cyclesWithArea) {
+    if (area < 150 || area > 25000) continue;
+
+    const polyPts = vids.map(i => verts[i]);
+
+    // Check minimum segment length (avoid degenerate cycles)
+    const minSeg = Math.min(...polyPts.map((p,i) => map.distance(p, polyPts[(i+1)%polyPts.length])));
+    if (minSeg < 3) continue;
+
+    // Skip if already have a facet of very similar area (within 5%)
+    const duplicate = facets.some(f => Math.abs((f.flatSqFt||0) - area) < area * 0.05);
+    if (duplicate) continue;
+
+    // Create the facet!
+    const poly = L.polygon(polyPts, {
+      color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.25, weight: 2
+    });
+    facetLayer.addLayer(poly);
+    addFacet(poly);
+    added++;
+
+window.detectAndFillFacet = detectAndFillFacet;
+      'Auto-detected facet: ' + Math.round(area).toLocaleString() + ' sq ft. Keep drawing to add more.';
+    setTimeout(() => {
+      if (currentMode !== 'facet') document.getElementById('modeHint').textContent = modeHints[currentMode];
+    }, 4000);
+  }
+
+  if (added === 0 && verts.length >= 3) {
+    console.log('No valid facets detected. Vertices:', verts.length, 'Cycles found:', cycles.length);
+  }
 }
 
 // ── Perimeter Calculator ─────────────────────────────────────────────────────────
@@ -968,105 +1563,147 @@ function calcPerimeter() {
 window.calcPerimeter = calcPerimeter;
 
 // ── Auto-Complete Facets from connected lines ─────────────────────────────
-function autoCompleteFacets() {
-  // Collect all line segment endpoints from ridge, hip, valley, drip, eave, rake
-  const lineSources = [ridgeLayer, hipLayer, valleyLayer, dripLayer, eavesLayer, rakeLayer];
-  const segments = [];
+function autoCompleteFacets(silent) {
+  // Use the same buildGraph() used by detectAndFillFacet — most reliable approach
+  const { verts, adj } = buildGraph();
 
-  lineSources.forEach(lg => {
-    lg.getLayers().forEach(l => {
-      const pts = l.getLatLngs();
-      if (pts.length >= 2) {
-        segments.push({ a: pts[0], b: pts[pts.length-1], layer: l });
-      }
-    });
-  });
+  // Deep diagnostic: count layers
+  const diagCounts = {};
+  [['ridge',ridgeLayer],['hip',hipLayer],['valley',valleyLayer],['drip',dripLayer],['eaves',eavesLayer],['rake',rakeLayer]].forEach(([n,lg])=>{ diagCounts[n]=lg.getLayers().length; });
+  console.log('[AutoComplete] layer counts:', JSON.stringify(diagCounts));
+  console.log('[AutoComplete] verts:', verts.length, 'adj:', JSON.stringify(adj));
+  console.log('[AutoComplete] layer counts:', JSON.stringify(diagCounts));
 
-  if (segments.length < 3) {
-    document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected segments to auto-complete a facet';
+  if (verts.length < 3) {
+    document.getElementById('modeHint').textContent = '⚠️ Need at least 3 connected line endpoints. Draw hips, ridge, and eaves first.';
     return;
   }
 
-  // Build adjacency: find all unique vertices (snap nearby points together)
-  const MERGE_DIST = 5; // meters
-  const vertices = [];
-
-  function findOrAddVertex(latlng) {
-    for (let i = 0; i < vertices.length; i++) {
-      if (map.distance(vertices[i], latlng) < MERGE_DIST) return i;
-    }
-    vertices.push(latlng);
-    return vertices.length - 1;
-  }
-
-  const edges = segments.map(seg => ({
-    a: findOrAddVertex(seg.a),
-    b: findOrAddVertex(seg.b)
-  }));
-
-  // Build adjacency list
-  const adj = {};
-  edges.forEach(({ a, b }) => {
-    if (!adj[a]) adj[a] = [];
-    if (!adj[b]) adj[b] = [];
-    if (!adj[a].includes(b)) adj[a].push(b);
-    if (!adj[b].includes(a)) adj[b].push(a);
-  });
-
-  // Find cycles (closed polygons) using DFS
-  const foundPolygons = [];
-  const visited = new Set();
-
-  function dfs(start, current, path, depth) {
-    if (depth > 8) return; // max facet complexity
-    if (adj[current]) {
-      for (const next of adj[current]) {
-        if (next === start && path.length >= 3) {
-          // Found a closed polygon!
-          const poly = path.map(i => vertices[i]);
-          foundPolygons.push(poly);
-          return;
-        }
-        if (!path.includes(next)) {
-          dfs(start, next, [...path, next], depth + 1);
-        }
-      }
-    }
-  }
-
-  Object.keys(adj).forEach(v => {
-    dfs(parseInt(v), parseInt(v), [parseInt(v)], 0);
-  });
-
-  // Deduplicate polygons (same vertices, different order)
-  const unique = [];
-  foundPolygons.forEach(poly => {
-    const key = [...poly.map(p => `${p.lat.toFixed(5)},${p.lng.toFixed(5)}`).sort()].join('|');
-    if (!unique.find(u => u.key === key)) {
-      unique.push({ key, poly });
-    }
-  });
-
-  if (unique.length === 0) {
-    document.getElementById('modeHint').textContent = '⚠️ No closed facets detected. Make sure all line endpoints are connected (use snap).';
+  // Check connectivity — warn if no vertex has 2+ connections
+  const connected = Object.keys(adj).filter(k => (adj[k]||[]).length >= 2);
+  console.log('[AutoComplete] vertices with 2+ connections:', connected.length);
+  if (connected.length < 3) {
+    document.getElementById('modeHint').textContent = '⚠️ Lines not connected. Endpoints must touch — zoom in and snap each line end to an existing point.';
     return;
   }
 
-  // Draw detected facets
+  const cycles = findAllSimpleCycles(verts, adj);
+  console.log('[AutoComplete] cycles found:', cycles.length);
+
+  if (!cycles.length) {
+    document.getElementById('modeHint').textContent = '⚠️ No closed loops found. Make sure all line segments form a closed shape.';
+    return;
+  }
+
+  // Score cycles by area, filter tiny ones
+  const scored = [];
+  for (const c of cycles) {
+    try {
+      const pts = c.vids.map(i => verts[i]);
+      const ring = [...pts.map(p => [p.lng, p.lat]), [pts[0].lng, pts[0].lat]];
+      const areaSqM = turf.area(turf.polygon([ring]));
+      const areaSqFt = areaSqM * 10.7639;
+      console.log('[AutoComplete] cycle', c.vids.join(','), 'area:', areaSqM.toFixed(1), 'sqm =', areaSqFt.toFixed(1), 'sqft');
+      if (areaSqFt > 20 && areaSqFt < 50000) scored.push({ vids: c.vids, areaSqFt });
+    } catch(e) { console.log('[AutoComplete] turf error:', e.message); }
+  }
+
+  console.log('[AutoComplete] valid facets after area filter:', scored.length);
+
+  // Sort SMALLEST first — real facets are the minimal faces, not the large composite polygons
+  scored.sort((a,b) => a.areaSqFt - b.areaSqFt);
+
+  // Greedy non-overlapping cover:
+  // Accept cycles whose vertex sets don't heavily overlap already-accepted cycles.
+  // A cycle is redundant if >50% of its vertices already appear in an accepted cycle
+  // AND it is smaller than that cycle (i.e. it's a sub-face).
+  // Find the minimum planar face cover using a greedy approach:
+  // 1. Build edge->cycle map
+  // 2. Repeatedly pick the cycle that covers the most uncovered edges
+  // 3. Stop when all edges are covered or no progress
+  const allEdges = new Set();
+  const edgeToCycles = {};
+  scored.forEach((c, ci) => {
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      allEdges.add(k);
+      if (!edgeToCycles[k]) edgeToCycles[k] = [];
+      edgeToCycles[k].push(ci);
+    }
+  });
+
+  // Each graph edge should be covered by exactly 1 or 2 faces
+  // Use greedy set cover: pick cycles that cover new edges
+  const coveredEdges = new Set();
+  const accepted = [];
+
+  // Sort scored by area desc (already done), then greedily accept
+  for (let ci = 0; ci < scored.length; ci++) {
+    const c = scored[ci];
+    // Count how many NEW (uncovered) edges this cycle covers
+    let newEdges = 0;
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      if (!coveredEdges.has(k)) newEdges++;
+    }
+    // Only accept if it covers at least 2 new edges (not a pure sub-face)
+    if (newEdges < 1) { console.log('[AutoComplete] skip - only', newEdges, 'new edges:', c.vids.join(',')); continue; }
+    // Skip near-duplicate areas
+    const isDup = accepted.some(a => Math.abs(a.areaSqFt - c.areaSqFt) < c.areaSqFt * 0.08);
+    if (isDup) continue;
+    // Mark edges covered
+    for (let i = 0; i < c.vids.length; i++) {
+      const a = c.vids[i], b = c.vids[(i+1)%c.vids.length];
+      const k = Math.min(a,b)+':'+Math.max(a,b);
+      coveredEdges.add(k);
+    }
+    accepted.push({ ...c, vidSet: new Set(c.vids) });
+  }
+  console.log('[AutoComplete] accepted after greedy cover:', accepted.length, 'covering', coveredEdges.size, 'of', allEdges.size, 'edges');
+  console.log('[AutoComplete] debug: scored=' + scored.length + ' accepted=' + accepted.length + ' cycles=' + cycles.length + ' verts=' + verts.length);
+
+  // Clear existing auto-detected facets before redrawing
+  facets.forEach(f => facetLayer.removeLayer(f.layer));
+  facets.length = 0;
+
   let added = 0;
-  unique.forEach(({ poly }) => {
+  for (const { vids, areaSqFt } of accepted) {
+    const poly = vids.map(i => verts[i]);
     const leafPoly = L.polygon(poly, {
       color: '#2563eb', fillColor: '#3b82f6', fillOpacity: 0.22, weight: 2.5
     });
     facetLayer.addLayer(leafPoly);
     addFacet(leafPoly);
     added++;
-  });
+  }
 
-  document.getElementById('modeHint').textContent = `✅ Auto-detected ${added} facet(s)! Check pitch values in the sidebar.`;
+  if (!silent) {
+    if (added === 0) {
+      document.getElementById('modeHint').textContent = '⚠️ No valid facets detected. Check browser console (F12) for details.';
+    } else {
+      document.getElementById('modeHint').textContent = '✅ Auto-detected ' + added + ' facet(s)! Adjust pitch values in the sidebar.';
+    }
+  }
   renderFacets();
 }
 window.autoCompleteFacets = autoCompleteFacets;
+
+// Mobile drawer toggle
+function toggleMobileDrawer() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn = document.getElementById('mobileDrawerBtn');
+  if (sidebar.classList.contains('mobile-open')) {
+    sidebar.classList.remove('mobile-open');
+    btn.textContent = '🛠️';
+  } else {
+    sidebar.classList.add('mobile-open');
+    btn.textContent = '✕';
+    setTimeout(() => map.invalidateSize(true), 350);
+  }
+}
+window.toggleMobileDrawer = toggleMobileDrawer;
 
 // Update perimeter in refreshStats
 const _origRefreshStats = refreshStats;
@@ -1088,25 +1725,577 @@ window.geocodeAddress = geocodeAddress;
 window.generatePDF = generatePDF;
 window.changePitch = changePitch;
 window.removeFacet = removeFacet;
+
+// PG Precise style Summary
+// PG Precise style Summary
+function showSummary() {
+  const flatTotal = facets.reduce((s,f) => s+(f.flatSqFt||0),0);
+  const slopedTotal = facets.reduce((s,f) => s+(f.slopedSqFt||0),0);
+  const squares = slopedTotal/100;
+  const ridgeFt = totalLayerFt(ridgeLayer);
+  const hipFt = totalLayerFt(hipLayer);
+  const valleyFt = totalLayerFt(valleyLayer);
+  const dripFt = totalLayerFt(dripLayer);
+  const rakeFt = totalLayerFt(rakeLayer);
+  const eavesFt = totalLayerFt(eavesLayer);
+  const perimFt = dripFt+eavesFt+rakeFt;
+  function tr1(l,v) { return '<tr style="border-bottom:1px solid #334155"><td style="padding:10px 16px;color:#94a3b8;font-size:0.9em">'+l+'</td><td style="padding:10px 16px;color:white;font-weight:600;text-align:right">'+v+'</td></tr>'; }
+  function tr2(w,sq) { return '<tr style="border-bottom:1px solid #334155"><td style="padding:8px 16px;color:#94a3b8;font-size:0.85em">Waste '+w+'%</td><td style="padding:8px 16px;color:white;font-weight:600;text-align:right">'+fmt(sq,2)+' SQs</td></tr>'; }
+  const rows = [tr1('Ridges',fmt(ridgeFt,0)+"'"),tr1('Eaves',fmt(eavesFt,0)+"'"),tr1('Rakes',fmt(rakeFt,0)+"'"),tr1('Valleys',fmt(valleyFt,0)+"'"),tr1('Hips',fmt(hipFt,0)+"'"),tr1('Drip Edge',fmt(dripFt,0)+"'"),tr1('Perimeter',fmt(perimFt,0)+"'")].join('');
+  const wasteRows = [10,12,15,17,20].map(w => tr2(w, squares*(1+w/100))).join('');
+  const el = document.createElement('div');
+  el.id = 'summaryModal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+  el.onclick = function(e) { if(e.target===el) closeSummary(); };
+  const inner = '<div style="background:#1e293b;border-radius:14px;max-width:420px;width:100%;max-height:90vh;overflow-y:auto">'
+    + '<div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center">'
+    + '<div style="font-weight:900;color:white;font-size:1.1em">Measurement Summary</div>'
+    + '<button onclick="closeSummary()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">&#10005;</button></div>'
+    + '<table style="width:100%;border-collapse:collapse">'+rows+'</table>'
+    + '<div style="background:#0f172a;padding:12px 16px">'
+    + '<div style="color:#f59e0b;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">Roof Area</div>'
+    + '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Flat Area</span><span style="color:white;font-weight:600">'+fmt(flatTotal,0)+' sq ft</span></div>'
+    + '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #334155"><span style="color:#94a3b8">Sloped Area</span><span style="color:white;font-weight:600">'+fmt(slopedTotal,0)+' sq ft</span></div>'
+    + '<div style="display:flex;justify-content:space-between;padding:12px 0;border-bottom:2px solid #f59e0b"><span style="color:white;font-weight:700;font-size:1.05em">Total Squares</span><span style="color:#f59e0b;font-weight:900;font-size:1.2em">'+fmt(squares,2)+' SQs</span></div></div>'
+    + '<div style="background:#0f172a;padding:12px 16px;border-radius:0 0 14px 14px">'
+    + '<div style="color:#64748b;font-weight:700;font-size:0.82em;margin-bottom:4px">Waste Factor</div>'
+    + '<table style="width:100%;border-collapse:collapse">'+wasteRows+'</table></div>'
+    + (window.fenceTotals && fenceTotals().grossFt ? '<div style="padding:12px 16px 0"><div style="color:#f472b6;font-weight:700;font-size:0.82em;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Fence</div><table class="fence-table">'+fenceRowsHTML(fenceTotals())+'</table></div>' : '')
+    + '<div style="padding:16px;display:flex;gap:10px">'
+    + '<button onclick="generatePDF();closeSummary()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Export PDF</button>'
+    + '<button onclick="closeSummary()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer;font-size:0.95em">Close</button>'
+    + '</div></div>';
+  el.innerHTML = inner;
+  document.body.appendChild(el);
+}
+function closeSummary() { document.getElementById('summaryModal')?.remove(); }
+window.showSummary = showSummary;
+window.closeSummary = closeSummary;
+
+// ── Estimate ─────────────────────────────────────────────────────────────────
+// Tear-off is ALWAYS included on every estimate.
+// Decking is an optional checkbox.
+// Waste defaults to 15% with dropdown for other factors.
+const estimateState = {
+  waste: 15,
+  decking: false,
+  // unit prices (editable in modal)
+  shingleSqPrice: 425,   // $/SQ installed (3-tab base, edit per market)
+  tearOffSqPrice: 75,    // $/SQ tear-off + haul (always applied)
+  deckingSqPrice: 250,   // $/SQ if decking checked (avg 50% replacement assumed)
+  deckingPct: 100,       // % of squares getting new decking (default replace all when checked)
+  underlaymentSqPrice: 35,
+  starterLfPrice: 2.25,
+  ridgeCapLfPrice: 7.50,
+  dripEdgeLfPrice: 2.85,
+  valleyLfPrice: 9.00,
+  flashingLot: 350,
+  ventLot: 225,
+  permitLot: 175,
+  taxPct: 0,
+  overheadPct: 10,
+  profitPct: 10
+};
+
+function computeEstimate() {
+  const slopedTotal = facets.reduce((s,f) => s + (f.slopedSqFt||0), 0);
+  const baseSq = slopedTotal / 100;
+  const sqWithWaste = baseSq * (1 + estimateState.waste/100);
+
+  const ridgeFt  = totalLayerFt(ridgeLayer);
+  const hipFt    = totalLayerFt(hipLayer);
+  const valleyFt = totalLayerFt(valleyLayer);
+  const dripFt   = totalLayerFt(dripLayer);
+  const eavesFt  = totalLayerFt(eavesLayer);
+  const rakeFt   = totalLayerFt(rakeLayer);
+  const ridgeCapLf = ridgeFt + hipFt;
+  const dripEdgeLf = dripFt > 0 ? dripFt : (eavesFt + rakeFt);
+  const starterLf  = eavesFt > 0 ? eavesFt : dripEdgeLf;
+
+  const lines = [];
+  // Tear-off — always
+  lines.push({
+    desc: 'Tear off existing roof — haul & dispose',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.tearOffSqPrice,
+    total: sqWithWaste * estimateState.tearOffSqPrice,
+    required: true
+  });
+  // Decking — optional
+  if (estimateState.decking) {
+    const deckSq = sqWithWaste * (estimateState.deckingPct/100);
+    lines.push({
+      desc: `Replace roof decking (${estimateState.deckingPct}% of area)`,
+      qty: deckSq, unit: 'SQ',
+      price: estimateState.deckingSqPrice,
+      total: deckSq * estimateState.deckingSqPrice
+    });
+  }
+  // Underlayment
+  lines.push({
+    desc: 'Synthetic underlayment',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.underlaymentSqPrice,
+    total: sqWithWaste * estimateState.underlaymentSqPrice
+  });
+  // Shingles (main material + labor)
+  lines.push({
+    desc: 'Composition shingles — supply & install',
+    qty: sqWithWaste, unit: 'SQ',
+    price: estimateState.shingleSqPrice,
+    total: sqWithWaste * estimateState.shingleSqPrice
+  });
+  // Starter strip
+  if (starterLf > 0) lines.push({
+    desc: 'Starter strip at eaves',
+    qty: starterLf, unit: 'LF',
+    price: estimateState.starterLfPrice,
+    total: starterLf * estimateState.starterLfPrice
+  });
+  // Ridge cap (ridges + hips)
+  if (ridgeCapLf > 0) lines.push({
+    desc: 'Ridge cap shingles (ridges + hips)',
+    qty: ridgeCapLf, unit: 'LF',
+    price: estimateState.ridgeCapLfPrice,
+    total: ridgeCapLf * estimateState.ridgeCapLfPrice
+  });
+  // Drip edge
+  if (dripEdgeLf > 0) lines.push({
+    desc: 'Drip edge metal',
+    qty: dripEdgeLf, unit: 'LF',
+    price: estimateState.dripEdgeLfPrice,
+    total: dripEdgeLf * estimateState.dripEdgeLfPrice
+  });
+  // Valley
+  if (valleyFt > 0) lines.push({
+    desc: 'Valley metal / ice & water',
+    qty: valleyFt, unit: 'LF',
+    price: estimateState.valleyLfPrice,
+    total: valleyFt * estimateState.valleyLfPrice
+  });
+  // Flashing lot
+  lines.push({
+    desc: 'Flashing, step & counter (lot)',
+    qty: 1, unit: 'LOT',
+    price: estimateState.flashingLot,
+    total: estimateState.flashingLot
+  });
+  // Vents
+  lines.push({
+    desc: 'Pipe boots, vents & accessories',
+    qty: 1, unit: 'LOT',
+    price: estimateState.ventLot,
+    total: estimateState.ventLot
+  });
+  // Permit
+  lines.push({
+    desc: 'Permit & inspection',
+    qty: 1, unit: 'LOT',
+    price: estimateState.permitLot,
+    total: estimateState.permitLot
+  });
+
+  const subtotal = lines.reduce((s,l) => s+l.total, 0);
+  const overhead = subtotal * (estimateState.overheadPct/100);
+  const profit   = subtotal * (estimateState.profitPct/100);
+  const taxable  = subtotal + overhead + profit;
+  const tax      = taxable * (estimateState.taxPct/100);
+  const grand    = taxable + tax;
+
+  return { baseSq, sqWithWaste, lines, subtotal, overhead, profit, tax, grand };
+}
+
+function _fmt$(n) { return '$' + (n||0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2}); }
+
+function showEstimate() {
+  const old = document.getElementById('estimateModal'); if (old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'estimateModal';
+  el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px';
+  el.onclick = function(e) { if(e.target===el) closeEstimate(); };
+  el.innerHTML = '<div id="estimateBody" style="background:#1e293b;border-radius:14px;max-width:640px;width:100%;max-height:92vh;overflow-y:auto;color:white"></div>';
+  document.body.appendChild(el);
+  renderEstimate();
+  loadPricing();
+}
+
+// ── Price lists: area sheets (admin) + "My pricing" (per account) ─────────────
+const PRICE_KEYS = ['shingleSqPrice','tearOffSqPrice','deckingSqPrice','underlaymentSqPrice','starterLfPrice','ridgeCapLfPrice','dripEdgeLfPrice','valleyLfPrice','flashingLot','ventLot','permitLot','overheadPct','profitPct','taxPct'];
+const pricingState = { loaded:false, sheets:[], mine:null, openRequests:[], selected:null, label:'Built-in prices', dirty:false, panel:null, msg:'' };
+
+async function loadPricing(force) {
+  if (pricingState.loaded && !force) return;
+  try {
+    const r = await fetch('/api/pricing');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    pricingState.sheets = d.sheets || [];
+    pricingState.mine = d.mine || null;
+    pricingState.openRequests = d.openRequests || [];
+    pricingState.loaded = true;
+    if (!pricingState.selected) {
+      const def = pricingState.sheets.find(x => x.isDefault) || pricingState.sheets[0];
+      selectPriceList(pricingState.mine ? 'mine' : (def ? def._id : ''), true);
+    }
+  } catch (err) { console.warn('Pricing unavailable', err); }
+  renderEstimate();
+}
+
+function _sheetLabel(sh) { return sh.area + (sh.version ? ' — ' + sh.version : ''); }
+
+function selectPriceList(id, silent) {
+  if (!silent && pricingState.dirty && !confirm('Switch price lists? Your unsaved price edits will be replaced.')) { renderEstimate(); return; }
+  let prices = null;
+  if (id === 'mine' && pricingState.mine) { prices = pricingState.mine.prices; pricingState.label = 'My pricing (' + pricingState.mine.area + ')'; }
+  else {
+    const sh = pricingState.sheets.find(x => x._id === id);
+    if (sh) { prices = sh.prices; pricingState.label = _sheetLabel(sh); }
+  }
+  if (prices) PRICE_KEYS.forEach(k => { if (prices[k] !== undefined) estimateState[k] = +prices[k]; });
+  pricingState.selected = id;
+  pricingState.dirty = false;
+  pricingState.msg = '';
+  if (!silent) renderEstimate();
+}
+
+function _guessArea() {
+  const parts = (document.getElementById('addressInput')?.value || '').split(',').map(x => x.trim()).filter(Boolean);
+  if (parts.length >= 3) return parts[parts.length-2] + ', ' + parts[parts.length-1].replace(/\s*\d{5}(-\d{4})?$/, '');
+  return '';
+}
+
+function togglePricePanel(name) {
+  pricingState.panel = pricingState.panel === name ? null : name;
+  pricingState.msg = '';
+  renderEstimate();
+}
+
+async function saveMyPricing() {
+  const area = (document.getElementById('pmArea')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you work in.'; return renderEstimate(); }
+  const prices = {}; PRICE_KEYS.forEach(k => prices[k] = estimateState[k]);
+  const baseSheetId = pricingState.selected && pricingState.selected !== 'mine' ? pricingState.selected : null;
+  try {
+    const r = await fetch('/api/pricing/mine', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ area, prices, baseSheetId }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Save failed');
+    pricingState.mine = d.pricing;
+    pricingState.selected = 'mine';
+    pricingState.label = 'My pricing (' + d.pricing.area + ')';
+    pricingState.dirty = false;
+    pricingState.panel = null;
+    pricingState.msg = '✅ Saved as your pricing. It will load automatically next time.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+async function requestLocalPricing() {
+  const area = (document.getElementById('prArea')?.value || '').trim();
+  const notes = (document.getElementById('prNotes')?.value || '').trim();
+  if (!area) { pricingState.msg = 'Enter the area you need pricing for.'; return renderEstimate(); }
+  try {
+    const r = await fetch('/api/pricing/requests', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ area, notes, address: document.getElementById('addressInput')?.value || '' }) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'Request failed');
+    pricingState.openRequests.push(d);
+    pricingState.panel = null;
+    pricingState.msg = '✅ Request sent for ' + d.area + '. You\'ll get an email when the price sheet is ready.';
+  } catch (err) { pricingState.msg = '⚠️ ' + err.message; }
+  renderEstimate();
+}
+
+function _pricingBar() {
+  const inp = 'background:#1e293b;border:1px solid #334155;color:white;padding:7px 9px;border-radius:6px;width:100%;box-sizing:border-box';
+  const btn = 'border:none;border-radius:7px;padding:8px 12px;font-weight:700;cursor:pointer;font-size:0.82em;color:white';
+  const opts = (pricingState.mine ? '<option value="mine" '+(pricingState.selected==='mine'?'selected':'')+'>⭐ My pricing ('+ _esc(pricingState.mine.area) +')</option>' : '')
+    + pricingState.sheets.map(sh => '<option value="'+ sh._id +'" '+(pricingState.selected===sh._id?'selected':'')+'>'+ _esc(_sheetLabel(sh)) + (sh.isDefault?' (default)':'') +'</option>').join('');
+  let panel = '';
+  if (pricingState.panel === 'save') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you work in (city, state)<input id="pmArea" value="'+ _esc(pricingState.mine?.area || _guessArea()) +'" placeholder="e.g. Waco, TX" style="'+inp+';margin-top:4px"></label>'
+      + '<div style="font-size:0.75em;color:#94a3b8">Saves the prices currently in this estimate (including any edits under ⚙️ Edit unit prices) as your own price list.</div>'
+      + '<button onclick="saveMyPricing()" style="'+btn+';background:#16a34a">Save my pricing</button></div>';
+  } else if (pricingState.panel === 'request') {
+    panel = '<div style="margin-top:10px;display:grid;gap:8px">'
+      + '<label style="font-size:0.78em;color:#94a3b8">Area you need pricing for (city, state)<input id="prArea" value="'+ _esc(_guessArea()) +'" placeholder="e.g. Oklahoma City, OK" style="'+inp+';margin-top:4px"></label>'
+      + '<label style="font-size:0.78em;color:#94a3b8">Notes (optional)<textarea id="prNotes" rows="2" placeholder="Shingle type, anything special…" style="'+inp+';margin-top:4px"></textarea></label>'
+      + '<button onclick="requestLocalPricing()" style="'+btn+';background:#2563eb">Send request</button></div>';
+  }
+  const pending = pricingState.openRequests.length
+    ? '<div style="font-size:0.75em;color:#94a3b8;margin-top:8px">⏳ Pricing requested: '+ pricingState.openRequests.map(r => _esc(r.area)).join(', ') +'</div>' : '';
+  return '<div style="padding:12px 18px;background:#0f172a;border-bottom:1px solid #334155">'
+    + '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +   '<span style="font-size:0.78em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px">Price list</span>'
+    +   (pricingState.loaded
+          ? '<select onchange="selectPriceList(this.value)" style="flex:1;min-width:160px;background:#1e293b;border:1px solid #334155;color:white;padding:6px 8px;border-radius:6px;font-weight:700">'+ opts +'</select>'
+          : '<span style="flex:1;font-size:0.85em;color:#64748b">Loading…</span>')
+    +   (pricingState.dirty ? '<span style="font-size:0.72em;color:#f59e0b;font-weight:700">edited, not saved</span>' : '')
+    + '</div>'
+    + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">'
+    +   '<button onclick="togglePricePanel(\'save\')" style="'+btn+';background:#334155;flex:1">💾 Save as my pricing</button>'
+    +   '<button onclick="togglePricePanel(\'request\')" style="'+btn+';background:#334155;flex:1">📍 Request local pricing</button>'
+    + '</div>'
+    + panel + pending
+    + (pricingState.msg ? '<div style="font-size:0.8em;margin-top:8px;color:#e2e8f0">'+ _esc(pricingState.msg) +'</div>' : '')
+    + '</div>';
+}
+
+function _esc(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+function renderEstimate() {
+  const body = document.getElementById('estimateBody');
+  if (!body) return;
+  const e = computeEstimate();
+  const wasteOptions = [10,12,15,17,20,22,25];
+
+  const wasteSelect = '<select id="estWaste" onchange="updateEstimate({waste:+this.value})" style="background:#0f172a;border:1px solid #334155;color:white;padding:6px 10px;border-radius:6px;font-weight:700">'
+    + wasteOptions.map(w => `<option value="${w}" ${w===estimateState.waste?'selected':''}>${w}%</option>`).join('')
+    + '</select>';
+
+  const lineRows = e.lines.map((l,i) => {
+    return '<tr style="border-bottom:1px solid #334155">'
+      + '<td style="padding:8px 10px;font-size:0.85em">'+ l.desc + (l.required?' <span style="color:#f59e0b;font-size:0.75em">(always)</span>':'') +'</td>'
+      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ fmt(l.qty,2) +' '+ l.unit +'</td>'
+      + '<td style="padding:8px 6px;text-align:right;font-size:0.85em;color:#cbd5e1">'+ _fmt$(l.price) +'</td>'
+      + '<td style="padding:8px 10px;text-align:right;font-weight:700">'+ _fmt$(l.total) +'</td>'
+      + '</tr>';
+  }).join('');
+
+  body.innerHTML =
+      '<div style="background:#0f172a;padding:16px 20px;border-radius:14px 14px 0 0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:2">'
+    + '<div style="font-weight:900;font-size:1.1em">💰 Roofing Estimate</div>'
+    + '<button onclick="closeEstimate()" style="background:none;border:none;color:#94a3b8;font-size:1.3em;cursor:pointer">×</button>'
+    + '</div>'
+    + '<div style="padding:14px 18px;display:grid;grid-template-columns:1fr 1fr;gap:10px;background:#0f172a">'
+    + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Base Sloped Area</div><div style="font-weight:700">'+ fmt(e.baseSq,2) +' SQ</div></div>'
+    + '<div><div style="font-size:0.7em;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">With Waste</div><div style="font-weight:700;color:#f59e0b">'+ fmt(e.sqWithWaste,2) +' SQ</div></div>'
+    + '</div>'
+    + _pricingBar()
+    + '<div style="padding:14px 18px;display:flex;flex-wrap:wrap;gap:14px;align-items:center;background:#1e293b;border-bottom:1px solid #334155">'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:not-allowed;opacity:0.95"><input type="checkbox" checked disabled style="accent-color:#16a34a"><span>Tear-off (always included)</span></label>'
+    + '<label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="estDecking" '+ (estimateState.decking?'checked':'') +' onchange="updateEstimate({decking:this.checked})" style="accent-color:#2563eb"><span>Decking needed</span></label>'
+    + '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:0.85em;color:#cbd5e1">Waste:</span>'+ wasteSelect +'</div>'
+    + (estimateState.decking ? '<div style="display:flex;align-items:center;gap:6px"><span style="font-size:0.85em;color:#cbd5e1">Decking %:</span><input type="number" min="1" max="100" value="'+ estimateState.deckingPct +'" onchange="updateEstimate({deckingPct:+this.value})" style="width:70px;background:#0f172a;border:1px solid #334155;color:white;padding:4px 6px;border-radius:6px"></div>' : '')
+    + '</div>'
+    + '<table style="width:100%;border-collapse:collapse">'
+    +   '<thead><tr style="background:#0f172a;color:#94a3b8;font-size:0.72em;text-transform:uppercase;letter-spacing:1px">'
+    +     '<th style="padding:8px 10px;text-align:left">Description</th>'
+    +     '<th style="padding:8px 6px;text-align:right">Qty</th>'
+    +     '<th style="padding:8px 6px;text-align:right">Unit $</th>'
+    +     '<th style="padding:8px 10px;text-align:right">Total</th>'
+    +   '</tr></thead>'
+    +   '<tbody>'+ lineRows +'</tbody>'
+    + '</table>'
+    + '<div style="padding:14px 18px;background:#0f172a">'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1"><span>Subtotal</span><span>'+ _fmt$(e.subtotal) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Overhead <input type="number" min="0" max="50" value="'+ estimateState.overheadPct +'" onchange="updateEstimate({overheadPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.overhead) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Profit <input type="number" min="0" max="50" value="'+ estimateState.profitPct +'" onchange="updateEstimate({profitPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.profit) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:6px 0;color:#cbd5e1;align-items:center"><span>Tax <input type="number" min="0" max="15" step="0.25" value="'+ estimateState.taxPct +'" onchange="updateEstimate({taxPct:+this.value})" style="width:55px;background:#1e293b;border:1px solid #334155;color:white;padding:2px 4px;border-radius:4px;margin-left:6px">%</span><span>'+ _fmt$(e.tax) +'</span></div>'
+    +   '<div style="display:flex;justify-content:space-between;padding:12px 0;margin-top:6px;border-top:2px solid #f59e0b"><span style="font-weight:900;font-size:1.1em">Grand Total</span><span style="color:#f59e0b;font-weight:900;font-size:1.25em">'+ _fmt$(e.grand) +'</span></div>'
+    + '</div>'
+    + '<details style="background:#0f172a;border-top:1px solid #334155;padding:0 18px">'
+    +   '<summary style="padding:12px 0;cursor:pointer;color:#94a3b8;font-size:0.85em">⚙️ Edit unit prices</summary>'
+    +   '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 0 14px 0;font-size:0.82em">'
+    +     _priceInput('Shingles $/SQ', 'shingleSqPrice')
+    +     _priceInput('Tear-off $/SQ', 'tearOffSqPrice')
+    +     _priceInput('Decking $/SQ', 'deckingSqPrice')
+    +     _priceInput('Underlayment $/SQ', 'underlaymentSqPrice')
+    +     _priceInput('Starter $/LF', 'starterLfPrice')
+    +     _priceInput('Ridge cap $/LF', 'ridgeCapLfPrice')
+    +     _priceInput('Drip edge $/LF', 'dripEdgeLfPrice')
+    +     _priceInput('Valley $/LF', 'valleyLfPrice')
+    +     _priceInput('Flashing (lot)', 'flashingLot')
+    +     _priceInput('Vents (lot)', 'ventLot')
+    +     _priceInput('Permit (lot)', 'permitLot')
+    +   '</div>'
+    + '</details>'
+    + '<div style="padding:14px 18px;display:flex;gap:10px;background:#0f172a;border-radius:0 0 14px 14px;position:sticky;bottom:0">'
+    +   '<button onclick="generateEstimatePDF()" style="flex:1;background:#c0392b;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">📄 Estimate PDF</button>'
+    +   '<button onclick="closeEstimate()" style="flex:1;background:#334155;color:white;border:none;border-radius:8px;padding:12px;font-weight:700;cursor:pointer">Close</button>'
+    + '</div>';
+}
+
+function _priceInput(label, key) {
+  return '<label style="display:flex;flex-direction:column;gap:3px;color:#cbd5e1"><span style="font-size:0.78em;color:#94a3b8">'+ label +'</span>'
+    + '<input type="number" min="0" step="0.01" value="'+ estimateState[key] +'" onchange="updateEstimate({'+ key +':+this.value})" style="background:#1e293b;border:1px solid #334155;color:white;padding:5px 7px;border-radius:5px"></label>';
+}
+
+function updateEstimate(patch) {
+  if (Object.keys(patch).some(k => PRICE_KEYS.includes(k) && +patch[k] !== +estimateState[k])) pricingState.dirty = true;
+  Object.assign(estimateState, patch);
+  renderEstimate();
+}
+
+function closeEstimate() { document.getElementById('estimateModal')?.remove(); }
+
+function generateEstimatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation:'portrait', unit:'pt', format:'letter' });
+  const W = 612, M = 40;
+  const e = computeEstimate();
+  const addr = document.getElementById('addressInput').value || 'N/A';
+  const claim = document.getElementById('claimNumber').value || 'N/A';
+  const inspector = document.getElementById('inspectorName').value || 'N/A';
+  const company = document.getElementById('companyName').value || '';
+  const date = document.getElementById('inspectionDate').value || new Date().toLocaleDateString();
+
+  // Header
+  doc.setFillColor(23,34,53); doc.rect(0,0,W,65,'F');
+  doc.setFontSize(17); doc.setFont(undefined,'bold'); doc.setTextColor(255,255,255);
+  doc.text('RoofTrace Pro — Estimate', M, 28);
+  doc.setFontSize(9); doc.setFont(undefined,'normal'); doc.setTextColor(180,195,220);
+  doc.text((company || 'Roofing Estimate') + '  |  rooftracepro.thepublicadjustertx.com', M, 44);
+  doc.text('Estimate Date: ' + date + '   |   Pricing: ' + pricingState.label + (pricingState.dirty ? ' (adjusted)' : ''), M, 57);
+
+  // Property block
+  doc.setTextColor(30,30,30); doc.setFontSize(9);
+  doc.setFont(undefined,'bold'); doc.text('Property:', M, 84); doc.setFont(undefined,'normal'); doc.text(addr, M+55, 84);
+  doc.setFont(undefined,'bold'); doc.text('Claim #:', M, 98); doc.setFont(undefined,'normal'); doc.text(claim, M+50, 98);
+  doc.setFont(undefined,'bold'); doc.text('Prepared by:', M+260, 98); doc.setFont(undefined,'normal'); doc.text(inspector, M+322, 98);
+
+  // Scope summary strip
+  const sumY = 112;
+  doc.setFillColor(240,248,232); doc.rect(M, sumY, W-M*2, 48, 'F');
+  doc.setDrawColor(180,210,150); doc.rect(M, sumY, W-M*2, 48, 'S');
+  const scope = [
+    ['Base SQ', fmt(e.baseSq,2)],
+    ['Waste', estimateState.waste + '%'],
+    ['Total SQ', fmt(e.sqWithWaste,2)],
+    ['Tear-off', 'Included'],
+    ['Decking', estimateState.decking ? (estimateState.deckingPct + '% replace') : 'Not included'],
+  ];
+  const cw = (W-M*2)/scope.length;
+  scope.forEach(([lbl,val],i) => {
+    const cx = M + i*cw + cw/2;
+    doc.setFontSize(7); doc.setFont(undefined,'normal'); doc.setTextColor(80,100,60);
+    doc.text(lbl, cx, sumY+14, {align:'center'});
+    doc.setFontSize(11); doc.setFont(undefined,'bold'); doc.setTextColor(20,50,20);
+    doc.text(val, cx, sumY+32, {align:'center'});
+  });
+
+  let y = sumY + 62;
+
+  // Line items table
+  doc.setFontSize(10); doc.setFont(undefined,'bold'); doc.setTextColor(30,30,30);
+  doc.text('Scope of Work', M, y); y += 10;
+  doc.setFillColor(23,34,53); doc.rect(M,y,W-M*2,15,'F');
+  doc.setFontSize(8); doc.setTextColor(255,255,255); doc.setFont(undefined,'bold');
+  doc.text('Description', M+8, y+10);
+  doc.text('Qty', M+330, y+10, {align:'right'});
+  doc.text('Unit', M+360, y+10, {align:'right'});
+  doc.text('Price', M+440, y+10, {align:'right'});
+  doc.text('Total', W-M-8, y+10, {align:'right'});
+  y += 15;
+  e.lines.forEach((l,idx) => {
+    if (y > 690) { doc.addPage(); y=40; }
+    if (idx%2===0) { doc.setFillColor(247,250,255); doc.rect(M,y,W-M*2,16,'F'); }
+    doc.setTextColor(30,30,30); doc.setFontSize(8); doc.setFont(undefined,'normal');
+    doc.text(l.desc + (l.required ? '  (always included)' : ''), M+8, y+10);
+    doc.text(fmt(l.qty,2), M+330, y+10, {align:'right'});
+    doc.text(l.unit, M+360, y+10, {align:'right'});
+    doc.text(_fmt$(l.price), M+440, y+10, {align:'right'});
+    doc.setFont(undefined,'bold');
+    doc.text(_fmt$(l.total), W-M-8, y+10, {align:'right'});
+    y += 16;
+  });
+
+  // Totals box
+  y += 6;
+  if (y > 660) { doc.addPage(); y=40; }
+  const boxX = W-M-220, boxW = 220;
+  function row(lbl, val, bold) {
+    doc.setFontSize(9);
+    doc.setFont(undefined, bold ? 'bold' : 'normal');
+    doc.setTextColor(bold ? 20 : 60, bold ? 50 : 70, bold ? 20 : 80);
+    doc.text(lbl, boxX+8, y+10);
+    doc.text(val, boxX+boxW-8, y+10, {align:'right'});
+    y += 15;
+  }
+  doc.setFillColor(247,250,255); doc.rect(boxX, y, boxW, 90, 'F');
+  doc.setDrawColor(200,215,240); doc.rect(boxX, y, boxW, 90, 'S');
+  row('Subtotal', _fmt$(e.subtotal));
+  row('Overhead ('+estimateState.overheadPct+'%)', _fmt$(e.overhead));
+  row('Profit ('+estimateState.profitPct+'%)', _fmt$(e.profit));
+  if (estimateState.taxPct > 0) row('Tax ('+estimateState.taxPct+'%)', _fmt$(e.tax));
+  y += 4;
+  doc.setDrawColor(245,158,11); doc.setLineWidth(1.5);
+  doc.line(boxX+6, y, boxX+boxW-6, y);
+  doc.setLineWidth(0.5);
+  y += 4;
+  row('GRAND TOTAL', _fmt$(e.grand), true);
+
+  // Footer notes
+  y = 740;
+  doc.setFontSize(7); doc.setTextColor(120);
+  doc.text('Tear-off is included on every estimate. Decking is itemized only when needed and field verified.', M, y);
+  doc.text('Estimate based on aerial measurements. Final pricing subject to field verification and material market.', M, y+10);
+
+  const fn = `estimate-${addr.replace(/[^a-z0-9]/gi,'-').toLowerCase().slice(0,30)}-${date}.pdf`;
+  doc.save(fn);
+}
+
+window.showEstimate = showEstimate;
+window.closeEstimate = closeEstimate;
+window.updateEstimate = updateEstimate;
+window.selectPriceList = selectPriceList;
+window.togglePricePanel = togglePricePanel;
+window.saveMyPricing = saveMyPricing;
+window.requestLocalPricing = requestLocalPricing;
+window.generateEstimatePDF = generateEstimatePDF;
 window.undoLast = function() {
+  // First: cancel any in-progress segment
+  if (segmentStart) {
+    if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
+    if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
+    segmentStart = null;
+    return;
+  }
+  // Then: remove last drawn line or facet
   if (undoStack.length > 0) {
     const last = undoStack.pop();
     last.group.removeLayer(last.layer);
     refreshStats();
+    // Flash confirmation
+    const flash = document.getElementById('mtb-undo');
+    if (flash) { const orig = flash.style.background; flash.style.background='#22c55e'; setTimeout(()=>flash.style.background=orig,400); }
   } else {
-    // If nothing in undo stack, cancel in-progress segment
-    if (segmentStart) {
-      if (segmentPreview) { map.removeLayer(segmentPreview); segmentPreview = null; }
-      if (previewLine) { map.removeLayer(previewLine); previewLine = null; }
-      segmentStart = null;
-    }
+    // Nothing to undo — shake the button
+    const btn = document.getElementById('mtb-undo');
+    if (btn) { btn.style.borderColor='#ef4444'; setTimeout(()=>btn.style.borderColor='#64748b',500); }
+  }
+};
+
+// Interior rooms (LiDAR scans) for the property currently on screen
+window.openInterior = function() {
+  const addr = (document.getElementById('addressInput').value || document.getElementById('mobileHeaderAddr').value || '').trim();
+  location.href = '/interior' + (addr ? '?address=' + encodeURIComponent(addr) : '');
+};
+
+window.mobileGeocode = function() {
+  const val = document.getElementById('mobileHeaderAddr').value.trim();
+  if (val) {
+    document.getElementById('addressInput').value = val;
+    geocodeAddress();
   }
 };
 
 // Delay initial setMode so L.Draw is fully loaded
 window.addEventListener('load', () => {
-  setTimeout(() => setMode('facet'), 200);
+  setTimeout(() => setMode('ridge'), 200);
+  // Show mobile-only elements on small screens
+  if (window.innerWidth <= 700) {
+    const search = document.getElementById('mobileHeaderSearch');
+    const tb = document.getElementById('mobileToolbar');
+    const drawerBtn = document.getElementById('mobileDrawerBtn');
+    const oldBar = document.getElementById('mobileAddrBar');
+    if (search) search.style.display = 'flex';
+    if (tb) tb.style.display = 'flex';
+    if (drawerBtn) drawerBtn.style.display = 'flex';
+    if (oldBar) oldBar.style.display = 'none'; // hide old bar
+  }
 });
 </script>
+<script src="/fence.js?v=1"></script>
 </body>
 </html>
