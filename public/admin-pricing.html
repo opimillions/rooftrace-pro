@@ -150,7 +150,7 @@ function render() {
     <tr>
       <td><strong>${esc(s.area)}</strong> ${s.isDefault ? '<span class="pill def">DEFAULT</span>' : ''}</td>
       <td>${esc(s.version || '—')}</td>
-      <td style="font-size:0.85em">${esc(s.source || '—')}</td>
+      <td style="font-size:0.85em">${esc(s.source || '—')}${s.catalog?.length ? `<br><span style="color:var(--muted)">${s.catalog.length} line items</span>` : ''}</td>
       <td style="white-space:nowrap">${dt(s.updatedAt)}</td>
       <td class="row-actions" style="white-space:nowrap">
         <button class="btn btn-outline btn-sm" onclick="openSheet('${s._id}')">Edit</button>

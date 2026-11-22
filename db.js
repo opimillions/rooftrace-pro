@@ -354,12 +354,17 @@ const pricingOps = {
   },
 };
 
-// First run: create the default DFW sheet from the current built-in prices
+// First run: create the default DFW sheet from the bundled Xactimate DFW price list
+// (lib/price-lists/TXDF8X_NOV26.json: core roof prices + full line-item catalog).
 (async () => {
-  if (!(await priceSheets.count({}))) {
+  const dfw = require('./lib/price-lists/TXDF8X_NOV26.json');
+  const starter = await priceSheets.findOne({ source: 'RoofTrace defaults — replace with Xactimate DFW' });
+  if (starter) {
+    await priceSheets.update({ _id: starter._id }, { $set: { ...dfw, prices: { ...pricing.defaultPrices(), ...dfw.prices }, updatedAt: now() } });
+  } else if (!(await priceSheets.count({}))) {
     await priceSheets.insert({
-      area: 'DFW', version: 'Starter prices', source: 'RoofTrace defaults — replace with Xactimate DFW',
-      prices: pricing.defaultPrices(), codes: {}, isDefault: true, createdAt: now(), updatedAt: now(),
+      ...dfw, prices: { ...pricing.defaultPrices(), ...dfw.prices }, codes: {},
+      isDefault: true, createdAt: now(), updatedAt: now(),
     });
   }
 })().catch(console.error);
